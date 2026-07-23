@@ -1,0 +1,176 @@
+# IronSight AI / WIW — .gitignore
+# Covers: Flutter/Dart build artifacts, Android/iOS/macOS/Linux/Windows platform
+# build outputs, editor/IDE files, secrets and local configuration, and common
+# OS-generated files. Kept intentionally readable/organized by category rather
+# than as a single unstructured dump, per the project's engineering principles.
+
+# -----------------------------------------------------------------------------
+# Flutter / Dart
+# -----------------------------------------------------------------------------
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+.flutter-plugins
+.flutter-plugins-dependencies
+flutter_*.png
+linked_*.ds
+unlinked.ds
+unlinked_spec.ds
+app.*.symbols
+app.*.map.json
+coverage/
+
+# -----------------------------------------------------------------------------
+# Android
+# -----------------------------------------------------------------------------
+**/android/**/gradle-wrapper.jar
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/**/GeneratedPluginRegistrant.java
+**/android/key.properties
+*.jks
+*.keystore
+
+# -----------------------------------------------------------------------------
+# iOS / macOS
+# -----------------------------------------------------------------------------
+**/ios/**/*.mode1v3
+**/ios/**/*.mode2v3
+**/ios/**/*.moved-aside
+**/ios/**/*.pbxuser
+**/ios/**/*.perspectivev3
+**/ios/**/*sync/
+**/ios/**/.sconsign.dblite
+**/ios/**/.tags*
+**/ios/**/.vagrant/
+**/ios/**/DerivedData/
+**/ios/**/Icon?
+**/ios/**/Pods/
+**/ios/**/.symlinks/
+**/ios/**/profile
+**/ios/**/xcuserdata/
+**/ios/.generated/
+**/ios/Flutter/.last_build_id
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/ServiceDefinitions.json
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Flutter/ephemeral/
+**/Flutter/ephemeral/
+**/Pods/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# -----------------------------------------------------------------------------
+# Windows (desktop build target)
+# -----------------------------------------------------------------------------
+**/windows/flutter/generated_plugin_registrant.cc
+**/windows/flutter/generated_plugin_registrant.h
+**/windows/flutter/generated_plugins.cmake
+**/windows/**/x64/
+**/windows/**/Debug/
+**/windows/**/Release/
+
+# -----------------------------------------------------------------------------
+# Linux (desktop build target)
+# -----------------------------------------------------------------------------
+**/linux/flutter/generated_plugin_registrant.cc
+**/linux/flutter/generated_plugin_registrant.h
+**/linux/flutter/generated_plugins.cmake
+
+# -----------------------------------------------------------------------------
+# Web
+# -----------------------------------------------------------------------------
+lib/generated_plugin_registrant.dart
+
+# -----------------------------------------------------------------------------
+# Secrets, environment variables, and local configuration
+# (Nothing below should ever contain real Supabase keys, service-role keys,
+# or other credentials committed to source control — docs/08-security-compliance.md §7.)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+secrets.json
+**/google-services.json
+**/GoogleService-Info.plist
+supabase/.temp/
+supabase/.branches/
+*.local.json
+local.properties
+*.local
+
+# -----------------------------------------------------------------------------
+# Editors / IDEs
+# -----------------------------------------------------------------------------
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code — ignore local editor state, but allow a small set of shared,
+# project-relevant config files to be tracked if intentionally committed later.
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Cursor — same pattern as VS Code above. `.cursor/settings.json` is
+# intentionally tracked in this repo (it enables the Supabase plugin, which
+# reflects this project's approved backend architecture, not a personal
+# editor preference) — see management/DECISIONS.md and management/CHANGELOG.md
+# for the reasoning. Any other local/machine-specific Cursor files are ignored.
+.cursor/*
+!.cursor/settings.json
+!.cursor/rules/
+
+# -----------------------------------------------------------------------------
+# OS-generated files
+# -----------------------------------------------------------------------------
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+.directory
+
+# -----------------------------------------------------------------------------
+# Generated / temporary files
+# -----------------------------------------------------------------------------
+*.tmp
+*.temp
+*.bak
+*.log
+.history/
