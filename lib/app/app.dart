@@ -13,7 +13,7 @@ class IronSightApp extends StatelessWidget {
       title: 'IronSight AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRoutes.dashboard,
+      initialRoute: AppRoutes.login,
       routes: appRoutes,
     );
   }

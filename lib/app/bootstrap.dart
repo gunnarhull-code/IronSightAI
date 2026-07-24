@@ -11,7 +11,8 @@ Future<void> bootstrap() async {
 
   await Supabase.initialize(
     url: dotenv.env['SUPABASE_URL']!,
-    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+    // publishableKey is the current name for the project's anon/public key.
+    publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   runApp(const IronSightApp());
