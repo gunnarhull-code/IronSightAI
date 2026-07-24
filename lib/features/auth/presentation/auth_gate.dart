@@ -4,21 +4,31 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/router.dart';
-import '../../dashboard/presentation/dashboard_screen.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
 
 /// Session-aware root gate for IronSight AI.
 ///
 /// On startup, checks `Supabase.instance.client.auth.currentSession` and shows
-/// either the dashboard (session present) or the login flow (no session).
+/// either [signedInHome] (session present) or the login flow (no session).
 /// Listens to auth state changes so sign-in and sign-out navigation stay
 /// centralized here instead of on individual screens.
+///
+/// [signedInHome] is typically a [CompanyGate] wired from `app/` so tenancy
+/// routing stays out of this widget while auth stays centralized.
 ///
 /// [isSignedIn] and [onSignedInChanged] are override hooks for widget tests
 /// that do not initialize Supabase via bootstrap.
 class AuthGate extends StatefulWidget {
-  const AuthGate({super.key, this.isSignedIn, this.onSignedInChanged});
+  const AuthGate({
+    super.key,
+    required this.signedInHome,
+    this.isSignedIn,
+    this.onSignedInChanged,
+  });
+
+  /// Shown when the user has an active session (e.g. [CompanyGate]).
+  final Widget signedInHome;
 
   /// Optional signed-in check used instead of reading the Supabase session.
   final bool Function()? isSignedIn;
@@ -69,12 +79,12 @@ class _AuthGateState extends State<AuthGate> {
   @override
   Widget build(BuildContext context) {
     if (_isSignedIn) {
-      return const DashboardScreen();
+      return widget.signedInHome;
     }
 
     // Nested navigator keeps login ↔ signup transitions local to the
     // unauthenticated flow. When a session appears, this subtree is replaced
-    // by the dashboard and the auth stack is discarded.
+    // by [signedInHome] and the auth stack is discarded.
     return Navigator(
       key: const ValueKey<String>('unauthenticated-navigator'),
       initialRoute: AppRoutes.login,
