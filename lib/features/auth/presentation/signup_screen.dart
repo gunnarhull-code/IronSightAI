@@ -5,9 +5,10 @@ import '../../../app/router.dart';
 
 /// Email/password account-creation screen.
 ///
-/// On successful sign-up, navigates to [AppRoutes.dashboard] and clears the
-/// auth screens from the navigation stack so the back button cannot return
-/// to sign-up.
+/// Successful sign-up does not navigate here — when Supabase creates a
+/// session, [AuthGate] swaps to the dashboard centrally. If email
+/// confirmation is required and no session is returned, the user remains
+/// on the auth flow.
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 
@@ -45,15 +46,16 @@ class _SignupScreenState extends State<SignupScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false);
+      // Navigation is handled by AuthGate via onAuthStateChange when a
+      // session is present after sign-up.
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Something went wrong. Please try again.');
+      if (mounted) {
+        setState(
+          () => _errorMessage = 'Something went wrong. Please try again.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

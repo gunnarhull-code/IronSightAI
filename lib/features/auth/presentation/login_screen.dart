@@ -5,9 +5,8 @@ import '../../../app/router.dart';
 
 /// Email/password sign-in screen.
 ///
-/// On successful sign-in, navigates to [AppRoutes.dashboard] and clears the
-/// auth screens from the navigation stack so the back button cannot return
-/// to sign-in.
+/// Successful sign-in does not navigate here — [AuthGate] listens to
+/// Supabase auth state and swaps to the dashboard centrally.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -43,15 +42,15 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-
-      if (!mounted) return;
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.dashboard, (route) => false);
+      // Navigation is handled by AuthGate via onAuthStateChange.
     } on AuthException catch (e) {
-      setState(() => _errorMessage = e.message);
+      if (mounted) setState(() => _errorMessage = e.message);
     } catch (_) {
-      setState(() => _errorMessage = 'Something went wrong. Please try again.');
+      if (mounted) {
+        setState(
+          () => _errorMessage = 'Something went wrong. Please try again.',
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }

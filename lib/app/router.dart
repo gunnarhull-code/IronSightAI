@@ -17,11 +17,10 @@ abstract final class AppRoutes {
 
 /// Route table consumed by [MaterialApp.routes].
 ///
-/// [AppRoutes.login] is also used as [MaterialApp.initialRoute] for now.
-/// This is deliberately simple: it does not yet check for an existing
-/// session and route straight to the dashboard — that is session-aware
-/// startup routing, to be added alongside company/role context loading
-/// (docs/13-roadmap.md, Weeks 1-2; management/sprints/SPRINT-1.md, Task 15).
+/// Session-aware startup and sign-in/sign-out transitions are owned by
+/// [AuthGate] (`lib/features/auth/presentation/auth_gate.dart`). Named routes
+/// remain available for login ↔ signup navigation and for any direct
+/// navigation that still needs a stable path.
 final Map<String, WidgetBuilder> appRoutes = {
   AppRoutes.login: (context) => const LoginScreen(),
   AppRoutes.signup: (context) => const SignupScreen(),

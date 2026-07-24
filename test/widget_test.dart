@@ -1,22 +1,95 @@
-// Basic smoke test for the IronSight AI application shell.
+// Smoke tests for session-aware routing via AuthGate.
 //
-// Note: this test launches [IronSightApp] directly, which does not invoke
-// [bootstrap]. That means Supabase / dotenv are not initialized — which is
-// intentional for a pure UI smoke test, and is why this test only asserts
-// that the login screen's static chrome renders (not that auth works).
+// These tests do not initialize Supabase / dotenv. AuthGate is given explicit
+// signed-in overrides so the UI can be exercised in isolation.
+
+import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ironsight_ai/app/app.dart';
+import 'package:ironsight_ai/features/auth/presentation/auth_gate.dart';
 
 void main() {
-  testWidgets('IronSightApp renders the login screen as initial route', (
+  testWidgets('AuthGate shows login when there is no session', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const IronSightApp());
+    await tester.pumpWidget(
+      IronSightApp(
+        authGate: AuthGate(
+          isSignedIn: () => false,
+          onSignedInChanged: () => const Stream<bool>.empty(),
+        ),
+      ),
+    );
 
     expect(find.text('IronSight AI'), findsOneWidget);
     expect(find.text('Sign in to continue'), findsOneWidget);
     expect(find.text('Sign In'), findsOneWidget);
+  });
+
+  testWidgets('AuthGate shows dashboard when a session exists', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      IronSightApp(
+        authGate: AuthGate(
+          isSignedIn: () => true,
+          onSignedInChanged: () => const Stream<bool>.empty(),
+        ),
+      ),
+    );
+
+    expect(find.text('IronSight AI'), findsOneWidget);
+    expect(find.text('Heavy Equipment Inspections'), findsOneWidget);
+    expect(find.text('Start Quick Appraisal'), findsOneWidget);
+  });
+
+  testWidgets('AuthGate switches to dashboard when signed-in becomes true', (
+    WidgetTester tester,
+  ) async {
+    final signedIn = StreamController<bool>.broadcast();
+    addTearDown(signedIn.close);
+
+    await tester.pumpWidget(
+      IronSightApp(
+        authGate: AuthGate(
+          isSignedIn: () => false,
+          onSignedInChanged: () => signedIn.stream,
+        ),
+      ),
+    );
+
+    expect(find.text('Sign in to continue'), findsOneWidget);
+
+    signedIn.add(true);
+    await tester.pump();
+
+    expect(find.text('Heavy Equipment Inspections'), findsOneWidget);
+    expect(find.text('Sign in to continue'), findsNothing);
+  });
+
+  testWidgets('AuthGate switches to login when signed-in becomes false', (
+    WidgetTester tester,
+  ) async {
+    final signedIn = StreamController<bool>.broadcast();
+    addTearDown(signedIn.close);
+
+    await tester.pumpWidget(
+      IronSightApp(
+        authGate: AuthGate(
+          isSignedIn: () => true,
+          onSignedInChanged: () => signedIn.stream,
+        ),
+      ),
+    );
+
+    expect(find.text('Heavy Equipment Inspections'), findsOneWidget);
+
+    signedIn.add(false);
+    await tester.pump();
+
+    expect(find.text('Sign in to continue'), findsOneWidget);
+    expect(find.text('Heavy Equipment Inspections'), findsNothing);
   });
 }
