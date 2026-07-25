@@ -35,7 +35,7 @@ The app **crashes on launch and tests fail** without these two things being read
 
 1. **`.env` file** (git-ignored, must exist at repo root). If missing, create it from the template: `cp .env.example .env`. It points the app at the local Supabase instance. The default local Supabase keys are deterministic demo values (safe for local dev only).
 2. **Local Supabase stack** (Postgres + Auth). Start it as follows — these are NOT run by the update script:
-   - Docker daemon is not auto-started. Start it once per VM boot (in a background/tmux session): `sudo dockerd`. The docker socket is group-accessible (`sudo chmod 666 /var/run/docker.sock` if you hit permission errors).
+   - Docker daemon is not auto-started. Start it once per VM boot (in a background/tmux session): `sudo dockerd`.
    - Start Supabase from the repo root: `supabase start` (idempotent; applies `supabase/migrations/*.sql` on first start). API at `http://127.0.0.1:54321`, Studio at `http://127.0.0.1:54323`, DB at `:54322`.
    - Reset/reapply migrations: `supabase db reset`. Local auth has `enable_confirmations = false`, so email signup logs in immediately (no confirmation email needed).
 
