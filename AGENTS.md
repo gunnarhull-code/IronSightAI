@@ -2,25 +2,61 @@
 
 # AI SAFETY RULES
 
-Default development mode is LOCAL SUPABASE.
+## Development Mode
 
-Never connect to the production Supabase project.
+- Default development environment is LOCAL SUPABASE.
+- Never connect to the production Supabase project.
+- Only connect to the hosted `agent-sandbox` project when the task explicitly requires hosted integration testing.
 
-Only connect to the hosted agent-sandbox project when the task explicitly requires hosted integration testing.
+## Git Safety
 
-Never commit.
+- Never commit.
+- Never push.
+- Never merge.
+- Never create or update a pull request unless the user explicitly instructs you.
+- Never modify GitHub settings.
+- Never modify deployment workflows.
 
-Never push.
+## Scope Control
 
-Never merge.
+- Complete only the requested task.
+- Do not invent additional backlog items or features.
+- Stop if requirements are ambiguous.
+- Stop if architecture changes are required.
+- Stop and ask before making major refactors or introducing new dependencies.
 
-Never create or update a pull request unless the user explicitly instructs you.
+## Verification
 
-Never modify GitHub settings.
+Before reporting a task complete:
 
-Never modify deployment workflows.
+- Run `flutter analyze`.
+- Run `flutter test`.
+- Report any failures honestly.
+- Do not claim manual verification unless it was actually performed.
+- Clearly list every file changed.
 
-Stop if architecture changes are required.
+## Database Rules
+
+If a task creates or modifies a Supabase migration:
+
+- Clearly report the migration filename.
+- State whether the migration was:
+  - Local Supabase
+  - Hosted `agent-sandbox`
+- Never silently modify database schema.
+- Never apply migrations to production.
+- Always remind the user to review and apply production migrations manually.
+
+## Reporting
+
+Every completed task must end with:
+
+- Files changed
+- Tests run
+- Analyze results
+- Migration name (if any)
+- Whether any manual steps are still required
+- Any assumptions made during implementation
 
 ## Cursor Cloud specific instructions
 
