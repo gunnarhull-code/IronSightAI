@@ -316,6 +316,43 @@ void main() {
     },
   );
 
+  testWidgets('disables save and prevents duplicates while creating', (
+    tester,
+  ) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository(
+      createDelay: const Duration(seconds: 1),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: EquipmentFormScreen(repository: repository)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Asset Name'),
+      'Skid Steer',
+    );
+    await selectManufacturer(tester, 'Bobcat');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Model'), 'S650');
+
+    await tester.tap(find.widgetWithText(FilledButton, 'Add Equipment'));
+    await tester.pump();
+
+    final savingButton = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(savingButton.onPressed, isNull);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(repository.createCallCount, 1);
+
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+
+    expect(repository.createCallCount, 1);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+  });
+
   testWidgets('shows visible error when repository create fails', (
     tester,
   ) async {

@@ -4,13 +4,19 @@ import 'package:ironsight_ai/domain/repositories/equipment_repository.dart';
 
 /// In-memory [EquipmentRepository] for widget and unit tests.
 class FakeEquipmentRepository implements EquipmentRepository {
-  FakeEquipmentRepository({List<Equipment>? equipment, this.getError})
-    : equipment = equipment ?? [];
+  FakeEquipmentRepository({
+    List<Equipment>? equipment,
+    this.getError,
+    this.createDelay = Duration.zero,
+    this.updateDelay = Duration.zero,
+  }) : equipment = equipment ?? [];
 
   List<Equipment> equipment;
   Object? getError;
   Object? createError;
   Object? updateError;
+  Duration createDelay;
+  Duration updateDelay;
 
   int createCallCount = 0;
   int updateCallCount = 0;
@@ -40,6 +46,9 @@ class FakeEquipmentRepository implements EquipmentRepository {
   Future<Equipment> createEquipment(EquipmentDetails details) async {
     createCallCount += 1;
     lastCreatedDetails = details;
+    if (createDelay > Duration.zero) {
+      await Future<void>.delayed(createDelay);
+    }
     if (createError != null) throw createError!;
 
     final now = DateTime.utc(2026, 1, 1);
@@ -66,6 +75,9 @@ class FakeEquipmentRepository implements EquipmentRepository {
     updateCallCount += 1;
     lastUpdatedId = id;
     lastUpdatedDetails = details;
+    if (updateDelay > Duration.zero) {
+      await Future<void>.delayed(updateDelay);
+    }
     if (updateError != null) throw updateError!;
 
     final index = equipment.indexWhere((item) => item.id == id);
