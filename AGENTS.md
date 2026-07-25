@@ -49,4 +49,4 @@ Run from the repo root:
 ### Notes / gotchas
 - The Flutter web debug build can show a blank white screen for ~15–30s on first load while the debug service connects; give it time or refresh once.
 - `supabase/config.toml` is committed so local dev is reproducible; `project_id = "workspace"`.
-- `README.md`/`docs/` claim "no application code yet" — this is stale; real app code (auth, company onboarding, equipment CRUD) exists under `lib/`.
+- Documentation may lag implementation. If documentation conflicts with working application code, inspect the code first and report the discrepancy rather than assuming the documentation is correct or automatically rewriting it.
