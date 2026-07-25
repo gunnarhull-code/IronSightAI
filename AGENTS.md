@@ -1,5 +1,27 @@
 # AGENTS.md
 
+# AI SAFETY RULES
+
+Default development mode is LOCAL SUPABASE.
+
+Never connect to the production Supabase project.
+
+Only connect to the hosted agent-sandbox project when the task explicitly requires hosted integration testing.
+
+Never commit.
+
+Never push.
+
+Never merge.
+
+Never create or update a pull request unless the user explicitly instructs you.
+
+Never modify GitHub settings.
+
+Never modify deployment workflows.
+
+Stop if architecture changes are required.
+
 ## Cursor Cloud specific instructions
 
 This is a **Flutter (Dart) mobile-first app** for equipment dealerships ("IronSight AI — WIW") with a **Supabase** backend (Postgres + Auth). It is a thin client that talks directly to Supabase via PostgREST/GoTrue; there is no custom server. The commands below are the standard Flutter/Supabase commands — see `README.md` and `pubspec.yaml` for product/tooling detail.
