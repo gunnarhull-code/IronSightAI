@@ -8,17 +8,19 @@
 
 ## [Unreleased]
 
-Nothing shipped yet. Documentation is complete; application code has not been written.
+Application foundation exists on `main` (Flutter + local Supabase: auth, company, equipment). Sprint 009 adds the engineering verification baseline.
 
 ### Added
+- **2026-07-26**: Sprint 009 — engineering reliability baseline: `docs/DEVELOPER_WORKFLOW.md` (setup/verification source of truth), `.github/workflows/ci.yml` (format/analyze/test on PRs to `main`), `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/verify.sh`, and `test/env_example_test.dart` for safe `.env.example` bootstrap coverage. No feature migrations.
 - **2026-07-23**: `management/sprints/SPRINT-1.md` — detailed Sprint 1 (Foundation) implementation plan: sprint goal, deliverables, in/out of scope, a 20-task dependency-ordered breakdown (purpose, dependencies, complexity, expected outcome per task), recommended build order, git milestones, a per-deliverable testing plan, a measurable Definition of Done, Sprint-1-specific risks with mitigations, and a Sprint 2 preview. Maps directly to `docs/13-roadmap.md`'s "Weeks 1–2: Foundation" section without duplicating it — this is the execution-level detail one layer below the strategic roadmap. Housed in a new `management/sprints/` subfolder so the top-level `management/` structure stays fixed at six files. `management/DASHBOARD.md`'s "Current Sprint," "Current Objective," "Current Tasks," and "Next Recommended Action" populated from this plan.
 
 ### Changed
+- **2026-07-26**: Corrected stale claims that the repository contained no application code (`README.md`, `management/DASHBOARD.md`, this changelog). Pointed setup/verification docs at `docs/DEVELOPER_WORKFLOW.md` to avoid duplicated long instructions. Active AFK sprint updated to Sprint 009.
 - **2026-07-23**: Founder decision — the project maintains a **single strategic roadmap**, `docs/13-roadmap.md`, permanently. `management/ROADMAP.md` (the 7-phase business-stage roadmap created earlier the same day) is **removed** as a duplicate source of truth, along with `management/SPRINTS.md` (its sprint-level content duplicated `docs/13-roadmap.md`'s Week 1-2 tasks) and `management/RISKS.md` (folded inline into `management/DASHBOARD.md`'s "Active Risks" section instead of a separate file). The management folder is now fixed at six files: `DASHBOARD.md`, `DECISIONS.md`, `CHANGELOG.md`, `BACKLOG.md`, `FOUNDER_LOG.md`, `WINS.md`. `DASHBOARD.md`'s "Current Phase"/"Current Sprint" sections replaced with a "Strategic Roadmap" section that references `docs/13-roadmap.md` rather than restating it. `BACKLOG.md` and `FOUNDER_LOG.md` had their references to the removed files corrected to point to `docs/13-roadmap.md` instead. `README.md`'s Daily Development Workflow updated to a 7-step sequence that explicitly includes reading `docs/13-roadmap.md`, and a new "Documentation Philosophy: `docs/` vs `management/`" section added stating the no-duplicate-sources-of-truth rule explicitly.
 - **2026-07-23 (earlier)**: `management/ROADMAP.md` restructured from 8 phases to 7 (superseded later the same day by the removal above). The standalone "Version 2 (Kickoff & Planning)" phase was removed and merged into a single "AI Assistance" phase that covers both planning and delivery as one business stage.
 
 ### Planned Next
-- Week 1 (Foundation): Supabase project setup, Flutter scaffold, schema migrations, RLS policies, auth flow. See [`docs/13-roadmap.md`](../docs/13-roadmap.md).
+- Continue V1 product implementation from the next assigned immutable sprint. Inspection work remains on Sprint 008’s independent track. See [`docs/13-roadmap.md`](../docs/13-roadmap.md).
 
 ---
 

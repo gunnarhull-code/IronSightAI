@@ -162,3 +162,12 @@
 - **Alternatives Considered**: Full sync of all documents `01`-`14` (rejected — significant additional effort for lower-risk documents); no sync at all, `docs/15` as sole authority (rejected — leaves the highest-risk documents, which an implementer is most likely to read directly, actively contradicting the approved design).
 - **Status**: Approved (Founder Decision #8)
 - **Related Documents**: `docs/16-founder-approval-checklist.md`, `docs/18-implementation-ready-report.md`
+
+## ADR-017: GitHub Actions for Pull-Request Verification (Not Deployments)
+
+- **Date**: 2026-07-26
+- **Decision**: Pull requests targeting `main` are verified by a minimal GitHub Actions workflow that installs a pinned Flutter version, creates `.env` only from committed `.env.example`, restores dependencies, checks formatting without rewriting, runs `flutter analyze`, and runs `flutter test`. The workflow uses `contents: read` only, enables simple Flutter/pub caching, and never deploys, never connects to production Supabase, and never applies migrations. Local setup/verification instructions live in a single source of truth: `docs/DEVELOPER_WORKFLOW.md`.
+- **Reasoning**: Draft PRs need a consistent, production-safe verification baseline. Duplicating long setup instructions across README/AGENTS caused staleness (including incorrect “no application code” claims). GitHub Actions is already where PRs are reviewed; a narrow verify job is enough for Sprint 009 without introducing release automation.
+- **Alternatives Considered**: (a) Codemagic-only CI immediately (deferred — `docs/10-tech-stack.md` still names Codemagic for Flutter-native store CI/CD later; Sprint 009 is PR verification, not store deployment); (b) Broad CI with migrations/deployments (rejected — unsafe and out of scope); (c) Leaving verification as manual-only (rejected — too easy for Draft PRs to skip format/analyze/test).
+- **Status**: Approved (Sprint 009)
+- **Related Documents**: `docs/DEVELOPER_WORKFLOW.md`, `.github/workflows/ci.yml`, `docs/10-tech-stack.md`
