@@ -21,15 +21,19 @@ void main() {
     await tester.pump();
   }
 
-  testWidgets('autofocuses the email field when login opens', (tester) async {
+  testWidgets('does not autofocus the email field when login opens', (
+    tester,
+  ) async {
     await pumpLogin(tester);
 
-    expect(fieldHasFocus(tester, emailField()), isTrue);
+    expect(fieldHasFocus(tester, emailField()), isFalse);
   });
 
   testWidgets('Enter in email moves focus to password', (tester) async {
     await pumpLogin(tester);
 
+    await tester.tap(emailField());
+    await tester.pump();
     await tester.enterText(emailField(), 'user@example.com');
     await tester.testTextInput.receiveAction(TextInputAction.next);
     await tester.pump();
@@ -57,6 +61,8 @@ void main() {
   testWidgets('tab order moves email -> password -> sign in', (tester) async {
     await pumpLogin(tester);
 
+    await tester.tap(emailField());
+    await tester.pump();
     expect(fieldHasFocus(tester, emailField()), isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);

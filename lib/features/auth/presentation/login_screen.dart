@@ -23,20 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordFocus = FocusNode();
 
   bool _isSubmitting = false;
-  bool _didRequestInitialFocus = false;
   String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    // Flutter web does not reliably honor [autofocus] alone; request focus
-    // after the first frame so Email is ready for keyboard entry immediately.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _didRequestInitialFocus) return;
-      _didRequestInitialFocus = true;
-      _emailFocus.requestFocus();
-    });
-  }
 
   @override
   void dispose() {
@@ -123,7 +110,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: TextFormField(
                             controller: _emailController,
                             focusNode: _emailFocus,
-                            autofocus: true,
                             enabled: !_isSubmitting,
                             keyboardType: TextInputType.emailAddress,
                             textInputAction: TextInputAction.next,
