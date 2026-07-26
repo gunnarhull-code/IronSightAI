@@ -36,6 +36,11 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.16.0
   flutter_dotenv: ^6.0.1
+  drift: ^2.34.2
+  sqlite3: ^3.5.0
+  path: ^1.9.1
+  path_provider: ^2.1.6
+  uuid: ^4.6.0
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +52,15 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  drift_dev: ^2.34.5
+  build_runner: ^2.15.1
+
+# Bundle SQLite3MultipleCiphers so local DB opens can use SQLCipher-compatible
+# encryption (Founder Decision #2 / ADR-011).
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
