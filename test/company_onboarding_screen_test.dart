@@ -123,7 +123,9 @@ void main() {
     await tester.enterText(find.byType(TextFormField), 'Hull Equipment');
     await tester.pump();
 
-    await tester.pageBack();
+    // Onboarding has no AppBar back control; simulate the system back gesture.
+    final handled = await tester.binding.handlePopRoute();
+    expect(handled, isTrue);
     await tester.pumpAndSettle();
 
     expect(find.text('Discard changes?'), findsOneWidget);
