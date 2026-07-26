@@ -1,0 +1,64 @@
+# Informational only: never connects to Supabase, never applies migrations.
+name: PR Migration Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  migration-check:
+    name: Supabase migration review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Detect Supabase migration changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t MIGRATION_FILES < <(
+            gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" \
+              --jq '.[] | select(.status == "added" or .status == "modified") | .filename' \
+              | grep -E '^supabase/migrations/' || true
+          )
+
+          if [ "${#MIGRATION_FILES[@]}" -eq 0 ]; then
+            {
+              echo "✅ No Supabase migrations detected."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "No Supabase migration files added or modified in this PR."
+            exit 0
+          fi
+
+          {
+            echo "## 🚨 SUPABASE MIGRATION REVIEW REQUIRED"
+            echo ""
+            echo "Changed migration files:"
+            echo ""
+            for file in "${MIGRATION_FILES[@]}"; do
+              echo "- \`${file##*/}\`"
+            done
+            echo ""
+            echo "- Production migration has not been applied by this workflow."
+            echo "- Review the SQL before merging."
+            echo "- After approval, run \`npx.cmd supabase db push --dry-run\`."
+            echo "- Apply production migrations manually only after review."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "🚨 SUPABASE MIGRATION REVIEW REQUIRED"
+          echo "Changed migration files:"
+          for file in "${MIGRATION_FILES[@]}"; do
+            echo "  - ${file##*/}"
+          done
+          echo "Production migration has not been applied by this workflow."
+          echo "Review the SQL before merging."
+          echo "After approval, run: npx.cmd supabase db push --dry-run"
+          echo "Apply production migrations manually only after review."
+          # Informational check: always pass so merges are not blocked yet.
+          exit 0
