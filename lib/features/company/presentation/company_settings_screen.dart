@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/company_membership.dart';
+import '../../../domain/entities/country_catalog.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/use_cases/get_current_user_company_membership.dart';
 import '../../../domain/use_cases/update_company_details.dart';
@@ -21,7 +22,7 @@ class CompanySettingsScreen extends StatefulWidget {
 class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _regionController = TextEditingController();
+  final _countryController = TextEditingController();
 
   late final GetCurrentUserCompanyMembership _getMembership;
   late final UpdateCompanyDetails _updateCompany;
@@ -40,14 +41,14 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     _getMembership = GetCurrentUserCompanyMembership(widget.repository);
     _updateCompany = UpdateCompanyDetails(widget.repository);
     _nameController.addListener(_syncUnsavedChanges);
-    _regionController.addListener(_syncUnsavedChanges);
+    _countryController.addListener(_syncUnsavedChanges);
     _loadSettings();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _regionController.dispose();
+    _countryController.dispose();
     super.dispose();
   }
 
@@ -86,7 +87,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     _isApplyingMembership = true;
     _membership = membership;
     _nameController.text = membership.company.name;
-    _regionController.text = membership.company.region ?? '';
+    _countryController.text = membership.company.region ?? '';
     _hasUnsavedChanges = false;
     _isApplyingMembership = false;
   }
@@ -97,7 +98,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     final company = _membership!.company;
     final hasChanges =
         _nameController.text.trim() != company.name ||
-        _regionController.text.trim() != (company.region ?? '');
+        _countryController.text.trim() != (company.region ?? '');
 
     if (hasChanges != _hasUnsavedChanges) {
       setState(() => _hasUnsavedChanges = hasChanges);
@@ -116,7 +117,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     try {
       final updatedCompany = await _updateCompany(
         name: _nameController.text,
-        region: _regionController.text,
+        region: _countryController.text,
       );
       if (!mounted) return;
 
@@ -236,11 +237,51 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
-                  controller: _regionController,
-                  enabled: canEdit && !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Region'),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final countryEntries = countryDropdownEntries(
+                      currentValue: membership.company.region,
+                    );
+                    return FormField<String>(
+                      // Validates the controller text so typed search terms
+                      // that were never selected from the list are rejected,
+                      // matching the equipment manufacturer dropdown pattern.
+                      validator: (_) {
+                        final value = _countryController.text.trim();
+                        if (!isAllowedCompanyCountry(
+                          value,
+                          existingRegion: membership.company.region,
+                        )) {
+                          return 'Select a country from the list';
+                        }
+                        return null;
+                      },
+                      builder: (field) {
+                        return DropdownMenu<String>(
+                          key: const Key('company_country_dropdown'),
+                          controller: _countryController,
+                          enabled: canEdit && !_isSaving,
+                          enableFilter: true,
+                          requestFocusOnTap: true,
+                          width: constraints.maxWidth,
+                          label: const Text('Country'),
+                          errorText: field.errorText,
+                          dropdownMenuEntries: countryEntries
+                              .map(
+                                (country) => DropdownMenuEntry<String>(
+                                  value: country,
+                                  label: country,
+                                ),
+                              )
+                              .toList(),
+                          onSelected: (_) {
+                            field.validate();
+                            _syncUnsavedChanges();
+                          },
+                        );
+                      },
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 _ReadOnlyInfo(
