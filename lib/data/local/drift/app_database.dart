@@ -11,11 +11,7 @@ import 'tables/inspections_table.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [
-    Inspections,
-    InspectionCategoryRatings,
-    InspectionDetailedResponses,
-  ],
+  tables: [Inspections, InspectionCategoryRatings, InspectionDetailedResponses],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);

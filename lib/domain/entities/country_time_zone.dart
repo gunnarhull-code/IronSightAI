@@ -4,10 +4,7 @@
 /// primary commercial center). Offsets are standard (non-DST) minutes east of
 /// UTC so timestamps can be localized without a timezone database dependency.
 class CountryTimeZone {
-  const CountryTimeZone({
-    required this.utcOffsetMinutes,
-    required this.label,
-  });
+  const CountryTimeZone({required this.utcOffsetMinutes, required this.label});
 
   /// Minutes east of UTC (negative for west).
   final int utcOffsetMinutes;
@@ -60,7 +57,10 @@ const Map<String, CountryTimeZone> countryTimeZones = {
   'Switzerland': CountryTimeZone(utcOffsetMinutes: 60, label: 'UTC+1'),
   'Thailand': CountryTimeZone(utcOffsetMinutes: 420, label: 'UTC+7'),
   'Turkey': CountryTimeZone(utcOffsetMinutes: 180, label: 'UTC+3'),
-  'United Arab Emirates': CountryTimeZone(utcOffsetMinutes: 240, label: 'UTC+4'),
+  'United Arab Emirates': CountryTimeZone(
+    utcOffsetMinutes: 240,
+    label: 'UTC+4',
+  ),
   'United Kingdom': CountryTimeZone(utcOffsetMinutes: 0, label: 'UTC'),
   'United States': CountryTimeZone(utcOffsetMinutes: -300, label: 'UTC-5'),
   'Vietnam': CountryTimeZone(utcOffsetMinutes: 420, label: 'UTC+7'),
@@ -81,9 +81,7 @@ String formatCompanyLocalTimestamp(
   String? companyCountry,
 }) {
   final zone = timeZoneForCompanyCountry(companyCountry);
-  final local = timestamp.toUtc().add(
-    Duration(minutes: zone.utcOffsetMinutes),
-  );
+  final local = timestamp.toUtc().add(Duration(minutes: zone.utcOffsetMinutes));
   String twoDigits(int value) => value.toString().padLeft(2, '0');
   return '${local.year}-${twoDigits(local.month)}-${twoDigits(local.day)} '
       '${twoDigits(local.hour)}:${twoDigits(local.minute)} ${zone.label}';

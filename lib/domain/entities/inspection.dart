@@ -127,9 +127,12 @@ class Inspection {
         map['local_lifecycle'] as String,
       ),
       depth: InspectionDepth.fromStorage(map['depth'] as String),
-      syncStatus: InspectionSyncStatus.fromStorage(map['sync_status'] as String),
-      reportStatus:
-          InspectionReportStatus.fromStorage(map['report_status'] as String),
+      syncStatus: InspectionSyncStatus.fromStorage(
+        map['sync_status'] as String,
+      ),
+      reportStatus: InspectionReportStatus.fromStorage(
+        map['report_status'] as String,
+      ),
       remoteId: map['remote_id'] as String?,
       overallNotes: map['overall_notes'] as String?,
       categoryRatings: rawRatings
@@ -187,17 +190,16 @@ class Inspection {
       syncStatus: syncStatus ?? this.syncStatus,
       reportStatus: reportStatus ?? this.reportStatus,
       remoteId: clearRemoteId ? null : (remoteId ?? this.remoteId),
-      overallNotes:
-          clearOverallNotes ? null : (overallNotes ?? this.overallNotes),
+      overallNotes: clearOverallNotes
+          ? null
+          : (overallNotes ?? this.overallNotes),
       categoryRatings: categoryRatings ?? this.categoryRatings,
       detailedResponses: detailedResponses ?? this.detailedResponses,
       createdAt: createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
-      completedAt:
-          clearCompletedAt ? null : (completedAt ?? this.completedAt),
-      discardedAt:
-          clearDiscardedAt ? null : (discardedAt ?? this.discardedAt),
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+      discardedAt: clearDiscardedAt ? null : (discardedAt ?? this.discardedAt),
     );
   }
 }

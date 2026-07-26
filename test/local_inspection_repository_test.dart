@@ -151,56 +151,58 @@ void main() {
       expect(updated.updatedByUserId, 'user-2');
     });
 
-    test('rejects updateMetadata from a different company (tenant boundary)',
-        () async {
-      final id = await createDraft(
-        companyId: 'company-b',
-        equipmentId: 'equip-b1',
-      );
-      final original = await repository.getById(
-        companyId: 'company-b',
-        inspectionId: id,
-      );
-
-      expect(
-        () => repository.updateMetadata(
-          companyId: 'company-a',
+    test(
+      'rejects updateMetadata from a different company (tenant boundary)',
+      () async {
+        final id = await createDraft(
+          companyId: 'company-b',
+          equipmentId: 'equip-b1',
+        );
+        final original = await repository.getById(
+          companyId: 'company-b',
           inspectionId: id,
-          updatedByUserId: 'user-a',
-          depth: InspectionDepth.detailed,
-          overallNotes: 'cross-tenant write',
-          remoteId: 'remote-hijack',
-          syncStatus: InspectionSyncStatus.pending,
-        ),
-        throwsA(isA<StateError>()),
-      );
+        );
 
-      final after = await repository.getById(
-        companyId: 'company-b',
-        inspectionId: id,
-      );
-      expect(after, isNotNull);
-      expect(after!.depth, original!.depth);
-      expect(after.overallNotes, original.overallNotes);
-      expect(after.remoteId, original.remoteId);
-      expect(after.syncStatus, original.syncStatus);
-      expect(after.updatedByUserId, original.updatedByUserId);
-      expect(after.updatedAt, original.updatedAt);
+        expect(
+          () => repository.updateMetadata(
+            companyId: 'company-a',
+            inspectionId: id,
+            updatedByUserId: 'user-a',
+            depth: InspectionDepth.detailed,
+            overallNotes: 'cross-tenant write',
+            remoteId: 'remote-hijack',
+            syncStatus: InspectionSyncStatus.pending,
+          ),
+          throwsA(isA<StateError>()),
+        );
 
-      expect(
-        await repository.getById(companyId: 'company-a', inspectionId: id),
-        isNull,
-      );
-      expect(
-        () => repository.saveCategoryRating(
-          companyId: 'company-a',
+        final after = await repository.getById(
+          companyId: 'company-b',
           inspectionId: id,
-          category: ScorecardCategory.engine,
-          rating: ConditionRating.good,
-        ),
-        throwsA(isA<StateError>()),
-      );
-    });
+        );
+        expect(after, isNotNull);
+        expect(after!.depth, original!.depth);
+        expect(after.overallNotes, original.overallNotes);
+        expect(after.remoteId, original.remoteId);
+        expect(after.syncStatus, original.syncStatus);
+        expect(after.updatedByUserId, original.updatedByUserId);
+        expect(after.updatedAt, original.updatedAt);
+
+        expect(
+          await repository.getById(companyId: 'company-a', inspectionId: id),
+          isNull,
+        );
+        expect(
+          () => repository.saveCategoryRating(
+            companyId: 'company-a',
+            inspectionId: id,
+            category: ScorecardCategory.engine,
+            rating: ConditionRating.good,
+          ),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
   });
 
   group('category ratings', () {
@@ -231,48 +233,49 @@ void main() {
     });
 
     test(
-        'rejects saveCategoryRating from a different company (tenant boundary)',
-        () async {
-      final id = await createDraft(companyId: 'company-b');
-      await repository.saveCategoryRating(
-        companyId: 'company-b',
-        inspectionId: id,
-        category: ScorecardCategory.engine,
-        rating: ConditionRating.fair,
-        updatedByUserId: 'user-b',
-      );
-      final original = await repository.getById(
-        companyId: 'company-b',
-        inspectionId: id,
-      );
-
-      expect(
-        () => repository.saveCategoryRating(
-          companyId: 'company-a',
+      'rejects saveCategoryRating from a different company (tenant boundary)',
+      () async {
+        final id = await createDraft(companyId: 'company-b');
+        await repository.saveCategoryRating(
+          companyId: 'company-b',
           inspectionId: id,
           category: ScorecardCategory.engine,
-          rating: ConditionRating.poor,
-          updatedByUserId: 'user-a',
-        ),
-        throwsA(isA<StateError>()),
-      );
+          rating: ConditionRating.fair,
+          updatedByUserId: 'user-b',
+        );
+        final original = await repository.getById(
+          companyId: 'company-b',
+          inspectionId: id,
+        );
 
-      final after = await repository.getById(
-        companyId: 'company-b',
-        inspectionId: id,
-      );
-      expect(after, isNotNull);
-      expect(
-        after!.ratingFor(ScorecardCategory.engine),
-        ConditionRating.fair,
-      );
-      expect(
-        after.ratingFor(ScorecardCategory.engine),
-        original!.ratingFor(ScorecardCategory.engine),
-      );
-      expect(after.updatedByUserId, original.updatedByUserId);
-      expect(after.updatedAt, original.updatedAt);
-    });
+        expect(
+          () => repository.saveCategoryRating(
+            companyId: 'company-a',
+            inspectionId: id,
+            category: ScorecardCategory.engine,
+            rating: ConditionRating.poor,
+            updatedByUserId: 'user-a',
+          ),
+          throwsA(isA<StateError>()),
+        );
+
+        final after = await repository.getById(
+          companyId: 'company-b',
+          inspectionId: id,
+        );
+        expect(after, isNotNull);
+        expect(
+          after!.ratingFor(ScorecardCategory.engine),
+          ConditionRating.fair,
+        );
+        expect(
+          after.ratingFor(ScorecardCategory.engine),
+          original!.ratingFor(ScorecardCategory.engine),
+        );
+        expect(after.updatedByUserId, original.updatedByUserId);
+        expect(after.updatedAt, original.updatedAt);
+      },
+    );
 
     test('rejects invalid category and rating wire values', () {
       expect(
@@ -324,66 +327,66 @@ void main() {
   });
 
   group('discard behavior', () {
-    test('soft-discards incomplete inspections and hides them from default list',
-        () async {
-      final id = await createDraft();
-
-      final discarded = await repository.discardIncomplete(
-        companyId: 'company-a',
-        inspectionId: id,
-        updatedByUserId: 'user-1',
-      );
-
-      expect(discarded.localLifecycle, InspectionLocalLifecycle.discarded);
-      expect(discarded.discardedAt, isNotNull);
-      expect(await repository.listForCompany('company-a'), isEmpty);
-      expect(
-        await repository.listForCompany('company-a', includeDiscarded: true),
-        hasLength(1),
-      );
-    });
-
     test(
-        'rejects discardIncomplete from a different company (tenant boundary)',
-        () async {
-      final id = await createDraft(
-        companyId: 'company-b',
-        equipmentId: 'equip-b1',
-      );
-      final original = await repository.getById(
-        companyId: 'company-b',
-        inspectionId: id,
-      );
+      'soft-discards incomplete inspections and hides them from default list',
+      () async {
+        final id = await createDraft();
 
-      expect(
-        () => repository.discardIncomplete(
+        final discarded = await repository.discardIncomplete(
           companyId: 'company-a',
           inspectionId: id,
-          updatedByUserId: 'user-a',
-        ),
-        throwsA(isA<StateError>()),
-      );
+          updatedByUserId: 'user-1',
+        );
 
-      final after = await repository.getById(
-        companyId: 'company-b',
-        inspectionId: id,
-      );
-      expect(after, isNotNull);
-      expect(after!.localLifecycle, InspectionLocalLifecycle.active);
-      expect(after.discardedAt, isNull);
-      expect(after.localLifecycle, original!.localLifecycle);
-      expect(after.discardedAt, original.discardedAt);
-      expect(after.updatedByUserId, original.updatedByUserId);
-      expect(after.updatedAt, original.updatedAt);
-      expect(await repository.listForCompany('company-b'), hasLength(1));
-    });
+        expect(discarded.localLifecycle, InspectionLocalLifecycle.discarded);
+        expect(discarded.discardedAt, isNotNull);
+        expect(await repository.listForCompany('company-a'), isEmpty);
+        expect(
+          await repository.listForCompany('company-a', includeDiscarded: true),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      'rejects discardIncomplete from a different company (tenant boundary)',
+      () async {
+        final id = await createDraft(
+          companyId: 'company-b',
+          equipmentId: 'equip-b1',
+        );
+        final original = await repository.getById(
+          companyId: 'company-b',
+          inspectionId: id,
+        );
+
+        expect(
+          () => repository.discardIncomplete(
+            companyId: 'company-a',
+            inspectionId: id,
+            updatedByUserId: 'user-a',
+          ),
+          throwsA(isA<StateError>()),
+        );
+
+        final after = await repository.getById(
+          companyId: 'company-b',
+          inspectionId: id,
+        );
+        expect(after, isNotNull);
+        expect(after!.localLifecycle, InspectionLocalLifecycle.active);
+        expect(after.discardedAt, isNull);
+        expect(after.localLifecycle, original!.localLifecycle);
+        expect(after.discardedAt, original.discardedAt);
+        expect(after.updatedByUserId, original.updatedByUserId);
+        expect(after.updatedAt, original.updatedAt);
+        expect(await repository.listForCompany('company-b'), hasLength(1));
+      },
+    );
 
     test('cannot discard a completed inspection', () async {
       final id = await createDraft();
-      await repository.complete(
-        companyId: 'company-a',
-        inspectionId: id,
-      );
+      await repository.complete(companyId: 'company-a', inspectionId: id);
 
       expect(
         () => repository.discardIncomplete(
@@ -414,83 +417,91 @@ void main() {
   });
 
   group('persistence across reconnect', () {
-    test('preserves inspection data after recreating repository/database connection',
-        () async {
-      // Intentional sequential open/close of the same file path.
-      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
-      addTearDown(() {
-        driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
-      });
+    test(
+      'preserves inspection data after recreating repository/database connection',
+      () async {
+        // Intentional sequential open/close of the same file path.
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+        addTearDown(() {
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+        });
 
-      final directory = await Directory.systemTemp.createTemp('ironsight_db_');
-      final file = File('${directory.path}/inspections.sqlite');
-      addTearDown(() async {
-        await directory.delete(recursive: true);
-      });
+        final directory = await Directory.systemTemp.createTemp(
+          'ironsight_db_',
+        );
+        final file = File('${directory.path}/inspections.sqlite');
+        addTearDown(() async {
+          await directory.delete(recursive: true);
+        });
 
-      const encryptionKey = 'test-inspection-key';
-      final firstDb = AppDatabase.file(
-        file,
-        encryptionKey: encryptionKey,
-        requireCipher: false,
-      );
-      final firstRepo = DriftLocalInspectionRepository(
-        firstDb,
-        clock: nextClock,
-        idGenerator: nextId,
-      );
+        const encryptionKey = 'test-inspection-key';
+        final firstDb = AppDatabase.file(
+          file,
+          encryptionKey: encryptionKey,
+          requireCipher: false,
+        );
+        final firstRepo = DriftLocalInspectionRepository(
+          firstDb,
+          clock: nextClock,
+          idGenerator: nextId,
+        );
 
-      final created = await firstRepo.createDraft(
-        companyId: 'company-a',
-        equipmentId: 'equip-1',
-        createdByUserId: 'user-1',
-      );
-      await firstRepo.saveCategoryRating(
-        companyId: 'company-a',
-        inspectionId: created.id,
-        category: ScorecardCategory.structure,
-        rating: ConditionRating.fair,
-      );
-      await firstRepo.saveDetailedCategoryResponse(
-        companyId: 'company-a',
-        inspectionId: created.id,
-        response: const DetailedCategoryResponse(
+        final created = await firstRepo.createDraft(
+          companyId: 'company-a',
+          equipmentId: 'equip-1',
+          createdByUserId: 'user-1',
+        );
+        await firstRepo.saveCategoryRating(
+          companyId: 'company-a',
+          inspectionId: created.id,
           category: ScorecardCategory.structure,
-          items: [
-            DetailedChecklistItemResponse(
-              itemKey: 'frame_cracks',
-              labelSnapshot: 'Frame cracks',
-              sortOrder: 0,
-              rating: ConditionRating.good,
-            ),
-          ],
-        ),
-      );
-      await firstDb.close();
+          rating: ConditionRating.fair,
+        );
+        await firstRepo.saveDetailedCategoryResponse(
+          companyId: 'company-a',
+          inspectionId: created.id,
+          response: const DetailedCategoryResponse(
+            category: ScorecardCategory.structure,
+            items: [
+              DetailedChecklistItemResponse(
+                itemKey: 'frame_cracks',
+                labelSnapshot: 'Frame cracks',
+                sortOrder: 0,
+                rating: ConditionRating.good,
+              ),
+            ],
+          ),
+        );
+        await firstDb.close();
 
-      final secondDb = AppDatabase.file(
-        file,
-        encryptionKey: encryptionKey,
-        requireCipher: false,
-      );
-      final secondRepo = DriftLocalInspectionRepository(secondDb);
-      addTearDown(secondDb.close);
+        final secondDb = AppDatabase.file(
+          file,
+          encryptionKey: encryptionKey,
+          requireCipher: false,
+        );
+        final secondRepo = DriftLocalInspectionRepository(secondDb);
+        addTearDown(secondDb.close);
 
-      final restored = await secondRepo.getById(
-        companyId: 'company-a',
-        inspectionId: created.id,
-      );
+        final restored = await secondRepo.getById(
+          companyId: 'company-a',
+          inspectionId: created.id,
+        );
 
-      expect(restored, isNotNull);
-      expect(
-        restored!.ratingFor(ScorecardCategory.structure),
-        ConditionRating.fair,
-      );
-      expect(
-        restored.detailedFor(ScorecardCategory.structure).items.single.itemKey,
-        'frame_cracks',
-      );
-      expect(await secondRepo.listForCompany('company-a'), hasLength(1));
-    });
+        expect(restored, isNotNull);
+        expect(
+          restored!.ratingFor(ScorecardCategory.structure),
+          ConditionRating.fair,
+        );
+        expect(
+          restored
+              .detailedFor(ScorecardCategory.structure)
+              .items
+              .single
+              .itemKey,
+          'frame_cracks',
+        );
+        expect(await secondRepo.listForCompany('company-a'), hasLength(1));
+      },
+    );
   });
 }

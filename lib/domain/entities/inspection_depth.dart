@@ -7,9 +7,9 @@ enum InspectionDepth {
   detailed;
 
   String get storageValue => switch (this) {
-        InspectionDepth.quickAppraisal => 'quick_appraisal',
-        InspectionDepth.detailed => 'detailed',
-      };
+    InspectionDepth.quickAppraisal => 'quick_appraisal',
+    InspectionDepth.detailed => 'detailed',
+  };
 
   static InspectionDepth fromStorage(String value) {
     return switch (value) {

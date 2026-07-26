@@ -18,6 +18,6 @@ class InspectionCategoryRatings extends Table {
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
-        {inspectionId, category},
-      ];
+    {inspectionId, category},
+  ];
 }

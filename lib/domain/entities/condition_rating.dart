@@ -9,11 +9,11 @@ enum ConditionRating {
   notAssessed;
 
   String get storageValue => switch (this) {
-        ConditionRating.good => 'good',
-        ConditionRating.fair => 'fair',
-        ConditionRating.poor => 'poor',
-        ConditionRating.notAssessed => 'not_assessed',
-      };
+    ConditionRating.good => 'good',
+    ConditionRating.fair => 'fair',
+    ConditionRating.poor => 'poor',
+    ConditionRating.notAssessed => 'not_assessed',
+  };
 
   static ConditionRating fromStorage(String value) {
     return switch (value) {

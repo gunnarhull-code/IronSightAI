@@ -19,10 +19,7 @@ void main() {
     final timestamp = DateTime.utc(2026, 1, 2, 3, 4);
 
     expect(
-      formatCompanyLocalTimestamp(
-        timestamp,
-        companyCountry: 'United States',
-      ),
+      formatCompanyLocalTimestamp(timestamp, companyCountry: 'United States'),
       '2026-01-01 22:04 UTC-5',
     );
     expect(

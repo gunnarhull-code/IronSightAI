@@ -23,6 +23,6 @@ class InspectionDetailedResponses extends Table {
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
-        {inspectionId, category, itemKey},
-      ];
+    {inspectionId, category, itemKey},
+  ];
 }
