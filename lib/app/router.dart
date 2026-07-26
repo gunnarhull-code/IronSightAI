@@ -85,8 +85,10 @@ Route<dynamic>? buildAppRoute(
   if (name == AppRoutes.equipmentNew) {
     return MaterialPageRoute<bool?>(
       settings: settings,
-      builder: (context) =>
-          EquipmentFormScreen(repository: equipmentRepository),
+      builder: (context) => EquipmentFormScreen(
+        repository: equipmentRepository,
+        companyRepository: companyRepository,
+      ),
     );
   }
 
@@ -96,6 +98,7 @@ Route<dynamic>? buildAppRoute(
       settings: settings,
       builder: (context) => EquipmentFormScreen(
         repository: equipmentRepository,
+        companyRepository: companyRepository,
         equipmentId: editId,
       ),
     );

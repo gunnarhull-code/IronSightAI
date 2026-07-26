@@ -311,6 +311,7 @@ void main() {
         home: EquipmentFormScreen(
           repository: repository,
           equipmentId: 'equipment-1',
+          companyCountry: 'United States',
         ),
       ),
     );
@@ -319,10 +320,34 @@ void main() {
     expect(find.text('Audit'), findsOneWidget);
     expect(find.text('Created By'), findsOneWidget);
     expect(find.text('Gunnar Hull'), findsOneWidget);
+    expect(find.text('Created'), findsOneWidget);
+    expect(find.text('2025-12-31 19:00 UTC-5'), findsOneWidget);
     expect(find.text('Last Updated By'), findsOneWidget);
     expect(find.text('Alex Rep'), findsOneWidget);
     expect(find.text('Last Updated'), findsOneWidget);
-    expect(find.text('2026-01-02 03:04 UTC'), findsOneWidget);
+    expect(find.text('2026-01-01 22:04 UTC-5'), findsOneWidget);
+    expect(find.text('2026-01-02 03:04 UTC'), findsNothing);
+  });
+
+  testWidgets('audit timestamps follow the company country time zone', (
+    tester,
+  ) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository(equipment: [sampleEquipment()]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: EquipmentFormScreen(
+          repository: repository,
+          equipmentId: 'equipment-1',
+          companyCountry: 'Japan',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('2026-01-01 09:00 UTC+9'), findsOneWidget);
+    expect(find.text('2026-01-02 12:04 UTC+9'), findsOneWidget);
   });
 
   testWidgets('dirty form warning can keep editing with values preserved', (

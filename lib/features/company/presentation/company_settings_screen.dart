@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../domain/entities/company_membership.dart';
+import '../../../domain/entities/country_catalog.dart';
+import '../../../domain/entities/country_time_zone.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/use_cases/get_current_user_company_membership.dart';
 import '../../../domain/use_cases/update_company_details.dart';
@@ -22,9 +24,9 @@ class CompanySettingsScreen extends StatefulWidget {
 class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _regionController = TextEditingController();
+  final _countryController = TextEditingController();
   final _nameFocus = FocusNode();
-  final _regionFocus = FocusNode();
+  final _countryFocus = FocusNode();
 
   late final GetCurrentUserCompanyMembership _getMembership;
   late final UpdateCompanyDetails _updateCompany;
@@ -44,16 +46,16 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     _getMembership = GetCurrentUserCompanyMembership(widget.repository);
     _updateCompany = UpdateCompanyDetails(widget.repository);
     _nameController.addListener(_syncUnsavedChanges);
-    _regionController.addListener(_syncUnsavedChanges);
+    _countryController.addListener(_syncUnsavedChanges);
     _loadSettings();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _regionController.dispose();
+    _countryController.dispose();
     _nameFocus.dispose();
-    _regionFocus.dispose();
+    _countryFocus.dispose();
     super.dispose();
   }
 
@@ -102,7 +104,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     _isApplyingMembership = true;
     _membership = membership;
     _nameController.text = membership.company.name;
-    _regionController.text = membership.company.region ?? '';
+    _countryController.text = membership.company.region ?? '';
     _hasUnsavedChanges = false;
     _isApplyingMembership = false;
   }
@@ -113,11 +115,17 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     final company = _membership!.company;
     final hasChanges =
         _nameController.text.trim() != company.name ||
-        _regionController.text.trim() != (company.region ?? '');
+        _countryController.text.trim() != (company.region ?? '');
 
-    if (hasChanges != _hasUnsavedChanges) {
-      setState(() => _hasUnsavedChanges = hasChanges);
-    }
+    // Always rebuild so the company-created timestamp reformats immediately
+    // when the Country dropdown selection changes.
+    setState(() => _hasUnsavedChanges = hasChanges);
+  }
+
+  String get _selectedCountryForDisplay {
+    final selected = _countryController.text.trim();
+    if (selected.isNotEmpty) return selected;
+    return _membership?.company.region ?? defaultCompanyCountry;
   }
 
   Future<void> _save() async {
@@ -133,7 +141,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     try {
       final updatedCompany = await _updateCompany(
         name: _nameController.text,
-        region: _regionController.text,
+        region: _countryController.text,
       );
       if (!mounted) return;
 
@@ -267,7 +275,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                       },
                       onFieldSubmitted: (_) {
                         if (canEdit && !_isSaving) {
-                          _regionFocus.requestFocus();
+                          _countryFocus.requestFocus();
                         }
                       },
                     ),
@@ -275,22 +283,64 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                   const SizedBox(height: 16),
                   FocusTraversalOrder(
                     order: const NumericFocusOrder(2),
-                    child: TextFormField(
-                      controller: _regionController,
-                      focusNode: _regionFocus,
-                      enabled: canEdit && !_isSaving,
-                      textCapitalization: TextCapitalization.words,
-                      textInputAction: TextInputAction.done,
-                      autofillHints: null,
-                      decoration: const InputDecoration(labelText: 'Region'),
-                      onFieldSubmitted: (_) {
-                        if (canEdit && !_isSaving && _hasUnsavedChanges) {
-                          _save();
-                        }
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final countryEntries = countryDropdownEntries(
+                          currentValue: membership.company.region,
+                        );
+                        return FormField<String>(
+                          // Validates the controller text so typed search terms
+                          // that were never selected from the list are rejected,
+                          // matching the equipment manufacturer dropdown pattern.
+                          validator: (_) {
+                            final value = _countryController.text.trim();
+                            if (!isAllowedCompanyCountry(
+                              value,
+                              existingRegion: membership.company.region,
+                            )) {
+                              return 'Select a country from the list';
+                            }
+                            return null;
+                          },
+                          builder: (field) {
+                            return DropdownMenu<String>(
+                              key: const Key('company_country_dropdown'),
+                              controller: _countryController,
+                              // DropdownMenu does not expose autofillHints; the
+                              // surrounding name field disables autofill explicitly.
+                              focusNode: _countryFocus,
+                              enabled: canEdit && !_isSaving,
+                              enableFilter: true,
+                              requestFocusOnTap: true,
+                              width: constraints.maxWidth,
+                              label: const Text('Country'),
+                              errorText: field.errorText,
+                              dropdownMenuEntries: countryEntries
+                                  .map(
+                                    (country) => DropdownMenuEntry<String>(
+                                      value: country,
+                                      label: country,
+                                    ),
+                                  )
+                                  .toList(),
+                              onSelected: (_) {
+                                field.validate();
+                                _syncUnsavedChanges();
+                              },
+                            );
+                          },
+                        );
                       },
                     ),
                   ),
                   const SizedBox(height: 24),
+                  _ReadOnlyInfo(
+                    label: 'Company created',
+                    value: formatCompanyLocalTimestamp(
+                      membership.company.createdAt,
+                      companyCountry: _selectedCountryForDisplay,
+                    ),
+                  ),
                   _ReadOnlyInfo(
                     label: 'Current user role',
                     value: membership.role.label,
