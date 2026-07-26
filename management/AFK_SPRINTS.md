@@ -1,6 +1,6 @@
-# AFK Sprints
+# # Active AFK Sprint
 
-This file contains approved work for Cursor Cloud Agents.
+This file contains the single approved sprint for Cursor Cloud Agents.
 
 Rules:
 
@@ -8,86 +8,98 @@ Rules:
 
 - Agents may not invent additional work.
 
-- Agents may not reorder sprints.
+- Agents must follow `AGENTS.md`.
 
-- Agents must follow [AGENTS.md](http://AGENTS.md).
+- Agents stop after completing the active sprint.
 
-- Agents stop after completing the assigned sprint.
+- GitHub draft PRs represent work in progress.
 
-Sprint Status:
+- A merged PR means the sprint is complete.
 
-- Pending
-
-- In Progress
-
-- Review
-
-- Complete
+- No separate sprint status field is required.
 
 ---
 
-# Sprint 001 — Equipment V1 Polish
+# Sprint 002 — Equipment V1 Polish
 
-Status: Pending
+## Goal
 
-Tasks:
+Finish the remaining high-value Equipment polish without changing architecture.
 
-- Equipment search
+## Tasks
 
-- Equipment sorting
+- Add a delete confirmation dialog.
 
-- Filter by manufacturer
+- Warn before leaving an equipment form with unsaved changes.
 
-- Loading indicator while saving
+- Add Created By.
 
-- Disable Save button during submission
+- Add Last Updated By.
 
-Acceptance Criteria:
+- Add Last Updated timestamp.
 
-- Search updates as the user types.
+## Acceptance Criteria
 
-- Search supports asset name, manufacturer, model, serial number, and location.
+- Delete requires explicit confirmation.
 
-- Sorting supports:
+- Canceling delete leaves the equipment unchanged.
 
-  - Asset Name (A–Z)
+- Leaving a modified form triggers an unsaved-changes warning.
 
-  - Manufacturer (A–Z)
+- Choosing to stay preserves entered values.
 
-  - Newest
+- Audit fields display clearly where appropriate.
 
-  - Oldest
+- Existing equipment workflows continue to work.
 
-- Manufacturer filter includes "All Manufacturers."
+- `flutter analyze` passes.
 
-- Save button is disabled while submitting.
+- `flutter test` passes.
 
-- Loading indicator shown during save.
+## Deliverables
 
-- Existing validation preserved.
+Before reporting completion:
 
-- flutter analyze passes.
+1. Run `flutter analyze`.
 
-- flutter test passes.
+2. Run `flutter test`.
 
-Deliverables:
+3. Launch the app and manually perform the requested workflow when the environment supports it.
+
+4. If manual verification cannot be performed, explain why.
+
+Return:
 
 - Files changed
 
-- Tests added/updated
+- Tests added or updated
 
-- Analyze results
+- `flutter analyze` results
 
-- Test results
+- `flutter test` results
 
-- Manual verification checklist
+- Manual verification performed / not performed
 
 - Assumptions made
 
-Do not commit.
+- Any migration created
 
-Do not push.
+- Follow-up recommendations directly related to this sprint
 
-Do not merge.
+## Safety Rules
 
-Do not create or update a pull request.
+- Do not modify unrelated features.
+
+- Do not refactor architecture.
+
+- Do not invent additional backlog items.
+
+- Use local Supabase by default.
+
+- Never connect to production.
+
+- Use hosted `agent-sandbox` only when explicitly required.
+
+- Stop if requirements are ambiguous.
+
+- Do not merge to `main`.
