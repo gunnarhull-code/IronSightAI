@@ -10,7 +10,7 @@ import 'support/fake_company_repository.dart';
 void main() {
   Company sampleCompany({
     String name = 'Hull Equipment',
-    String? region = 'Midwest',
+    String? region = 'United States',
   }) {
     return Company(
       id: 'company-1',
@@ -28,6 +28,23 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: CompanySettingsScreen(repository: repository)),
     );
+  }
+
+  Finder countryTextField() {
+    return find.descendant(
+      of: find.byKey(const Key('company_country_dropdown')),
+      matching: find.byType(TextField),
+    );
+  }
+
+  Future<void> selectCountry(WidgetTester tester, String country) async {
+    // Filter first so the target entry is on-screen in the long catalog.
+    await tester.tap(find.byKey(const Key('company_country_dropdown')));
+    await tester.pumpAndSettle();
+    await tester.enterText(countryTextField(), country);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(country).last);
+    await tester.pumpAndSettle();
   }
 
   Future<void> openSettingsRoute(
@@ -70,26 +87,73 @@ void main() {
     expect(find.text('Owner'), findsOneWidget);
     expect(find.text('company-1'), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Company name'), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Region'), findsOneWidget);
+    expect(find.byKey(const Key('company_country_dropdown')), findsOneWidget);
+    expect(find.text('Region'), findsNothing);
+
+    final countryField = tester.widget<TextField>(countryTextField());
+    expect(countryField.controller?.text, 'United States');
+    expect(find.text('Company created'), findsOneWidget);
+    expect(find.text('2025-12-31 19:00 UTC-5'), findsOneWidget);
   });
 
-  testWidgets('owner can edit company name and region', (tester) async {
+  testWidgets('company created time updates when country changes', (
+    tester,
+  ) async {
     final repository = FakeCompanyRepository(company: sampleCompany());
 
     await pumpScreen(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
-    await tester.enterText(find.byType(TextFormField).at(1), 'Great Lakes');
-    await tester.pump();
+    expect(find.text('2025-12-31 19:00 UTC-5'), findsOneWidget);
+
+    await selectCountry(tester, 'Japan');
+
+    expect(find.text('2026-01-01 09:00 UTC+9'), findsOneWidget);
+    expect(find.text('2025-12-31 19:00 UTC-5'), findsNothing);
+  });
+
+  testWidgets('owner can edit company name and country', (tester) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).first, 'Iron Rentals');
+    await selectCountry(tester, 'Canada');
 
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
 
     expect(repository.updateCallCount, 1);
     expect(repository.lastUpdatedName, 'Iron Rentals');
-    expect(repository.lastUpdatedRegion, 'Great Lakes');
+    expect(repository.lastUpdatedRegion, 'Canada');
     expect(find.text('Company settings saved.'), findsWidgets);
+  });
+
+  testWidgets('legacy free-text region still loads and can be saved', (
+    tester,
+  ) async {
+    final repository = FakeCompanyRepository(
+      company: sampleCompany(region: 'Midwest'),
+    );
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    final countryField = tester.widget<TextField>(countryTextField());
+    expect(countryField.controller?.text, 'Midwest');
+
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'Hull Equipment Co',
+    );
+    await tester.pump();
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+
+    expect(repository.updateCallCount, 1);
+    expect(repository.lastUpdatedName, 'Hull Equipment Co');
+    expect(repository.lastUpdatedRegion, 'Midwest');
   });
 
   testWidgets('validation failure prevents company update', (tester) async {
@@ -98,13 +162,29 @@ void main() {
     await pumpScreen(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), '');
+    await tester.enterText(find.byType(TextFormField).first, '');
     await tester.pump();
 
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
 
     expect(find.text('Company name is required'), findsOneWidget);
+    expect(repository.updateCallCount, 0);
+  });
+
+  testWidgets('invalid country search text prevents save', (tester) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(countryTextField(), 'Not A Real Country');
+    await tester.pump();
+
+    await tester.tap(find.text('Save Changes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Select a country from the list'), findsOneWidget);
     expect(repository.updateCallCount, 0);
   });
 
@@ -121,7 +201,7 @@ void main() {
     );
     expect(pristineSave.onPressed, isNull);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.enterText(find.byType(TextFormField).first, 'Iron Rentals');
     await tester.pump();
 
     final dirtySave = tester.widget<FilledButton>(
@@ -141,7 +221,7 @@ void main() {
     await pumpScreen(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.enterText(find.byType(TextFormField).first, 'Iron Rentals');
     await tester.pump();
 
     await tester.tap(find.text('Save Changes'));
@@ -166,14 +246,17 @@ void main() {
 
     await openSettingsRoute(tester, repository);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.enterText(find.byType(TextFormField).first, 'Iron Rentals');
     await tester.pump();
 
     await tester.pageBack();
     await tester.pumpAndSettle();
 
     expect(find.text('Discard changes?'), findsOneWidget);
-    expect(find.text('You have unsaved company settings changes.'), findsOneWidget);
+    expect(
+      find.text('You have unsaved company settings changes.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Keep Editing'));
     await tester.pumpAndSettle();
@@ -190,7 +273,7 @@ void main() {
 
     await openSettingsRoute(tester, repository);
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.enterText(find.byType(TextFormField).first, 'Iron Rentals');
     await tester.pump();
 
     await tester.pageBack();
@@ -210,7 +293,7 @@ void main() {
     await pumpScreen(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.enterText(find.byType(TextFormField).first, 'Iron Rentals');
     await tester.pump();
 
     await tester.tap(find.text('Save Changes'));
@@ -233,10 +316,10 @@ void main() {
     await tester.pumpAndSettle();
 
     final nameField = tester.widget<TextFormField>(
-      find.byType(TextFormField).at(0),
+      find.byType(TextFormField).first,
     );
-    final regionField = tester.widget<TextFormField>(
-      find.byType(TextFormField).at(1),
+    final countryMenu = tester.widget<DropdownMenu<String>>(
+      find.byKey(const Key('company_country_dropdown')),
     );
     final saveButton = tester.widget<FilledButton>(
       find.widgetWithText(FilledButton, 'Save Changes'),
@@ -244,7 +327,7 @@ void main() {
 
     expect(find.text('Inspector'), findsOneWidget);
     expect(nameField.enabled, isFalse);
-    expect(regionField.enabled, isFalse);
+    expect(countryMenu.enabled, isFalse);
     expect(saveButton.onPressed, isNull);
     expect(
       find.text('Your role is read-only for company settings.'),
@@ -267,7 +350,7 @@ void main() {
     expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
   });
 
-  testWidgets('company fields disable browser autofill hints', (tester) async {
+  testWidgets('company name disables browser autofill hints', (tester) async {
     final repository = FakeCompanyRepository(company: sampleCompany());
 
     await pumpScreen(tester, repository);
@@ -279,18 +362,12 @@ void main() {
         matching: find.byType(EditableText),
       ),
     );
-    final regionEditable = tester.widget<EditableText>(
-      find.descendant(
-        of: find.widgetWithText(TextFormField, 'Region'),
-        matching: find.byType(EditableText),
-      ),
-    );
 
+    // Country uses DropdownMenu, which does not expose autofillHints.
     expect(nameEditable.autofillHints, isNull);
-    expect(regionEditable.autofillHints, isNull);
   });
 
-  testWidgets('Enter in company name moves focus to region', (tester) async {
+  testWidgets('Enter in company name moves focus to country', (tester) async {
     final repository = FakeCompanyRepository(company: sampleCompany());
 
     await pumpScreen(tester, repository);
@@ -303,12 +380,12 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.next);
     await tester.pump();
 
-    final regionEditable = find.descendant(
-      of: find.widgetWithText(TextFormField, 'Region'),
+    final countryEditable = find.descendant(
+      of: find.byKey(const Key('company_country_dropdown')),
       matching: find.byType(EditableText),
     );
     expect(
-      tester.widget<EditableText>(regionEditable).focusNode.hasFocus,
+      tester.widget<EditableText>(countryEditable).focusNode.hasFocus,
       isTrue,
     );
   });

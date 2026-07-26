@@ -7,7 +7,7 @@ import '../entities/company_membership.dart';
 /// interface is intentionally narrow now and ready to grow for:
 /// - multiple users per company (invites / roster)
 /// - manager and inspector roles
-/// - company region settings
+/// - company country settings (stored as `region`)
 /// - equipment and inspection repositories scoped by [Company.id]
 abstract class CompanyRepository {
   /// Returns the company for the currently authenticated user, or `null`

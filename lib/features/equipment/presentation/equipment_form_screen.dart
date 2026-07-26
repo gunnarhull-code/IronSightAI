@@ -2,13 +2,17 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../domain/entities/country_catalog.dart';
+import '../../../domain/entities/country_time_zone.dart';
 import '../../../domain/entities/equipment.dart';
 import '../../../domain/entities/equipment_details.dart'
     show maxEquipmentYear, minEquipmentYear;
 import '../../../domain/entities/manufacturer_catalog.dart';
 import '../../../domain/exceptions/duplicate_serial_number_exception.dart';
+import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/repositories/equipment_repository.dart';
 import '../../../domain/use_cases/create_equipment.dart';
+import '../../../domain/use_cases/get_current_user_company.dart';
 import '../../../domain/use_cases/get_equipment_by_id.dart';
 import '../../../domain/use_cases/update_equipment.dart';
 
@@ -21,11 +25,20 @@ class EquipmentFormScreen extends StatefulWidget {
   const EquipmentFormScreen({
     super.key,
     required this.repository,
+    this.companyRepository,
     this.equipmentId,
+    this.companyCountry,
   });
 
   final EquipmentRepository repository;
+
+  /// Used to resolve the company country for local audit timestamps.
+  final CompanyRepository? companyRepository;
+
   final String? equipmentId;
+
+  /// Optional override for tests; otherwise loaded from [companyRepository].
+  final String? companyCountry;
 
   bool get isEditing => equipmentId != null;
 
@@ -66,6 +79,7 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   bool _didRequestInitialFocus = false;
   String? _errorMessage;
   Equipment? _loadedEquipment;
+  String? _companyCountry;
 
   Map<String, String> _originalValues = const {};
 
@@ -97,16 +111,38 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
     _getEquipmentById = GetEquipmentById(widget.repository);
     _createEquipment = CreateEquipment(widget.repository);
     _updateEquipment = UpdateEquipment(widget.repository);
+    _companyCountry = widget.companyCountry ?? defaultCompanyCountry;
 
     for (final controller in _allControllers) {
       controller.addListener(_syncUnsavedChanges);
     }
 
+    _loadCompanyCountry();
     if (widget.isEditing) {
       _loadEquipment();
     } else {
       _originalValues = _currentValues();
       _isLoading = false;
+    }
+  }
+
+  Future<void> _loadCompanyCountry() async {
+    if (widget.companyCountry != null) {
+      setState(() => _companyCountry = widget.companyCountry);
+      return;
+    }
+
+    final companyRepository = widget.companyRepository;
+    if (companyRepository == null) return;
+
+    try {
+      final company = await GetCurrentUserCompany(companyRepository)();
+      if (!mounted) return;
+      setState(() {
+        _companyCountry = company?.region ?? defaultCompanyCountry;
+      });
+    } catch (_) {
+      // Keep the default country so audit timestamps still render.
     }
   }
 
@@ -351,7 +387,10 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
                     const SizedBox(height: 16),
                   ],
                   if (_loadedEquipment != null) ...[
-                    _AuditInfoCard(equipment: _loadedEquipment!),
+                    _AuditInfoCard(
+                      equipment: _loadedEquipment!,
+                      companyCountry: _companyCountry,
+                    ),
                     const SizedBox(height: 16),
                   ],
                   FocusTraversalOrder(
@@ -599,9 +638,13 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 }
 
 class _AuditInfoCard extends StatelessWidget {
-  const _AuditInfoCard({required this.equipment});
+  const _AuditInfoCard({
+    required this.equipment,
+    required this.companyCountry,
+  });
 
   final Equipment equipment;
+  final String? companyCountry;
 
   @override
   Widget build(BuildContext context) {
@@ -623,13 +666,24 @@ class _AuditInfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _AuditRow(
+              label: 'Created',
+              value: formatCompanyLocalTimestamp(
+                equipment.createdAt,
+                companyCountry: companyCountry,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AuditRow(
               label: 'Last Updated By',
               value: _displayUser(equipment.updatedByName, equipment.updatedBy),
             ),
             const SizedBox(height: 8),
             _AuditRow(
               label: 'Last Updated',
-              value: _formatTimestamp(equipment.updatedAt),
+              value: formatCompanyLocalTimestamp(
+                equipment.updatedAt,
+                companyCountry: companyCountry,
+              ),
             ),
           ],
         ),
@@ -641,13 +695,6 @@ class _AuditInfoCard extends StatelessWidget {
     final trimmedName = name?.trim();
     if (trimmedName != null && trimmedName.isNotEmpty) return trimmedName;
     return id == null ? 'Not recorded' : 'Unknown user';
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final utc = timestamp.toUtc();
-    String twoDigits(int value) => value.toString().padLeft(2, '0');
-    return '${utc.year}-${twoDigits(utc.month)}-${twoDigits(utc.day)} '
-        '${twoDigits(utc.hour)}:${twoDigits(utc.minute)} UTC';
   }
 }
 
