@@ -173,7 +173,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Discard changes?'), findsOneWidget);
-    expect(find.text('You have unsaved company settings changes.'), findsOneWidget);
+    expect(
+      find.text('You have unsaved company settings changes.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.text('Keep Editing'));
     await tester.pumpAndSettle();
