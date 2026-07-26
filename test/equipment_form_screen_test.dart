@@ -354,8 +354,9 @@ void main() {
       find.widgetWithText(TextFormField, 'Asset Name'),
       'Skid Steer',
     );
+    await tester.pump();
 
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
 
     expect(find.text('Discard changes?'), findsOneWidget);
@@ -395,8 +396,9 @@ void main() {
       find.widgetWithText(TextFormField, 'Asset Name'),
       'Skid Steer',
     );
+    await tester.pump();
 
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Back'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Discard'));
     await tester.pumpAndSettle();
