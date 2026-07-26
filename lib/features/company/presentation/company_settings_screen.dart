@@ -105,6 +105,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -227,10 +228,13 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                   controller: _nameController,
                   enabled: canEdit && !_isSaving,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Company name'),
+                  decoration: const InputDecoration(
+                    labelText: 'Company name',
+                    helperText: 'Required',
+                  ),
                   validator: (value) {
                     if (value == null || value.trim().isEmpty) {
-                      return 'Enter company name';
+                      return 'Company name is required';
                     }
                     return null;
                   },
