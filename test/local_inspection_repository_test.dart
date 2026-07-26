@@ -150,6 +150,57 @@ void main() {
       expect(updated.syncStatus, InspectionSyncStatus.pending);
       expect(updated.updatedByUserId, 'user-2');
     });
+
+    test('rejects updateMetadata from a different company (tenant boundary)',
+        () async {
+      final id = await createDraft(
+        companyId: 'company-b',
+        equipmentId: 'equip-b1',
+      );
+      final original = await repository.getById(
+        companyId: 'company-b',
+        inspectionId: id,
+      );
+
+      expect(
+        () => repository.updateMetadata(
+          companyId: 'company-a',
+          inspectionId: id,
+          updatedByUserId: 'user-a',
+          depth: InspectionDepth.detailed,
+          overallNotes: 'cross-tenant write',
+          remoteId: 'remote-hijack',
+          syncStatus: InspectionSyncStatus.pending,
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      final after = await repository.getById(
+        companyId: 'company-b',
+        inspectionId: id,
+      );
+      expect(after, isNotNull);
+      expect(after!.depth, original!.depth);
+      expect(after.overallNotes, original.overallNotes);
+      expect(after.remoteId, original.remoteId);
+      expect(after.syncStatus, original.syncStatus);
+      expect(after.updatedByUserId, original.updatedByUserId);
+      expect(after.updatedAt, original.updatedAt);
+
+      expect(
+        await repository.getById(companyId: 'company-a', inspectionId: id),
+        isNull,
+      );
+      expect(
+        () => repository.saveCategoryRating(
+          companyId: 'company-a',
+          inspectionId: id,
+          category: ScorecardCategory.engine,
+          rating: ConditionRating.good,
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 
   group('category ratings', () {
@@ -177,6 +228,50 @@ void main() {
         rating: ConditionRating.poor,
       );
       expect(again.ratingFor(ScorecardCategory.engine), ConditionRating.poor);
+    });
+
+    test(
+        'rejects saveCategoryRating from a different company (tenant boundary)',
+        () async {
+      final id = await createDraft(companyId: 'company-b');
+      await repository.saveCategoryRating(
+        companyId: 'company-b',
+        inspectionId: id,
+        category: ScorecardCategory.engine,
+        rating: ConditionRating.fair,
+        updatedByUserId: 'user-b',
+      );
+      final original = await repository.getById(
+        companyId: 'company-b',
+        inspectionId: id,
+      );
+
+      expect(
+        () => repository.saveCategoryRating(
+          companyId: 'company-a',
+          inspectionId: id,
+          category: ScorecardCategory.engine,
+          rating: ConditionRating.poor,
+          updatedByUserId: 'user-a',
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      final after = await repository.getById(
+        companyId: 'company-b',
+        inspectionId: id,
+      );
+      expect(after, isNotNull);
+      expect(
+        after!.ratingFor(ScorecardCategory.engine),
+        ConditionRating.fair,
+      );
+      expect(
+        after.ratingFor(ScorecardCategory.engine),
+        original!.ratingFor(ScorecardCategory.engine),
+      );
+      expect(after.updatedByUserId, original.updatedByUserId);
+      expect(after.updatedAt, original.updatedAt);
     });
 
     test('rejects invalid category and rating wire values', () {
@@ -246,6 +341,41 @@ void main() {
         await repository.listForCompany('company-a', includeDiscarded: true),
         hasLength(1),
       );
+    });
+
+    test(
+        'rejects discardIncomplete from a different company (tenant boundary)',
+        () async {
+      final id = await createDraft(
+        companyId: 'company-b',
+        equipmentId: 'equip-b1',
+      );
+      final original = await repository.getById(
+        companyId: 'company-b',
+        inspectionId: id,
+      );
+
+      expect(
+        () => repository.discardIncomplete(
+          companyId: 'company-a',
+          inspectionId: id,
+          updatedByUserId: 'user-a',
+        ),
+        throwsA(isA<StateError>()),
+      );
+
+      final after = await repository.getById(
+        companyId: 'company-b',
+        inspectionId: id,
+      );
+      expect(after, isNotNull);
+      expect(after!.localLifecycle, InspectionLocalLifecycle.active);
+      expect(after.discardedAt, isNull);
+      expect(after.localLifecycle, original!.localLifecycle);
+      expect(after.discardedAt, original.discardedAt);
+      expect(after.updatedByUserId, original.updatedByUserId);
+      expect(after.updatedAt, original.updatedAt);
+      expect(await repository.listForCompany('company-b'), hasLength(1));
     });
 
     test('cannot discard a completed inspection', () async {
