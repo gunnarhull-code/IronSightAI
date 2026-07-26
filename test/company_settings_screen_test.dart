@@ -30,6 +30,33 @@ void main() {
     );
   }
 
+  Future<void> openSettingsRoute(
+    WidgetTester tester,
+    FakeCompanyRepository repository,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: FilledButton(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        CompanySettingsScreen(repository: repository),
+                  ),
+                );
+              },
+              child: const Text('Open Settings'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Open Settings'));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('loads the current company settings', (tester) async {
     final repository = FakeCompanyRepository(company: sampleCompany());
 
@@ -77,8 +104,103 @@ void main() {
     await tester.tap(find.text('Save Changes'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Enter company name'), findsOneWidget);
+    expect(find.text('Company name is required'), findsOneWidget);
     expect(repository.updateCallCount, 0);
+  });
+
+  testWidgets('save stays disabled until settings are modified', (
+    tester,
+  ) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    final pristineSave = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Save Changes'),
+    );
+    expect(pristineSave.onPressed, isNull);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.pump();
+
+    final dirtySave = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Save Changes'),
+    );
+    expect(dirtySave.onPressed, isNotNull);
+  });
+
+  testWidgets('disables save and prevents duplicates while saving', (
+    tester,
+  ) async {
+    final repository = FakeCompanyRepository(
+      company: sampleCompany(),
+      updateDelay: const Duration(seconds: 1),
+    );
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.pump();
+
+    await tester.tap(find.text('Save Changes'));
+    await tester.pump();
+
+    final savingButton = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(savingButton.onPressed, isNull);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    expect(repository.updateCallCount, 1);
+
+    await tester.tap(find.byType(FilledButton));
+    await tester.pump();
+
+    expect(repository.updateCallCount, 1);
+
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('warns before leaving a modified company form', (tester) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await openSettingsRoute(tester, repository);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsOneWidget);
+    expect(find.text('You have unsaved company settings changes.'), findsOneWidget);
+
+    await tester.tap(find.text('Keep Editing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Basic company information'), findsOneWidget);
+    expect(find.text('Iron Rentals'), findsOneWidget);
+    expect(find.text('Open Settings'), findsNothing);
+  });
+
+  testWidgets('discarding unsaved company changes leaves the form', (
+    tester,
+  ) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await openSettingsRoute(tester, repository);
+
+    await tester.enterText(find.byType(TextFormField).at(0), 'Iron Rentals');
+    await tester.pump();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Discard'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Open Settings'), findsOneWidget);
+    expect(find.text('Basic company information'), findsNothing);
   });
 
   testWidgets('repository update failure shows visible error', (tester) async {
