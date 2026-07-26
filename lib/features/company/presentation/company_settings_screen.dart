@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/company_membership.dart';
 import '../../../domain/entities/country_catalog.dart';
+import '../../../domain/entities/country_time_zone.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/use_cases/get_current_user_company_membership.dart';
 import '../../../domain/use_cases/update_company_details.dart';
@@ -100,9 +101,15 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
         _nameController.text.trim() != company.name ||
         _countryController.text.trim() != (company.region ?? '');
 
-    if (hasChanges != _hasUnsavedChanges) {
-      setState(() => _hasUnsavedChanges = hasChanges);
-    }
+    // Always rebuild so the company-created timestamp reformats immediately
+    // when the Country dropdown selection changes.
+    setState(() => _hasUnsavedChanges = hasChanges);
+  }
+
+  String get _selectedCountryForDisplay {
+    final selected = _countryController.text.trim();
+    if (selected.isNotEmpty) return selected;
+    return _membership?.company.region ?? defaultCompanyCountry;
   }
 
   Future<void> _save() async {
@@ -288,6 +295,13 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
+                _ReadOnlyInfo(
+                  label: 'Company created',
+                  value: formatCompanyLocalTimestamp(
+                    membership.company.createdAt,
+                    companyCountry: _selectedCountryForDisplay,
+                  ),
+                ),
                 _ReadOnlyInfo(
                   label: 'Current user role',
                   value: membership.role.label,
