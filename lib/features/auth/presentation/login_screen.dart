@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../app/router.dart';
@@ -18,6 +19,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _emailFocus = FocusNode();
+  final _passwordFocus = FocusNode();
 
   bool _isSubmitting = false;
   String? _errorMessage;
@@ -26,6 +29,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailFocus.dispose();
+    _passwordFocus.dispose();
     super.dispose();
   }
 
@@ -42,6 +47,9 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      // Encourage the browser/OS password manager to offer saving credentials
+      // for this authentication form only.
+      TextInput.finishAutofillContext(shouldSave: true);
       // Navigation is handled by AuthGate via onAuthStateChange.
     } on AuthException catch (e) {
       if (mounted) setState(() => _errorMessage = e.message);
@@ -71,65 +79,101 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'IronSight AI',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineMedium,
+              child: AutofillGroup(
+                child: Form(
+                  key: _formKey,
+                  child: FocusTraversalGroup(
+                    policy: OrderedTraversalPolicy(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'IronSight AI',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Sign in to continue',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        if (_errorMessage != null) ...[
+                          _ErrorBanner(message: _errorMessage!),
+                          const SizedBox(height: 16),
+                        ],
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(1),
+                          child: TextFormField(
+                            controller: _emailController,
+                            focusNode: _emailFocus,
+                            autofocus: true,
+                            enabled: !_isSubmitting,
+                            keyboardType: TextInputType.emailAddress,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: const [AutofillHints.email],
+                            decoration: const InputDecoration(
+                              labelText: 'Email',
+                            ),
+                            validator: _validateEmail,
+                            onFieldSubmitted: (_) {
+                              _passwordFocus.requestFocus();
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(2),
+                          child: TextFormField(
+                            controller: _passwordController,
+                            focusNode: _passwordFocus,
+                            enabled: !_isSubmitting,
+                            obscureText: true,
+                            textInputAction: TextInputAction.done,
+                            autofillHints: const [AutofillHints.password],
+                            decoration: const InputDecoration(
+                              labelText: 'Password',
+                            ),
+                            validator: _validatePassword,
+                            onFieldSubmitted: (_) {
+                              if (!_isSubmitting) {
+                                _signIn();
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(3),
+                          child: FilledButton(
+                            onPressed: _isSubmitting ? null : _signIn,
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text('Sign In'),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(4),
+                          child: TextButton(
+                            onPressed: _isSubmitting ? null : _goToSignUp,
+                            child: const Text(
+                              "Don't have an account? Sign Up",
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Sign in to continue',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    if (_errorMessage != null) ...[
-                      _ErrorBanner(message: _errorMessage!),
-                      const SizedBox(height: 16),
-                    ],
-                    TextFormField(
-                      controller: _emailController,
-                      enabled: !_isSubmitting,
-                      keyboardType: TextInputType.emailAddress,
-                      autofillHints: const [AutofillHints.email],
-                      decoration: const InputDecoration(labelText: 'Email'),
-                      validator: _validateEmail,
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      enabled: !_isSubmitting,
-                      obscureText: true,
-                      autofillHints: const [AutofillHints.password],
-                      decoration: const InputDecoration(labelText: 'Password'),
-                      validator: _validatePassword,
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _signIn,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : const Text('Sign In'),
-                    ),
-                    const SizedBox(height: 16),
-                    TextButton(
-                      onPressed: _isSubmitting ? null : _goToSignUp,
-                      child: const Text("Don't have an account? Sign Up"),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

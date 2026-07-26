@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../domain/entities/company_membership.dart';
 import '../../../domain/repositories/company_repository.dart';
@@ -22,6 +23,8 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _regionController = TextEditingController();
+  final _nameFocus = FocusNode();
+  final _regionFocus = FocusNode();
 
   late final GetCurrentUserCompanyMembership _getMembership;
   late final UpdateCompanyDetails _updateCompany;
@@ -31,6 +34,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   bool _isSaving = false;
   bool _hasUnsavedChanges = false;
   bool _isApplyingMembership = false;
+  bool _didRequestInitialFocus = false;
   String? _errorMessage;
   String? _successMessage;
 
@@ -48,7 +52,19 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   void dispose() {
     _nameController.dispose();
     _regionController.dispose();
+    _nameFocus.dispose();
+    _regionFocus.dispose();
     super.dispose();
+  }
+
+  void _requestInitialFocusIfNeeded({required bool canEdit}) {
+    if (_didRequestInitialFocus || !canEdit) return;
+    _didRequestInitialFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && canEdit) {
+        _nameFocus.requestFocus();
+      }
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -128,6 +144,8 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
         _applyMembership(updatedMembership);
         _successMessage = 'Company settings saved.';
       });
+      // Non-auth form: do not prompt the browser to save credentials.
+      TextInput.finishAutofillContext(shouldSave: false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Company settings saved.')));
@@ -193,6 +211,8 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
       return _RetryState(message: _errorMessage, onRetry: _loadSettings);
     }
 
+    _requestInitialFocusIfNeeded(canEdit: canEdit);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Center(
@@ -200,80 +220,112 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Basic company information',
-                  style: theme.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Keep the dealership workspace details current.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (_errorMessage != null) ...[
-                  _StatusBanner(message: _errorMessage!, isError: true),
-                  const SizedBox(height: 16),
-                ],
-                if (_successMessage != null) ...[
-                  _StatusBanner(message: _successMessage!, isError: false),
-                  const SizedBox(height: 16),
-                ],
-                TextFormField(
-                  controller: _nameController,
-                  enabled: canEdit && !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Company name'),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Enter company name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _regionController,
-                  enabled: canEdit && !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Region'),
-                ),
-                const SizedBox(height: 24),
-                _ReadOnlyInfo(
-                  label: 'Current user role',
-                  value: membership.role.label,
-                ),
-                _ReadOnlyInfo(
-                  label: 'Company ID',
-                  value: membership.company.id,
-                ),
-                if (!canEdit) ...[
-                  const SizedBox(height: 16),
+            child: FocusTraversalGroup(
+              policy: OrderedTraversalPolicy(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                   Text(
-                    'Your role is read-only for company settings.',
+                    'Basic company information',
+                    style: theme.textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Keep the dealership workspace details current.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  if (_errorMessage != null) ...[
+                    _StatusBanner(message: _errorMessage!, isError: true),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_successMessage != null) ...[
+                    _StatusBanner(message: _successMessage!, isError: false),
+                    const SizedBox(height: 16),
+                  ],
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(1),
+                    child: TextFormField(
+                      controller: _nameController,
+                      focusNode: _nameFocus,
+                      enabled: canEdit && !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Company name',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Enter company name';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) {
+                        if (canEdit && !_isSaving) {
+                          _regionFocus.requestFocus();
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(2),
+                    child: TextFormField(
+                      controller: _regionController,
+                      focusNode: _regionFocus,
+                      enabled: canEdit && !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.done,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Region'),
+                      onFieldSubmitted: (_) {
+                        if (canEdit && !_isSaving && _hasUnsavedChanges) {
+                          _save();
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _ReadOnlyInfo(
+                    label: 'Current user role',
+                    value: membership.role.label,
+                  ),
+                  _ReadOnlyInfo(
+                    label: 'Company ID',
+                    value: membership.company.id,
+                  ),
+                  if (!canEdit) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Your role is read-only for company settings.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(3),
+                    child: FilledButton(
+                      onPressed: canEdit && !_isSaving && _hasUnsavedChanges
+                          ? _save
+                          : null,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : const Text('Save Changes'),
+                    ),
+                  ),
                 ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: canEdit && !_isSaving && _hasUnsavedChanges
-                      ? _save
-                      : null,
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : const Text('Save Changes'),
-                ),
-              ],
+              ),
             ),
           ),
         ),

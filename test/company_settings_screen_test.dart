@@ -129,4 +129,65 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('autofocuses company name when settings open for an owner', (
+    tester,
+  ) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    final editable = find.descendant(
+      of: find.widgetWithText(TextFormField, 'Company name'),
+      matching: find.byType(EditableText),
+    );
+    expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
+  });
+
+  testWidgets('company fields disable browser autofill hints', (tester) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    final nameEditable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.widgetWithText(TextFormField, 'Company name'),
+        matching: find.byType(EditableText),
+      ),
+    );
+    final regionEditable = tester.widget<EditableText>(
+      find.descendant(
+        of: find.widgetWithText(TextFormField, 'Region'),
+        matching: find.byType(EditableText),
+      ),
+    );
+
+    expect(nameEditable.autofillHints, isNull);
+    expect(regionEditable.autofillHints, isNull);
+  });
+
+  testWidgets('Enter in company name moves focus to region', (tester) async {
+    final repository = FakeCompanyRepository(company: sampleCompany());
+
+    await pumpScreen(tester, repository);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Company name'),
+      'Iron Rentals',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pump();
+
+    final regionEditable = find.descendant(
+      of: find.widgetWithText(TextFormField, 'Region'),
+      matching: find.byType(EditableText),
+    );
+    expect(
+      tester.widget<EditableText>(regionEditable).focusNode.hasFocus,
+      isTrue,
+    );
+  });
 }
