@@ -22,7 +22,7 @@ This is the company's single, permanent strategic roadmap — covering the Week 
 
 **Sprint 009 — Engineering Reliability, CI, and Developer Workflow Baseline.** Active AFK sprint file: [`management/AFK_SPRINTS.md`](./AFK_SPRINTS.md). Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
 
-Sprint history note (immutable numbering): Sprint 003 is postponed; Sprints 004–007 are treated as completed assignments per founder sprint process. Sprint 008 (inspection foundation) is independent and must not be mixed into Sprint 009.
+Sprint history note (immutable numbering): Sprint 003 is postponed; Sprints 004–007 are treated as completed assignments per founder sprint process. Sprint 008 (inspection foundation) is merged on `main`; Sprint 009 must not modify inspection-domain code even though that code is present after merging `main`.
 
 ## Current Objective
 
@@ -68,7 +68,7 @@ Full detail: [`WINS.md`](./WINS.md).
 
 ## Current Blockers
 
-No technical blockers for Sprint 009. Sprint 008 inspection work must stay independent.
+No technical blockers for Sprint 009. Sprint 008 is on `main`; do not change inspection-domain code in this sprint.
 
 ## Active Risks
 

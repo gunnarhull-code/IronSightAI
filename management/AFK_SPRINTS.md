@@ -44,7 +44,7 @@ Establish a dependable engineering-verification baseline so future Draft PRs can
 
 ## Independence
 
-Sprint 009 must remain independent from Sprint 008. Do not modify inspection-domain implementation, inspection persistence, or inspection schema. Do not depend on unmerged Sprint 008 work.
+Sprint 008 (inspection local foundation) is already merged on `main`. Sprint 009 must not modify inspection-domain implementation, inspection persistence, or inspection schema. Including those files via merge from `main` is expected; changing them for Sprint 009 is out of scope.
 
 ## Acceptance Criteria
 
