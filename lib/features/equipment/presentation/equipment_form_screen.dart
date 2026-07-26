@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../domain/entities/equipment.dart';
 import '../../../domain/entities/equipment_details.dart'
@@ -44,6 +45,15 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
 
+  final _assetNameFocus = FocusNode();
+  final _manufacturerFocus = FocusNode();
+  final _modelFocus = FocusNode();
+  final _serialNumberFocus = FocusNode();
+  final _yearFocus = FocusNode();
+  final _hoursFocus = FocusNode();
+  final _locationFocus = FocusNode();
+  final _notesFocus = FocusNode();
+
   late final GetEquipmentById _getEquipmentById;
   late final CreateEquipment _createEquipment;
   late final UpdateEquipment _updateEquipment;
@@ -53,6 +63,7 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   bool _hasUnsavedChanges = false;
   bool _isApplyingValues = false;
   bool _notFound = false;
+  bool _didRequestInitialFocus = false;
   String? _errorMessage;
   Equipment? _loadedEquipment;
 
@@ -67,6 +78,17 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
     _hoursController,
     _locationController,
     _notesController,
+  ];
+
+  List<FocusNode> get _allFocusNodes => [
+    _assetNameFocus,
+    _manufacturerFocus,
+    _modelFocus,
+    _serialNumberFocus,
+    _yearFocus,
+    _hoursFocus,
+    _locationFocus,
+    _notesFocus,
   ];
 
   @override
@@ -93,7 +115,20 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
     for (final controller in _allControllers) {
       controller.dispose();
     }
+    for (final focusNode in _allFocusNodes) {
+      focusNode.dispose();
+    }
     super.dispose();
+  }
+
+  void _requestInitialFocusIfNeeded() {
+    if (_didRequestInitialFocus || _isLoading || _notFound) return;
+    _didRequestInitialFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isSaving) {
+        _assetNameFocus.requestFocus();
+      }
+    });
   }
 
   Future<void> _loadEquipment() async {
@@ -215,6 +250,8 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 
       if (!mounted) return;
       _hasUnsavedChanges = false;
+      // Non-auth form: do not prompt the browser to save credentials.
+      TextInput.finishAutofillContext(shouldSave: false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -295,6 +332,8 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   }
 
   Widget _buildForm(BuildContext context) {
+    _requestInitialFocusIfNeeded();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Center(
@@ -302,161 +341,255 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_errorMessage != null) ...[
-                  _ErrorBanner(message: _errorMessage!),
-                  const SizedBox(height: 16),
-                ],
-                if (_loadedEquipment != null) ...[
-                  _AuditInfoCard(equipment: _loadedEquipment!),
-                  const SizedBox(height: 16),
-                ],
-                TextFormField(
-                  controller: _assetNameController,
-                  enabled: !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Asset Name'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Enter an asset name'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return FormField<String>(
-                      // Validates the controller's current text directly
-                      // (rather than a separately tracked selection) so the
-                      // inline error always matches exactly what would be
-                      // submitted on Save, whether it came from typing a
-                      // search term or tapping a menu entry.
-                      validator: (_) {
-                        final value = _manufacturerController.text.trim();
-                        if (value.isEmpty) {
-                          return 'Select a manufacturer';
-                        }
-                        if (!manufacturerCatalog.contains(value)) {
-                          return 'Select a manufacturer from the list';
-                        }
-                        return null;
+            child: FocusTraversalGroup(
+              policy: OrderedTraversalPolicy(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_errorMessage != null) ...[
+                    _ErrorBanner(message: _errorMessage!),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_loadedEquipment != null) ...[
+                    _AuditInfoCard(equipment: _loadedEquipment!),
+                    const SizedBox(height: 16),
+                  ],
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(1),
+                    child: TextFormField(
+                      controller: _assetNameController,
+                      focusNode: _assetNameFocus,
+                      autofocus: !widget.isEditing,
+                      enabled: !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Asset Name',
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Enter an asset name'
+                          : null,
+                      onFieldSubmitted: (_) {
+                        _manufacturerFocus.requestFocus();
                       },
-                      builder: (field) {
-                        return DropdownMenu<String>(
-                          controller: _manufacturerController,
-                          enabled: !_isSaving,
-                          enableFilter: true,
-                          requestFocusOnTap: true,
-                          width: constraints.maxWidth,
-                          label: const Text('Manufacturer'),
-                          errorText: field.errorText,
-                          dropdownMenuEntries: manufacturerCatalog
-                              .map(
-                                (manufacturer) => DropdownMenuEntry<String>(
-                                  value: manufacturer,
-                                  label: manufacturer,
-                                ),
-                              )
-                              .toList(),
-                          onSelected: (_) => field.validate(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(2),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return FormField<String>(
+                          // Validates the controller's current text directly
+                          // (rather than a separately tracked selection) so the
+                          // inline error always matches exactly what would be
+                          // submitted on Save, whether it came from typing a
+                          // search term or tapping a menu entry.
+                          validator: (_) {
+                            final value = _manufacturerController.text.trim();
+                            if (value.isEmpty) {
+                              return 'Select a manufacturer';
+                            }
+                            if (!manufacturerCatalog.contains(value)) {
+                              return 'Select a manufacturer from the list';
+                            }
+                            return null;
+                          },
+                          builder: (field) {
+                            return DropdownMenu<String>(
+                              controller: _manufacturerController,
+                              // DropdownMenu does not expose autofillHints; the
+                              // surrounding fields disable autofill explicitly.
+                              focusNode: _manufacturerFocus,
+                              enabled: !_isSaving,
+                              enableFilter: true,
+                              requestFocusOnTap: true,
+                              width: constraints.maxWidth,
+                              label: const Text('Manufacturer'),
+                              errorText: field.errorText,
+                              dropdownMenuEntries: manufacturerCatalog
+                                  .map(
+                                    (manufacturer) => DropdownMenuEntry<String>(
+                                      value: manufacturer,
+                                      label: manufacturer,
+                                    ),
+                                  )
+                                  .toList(),
+                              onSelected: (_) {
+                                field.validate();
+                                _modelFocus.requestFocus();
+                              },
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _modelController,
-                  enabled: !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Model'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Enter a model'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _serialNumberController,
-                  enabled: !_isSaving,
-                  decoration: const InputDecoration(labelText: 'Serial Number'),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _yearController,
-                        enabled: !_isSaving,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Year'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return null;
-                          }
-                          final parsed = int.tryParse(value.trim());
-                          if (parsed == null) return 'Enter a valid year';
-                          if (parsed < minEquipmentYear) {
-                            return 'Year must be $minEquipmentYear or later';
-                          }
-                          final latestYear = maxEquipmentYear();
-                          if (parsed > latestYear) {
-                            return 'Year cannot be later than $latestYear';
-                          }
-                          return null;
-                        },
-                      ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _hoursController,
-                        enabled: !_isSaving,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(labelText: 'Hours'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return null;
-                          }
-                          final parsed = double.tryParse(value.trim());
-                          if (parsed == null) return 'Enter a valid number';
-                          if (parsed < 0) return 'Hours cannot be negative';
-                          return null;
-                        },
-                      ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(3),
+                    child: TextFormField(
+                      controller: _modelController,
+                      focusNode: _modelFocus,
+                      enabled: !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Model'),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Enter a model'
+                          : null,
+                      onFieldSubmitted: (_) {
+                        _serialNumberFocus.requestFocus();
+                      },
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _locationController,
-                  enabled: !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _notesController,
-                  enabled: !_isSaving,
-                  maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSaving ? null : _save,
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : Text(
-                          widget.isEditing ? 'Save Changes' : 'Add Equipment',
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(4),
+                    child: TextFormField(
+                      controller: _serialNumberController,
+                      focusNode: _serialNumberFocus,
+                      enabled: !_isSaving,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Serial Number',
+                      ),
+                      onFieldSubmitted: (_) {
+                        _yearFocus.requestFocus();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: FocusTraversalOrder(
+                          order: const NumericFocusOrder(5),
+                          child: TextFormField(
+                            controller: _yearController,
+                            focusNode: _yearFocus,
+                            enabled: !_isSaving,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Year',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null;
+                              }
+                              final parsed = int.tryParse(value.trim());
+                              if (parsed == null) return 'Enter a valid year';
+                              if (parsed < minEquipmentYear) {
+                                return 'Year must be $minEquipmentYear or later';
+                              }
+                              final latestYear = maxEquipmentYear();
+                              if (parsed > latestYear) {
+                                return 'Year cannot be later than $latestYear';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              _hoursFocus.requestFocus();
+                            },
+                          ),
                         ),
-                ),
-              ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: FocusTraversalOrder(
+                          order: const NumericFocusOrder(6),
+                          child: TextFormField(
+                            controller: _hoursController,
+                            focusNode: _hoursFocus,
+                            enabled: !_isSaving,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            textInputAction: TextInputAction.next,
+                            autofillHints: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Hours',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null;
+                              }
+                              final parsed = double.tryParse(value.trim());
+                              if (parsed == null) {
+                                return 'Enter a valid number';
+                              }
+                              if (parsed < 0) {
+                                return 'Hours cannot be negative';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              _locationFocus.requestFocus();
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(7),
+                    child: TextFormField(
+                      controller: _locationController,
+                      focusNode: _locationFocus,
+                      enabled: !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Location'),
+                      onFieldSubmitted: (_) {
+                        _notesFocus.requestFocus();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(8),
+                    child: TextFormField(
+                      controller: _notesController,
+                      focusNode: _notesFocus,
+                      enabled: !_isSaving,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.newline,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Notes'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(9),
+                    child: FilledButton(
+                      onPressed: _isSaving ? null : _save,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              widget.isEditing
+                                  ? 'Save Changes'
+                                  : 'Add Equipment',
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

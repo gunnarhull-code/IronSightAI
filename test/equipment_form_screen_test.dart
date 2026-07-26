@@ -496,4 +496,77 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('autofocuses asset name when create form opens', (tester) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(home: EquipmentFormScreen(repository: repository)),
+    );
+    await tester.pumpAndSettle();
+
+    final editable = find.descendant(
+      of: find.widgetWithText(TextFormField, 'Asset Name'),
+      matching: find.byType(EditableText),
+    );
+    expect(tester.widget<EditableText>(editable).focusNode.hasFocus, isTrue);
+  });
+
+  testWidgets('equipment text fields disable browser autofill hints', (
+    tester,
+  ) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(home: EquipmentFormScreen(repository: repository)),
+    );
+    await tester.pumpAndSettle();
+
+    // Assert TextFormField inputs only — DropdownMenu uses its own internal
+    // text field that does not expose autofillHints configuration.
+    const labels = [
+      'Asset Name',
+      'Model',
+      'Serial Number',
+      'Year',
+      'Hours',
+      'Location',
+      'Notes',
+    ];
+    for (final label in labels) {
+      final editable = tester.widget<EditableText>(
+        find.descendant(
+          of: find.widgetWithText(TextFormField, label),
+          matching: find.byType(EditableText),
+        ),
+      );
+      expect(editable.autofillHints, isNull, reason: label);
+    }
+  });
+
+  testWidgets('Enter in asset name moves focus to manufacturer', (
+    tester,
+  ) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(home: EquipmentFormScreen(repository: repository)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Asset Name'),
+      'Excavator 1',
+    );
+    await tester.testTextInput.receiveAction(TextInputAction.next);
+    await tester.pump();
+
+    final manufacturerField = tester.widget<DropdownMenu<String>>(
+      find.byType(DropdownMenu<String>),
+    );
+    expect(manufacturerField.focusNode?.hasFocus, isTrue);
+  });
 }

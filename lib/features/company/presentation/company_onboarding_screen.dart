@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../domain/use_cases/create_company_for_current_user.dart';
 
@@ -24,21 +25,31 @@ class CompanyOnboardingScreen extends StatefulWidget {
 class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _nameFocus = FocusNode();
 
   bool _isSubmitting = false;
   bool _hasUnsavedChanges = false;
+  bool _didRequestInitialFocus = false;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
     _nameController.addListener(_syncUnsavedChanges);
+    // Flutter web does not reliably honor [autofocus] alone; request focus
+    // after the first frame so Company Name is ready immediately.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didRequestInitialFocus) return;
+      _didRequestInitialFocus = true;
+      _nameFocus.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _nameController.removeListener(_syncUnsavedChanges);
     _nameController.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -62,6 +73,8 @@ class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
       await widget.createCompany(name: _nameController.text);
       if (!mounted) return;
       _hasUnsavedChanges = false;
+      // Non-auth form: do not prompt the browser to save credentials.
+      TextInput.finishAutofillContext(shouldSave: false);
       widget.onCompleted();
     } catch (e) {
       if (!mounted) return;
@@ -117,57 +130,76 @@ class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
                 constraints: const BoxConstraints(maxWidth: 400),
                 child: Form(
                   key: _formKey,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Set up your company',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Create your dealership workspace to start inspections.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                  child: FocusTraversalGroup(
+                    policy: OrderedTraversalPolicy(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Set up your company',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.headlineMedium,
                         ),
-                      ),
-                      const SizedBox(height: 32),
-                      if (_errorMessage != null) ...[
-                        _ErrorBanner(message: _errorMessage!),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Create your dealership workspace to start inspections.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+                        if (_errorMessage != null) ...[
+                          _ErrorBanner(message: _errorMessage!),
+                          const SizedBox(height: 16),
+                        ],
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(1),
+                          child: TextFormField(
+                            controller: _nameController,
+                            focusNode: _nameFocus,
+                            autofocus: true,
+                            enabled: !_isSubmitting,
+                            textCapitalization: TextCapitalization.words,
+                            textInputAction: TextInputAction.done,
+                            // Disable browser/OS autofill so saving a company is
+                            // never mistaken for a credential form.
+                            autofillHints: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Company Name',
+                              helperText: 'Required',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Company name is required';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              if (!_isSubmitting) {
+                                _continue();
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        FocusTraversalOrder(
+                          order: const NumericFocusOrder(2),
+                          child: FilledButton(
+                            onPressed: _isSubmitting ? null : _continue,
+                            child: _isSubmitting
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : const Text('Continue'),
+                          ),
+                        ),
                       ],
-                      TextFormField(
-                        controller: _nameController,
-                        enabled: !_isSubmitting,
-                        textCapitalization: TextCapitalization.words,
-                        autofillHints: const [AutofillHints.organizationName],
-                        decoration: const InputDecoration(
-                          labelText: 'Company Name',
-                          helperText: 'Required',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'Company name is required';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      FilledButton(
-                        onPressed: _isSubmitting ? null : _continue,
-                        child: _isSubmitting
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2.5,
-                                ),
-                              )
-                            : const Text('Continue'),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
