@@ -9,11 +9,15 @@ class FakeCompanyRepository implements CompanyRepository {
     this.company,
     this.role = CompanyRole.owner,
     this.getError,
+    this.createDelay = Duration.zero,
+    this.updateDelay = Duration.zero,
   });
 
   Company? company;
   CompanyRole role;
   Object? getError;
+  Duration createDelay;
+  Duration updateDelay;
   int createCallCount = 0;
   int updateCallCount = 0;
   String? lastCreatedName;
@@ -44,6 +48,9 @@ class FakeCompanyRepository implements CompanyRepository {
   Future<Company> createCompanyForCurrentUser({required String name}) async {
     createCallCount += 1;
     lastCreatedName = name;
+    if (createDelay > Duration.zero) {
+      await Future<void>.delayed(createDelay);
+    }
     if (createError != null) {
       throw createError!;
     }
@@ -64,6 +71,9 @@ class FakeCompanyRepository implements CompanyRepository {
     updateCallCount += 1;
     lastUpdatedName = name;
     lastUpdatedRegion = region;
+    if (updateDelay > Duration.zero) {
+      await Future<void>.delayed(updateDelay);
+    }
     if (updateError != null) {
       throw updateError!;
     }
