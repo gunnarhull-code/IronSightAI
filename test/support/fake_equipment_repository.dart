@@ -15,14 +15,17 @@ class FakeEquipmentRepository implements EquipmentRepository {
   Object? getError;
   Object? createError;
   Object? updateError;
+  Object? deleteError;
   Duration createDelay;
   Duration updateDelay;
 
   int createCallCount = 0;
   int updateCallCount = 0;
+  int deleteCallCount = 0;
   EquipmentDetails? lastCreatedDetails;
   EquipmentDetails? lastUpdatedDetails;
   String? lastUpdatedId;
+  String? lastDeletedId;
 
   static const String _companyId = 'company-1';
   int _nextId = 1;
@@ -63,6 +66,10 @@ class FakeEquipmentRepository implements EquipmentRepository {
       hours: details.hours,
       location: details.location,
       notes: details.notes,
+      createdBy: 'user-1',
+      createdByName: 'Gunnar Hull',
+      updatedBy: 'user-1',
+      updatedByName: 'Gunnar Hull',
       createdAt: now,
       updatedAt: now,
     );
@@ -97,11 +104,24 @@ class FakeEquipmentRepository implements EquipmentRepository {
       hours: details.hours,
       location: details.location,
       notes: details.notes,
+      createdBy: existing.createdBy,
+      createdByName: existing.createdByName,
+      updatedBy: 'user-1',
+      updatedByName: 'Gunnar Hull',
       createdAt: existing.createdAt,
       updatedAt: DateTime.utc(2026, 1, 2),
     );
     equipment = [...equipment]..[index] = updated;
     return updated;
+  }
+
+  @override
+  Future<void> deleteEquipment(String id) async {
+    deleteCallCount += 1;
+    lastDeletedId = id;
+    if (deleteError != null) throw deleteError!;
+
+    equipment = equipment.where((item) => item.id != id).toList();
   }
 
   int isSerialNumberTakenCallCount = 0;

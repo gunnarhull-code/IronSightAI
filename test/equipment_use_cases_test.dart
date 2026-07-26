@@ -4,6 +4,7 @@ import 'package:ironsight_ai/domain/entities/equipment.dart';
 import 'package:ironsight_ai/domain/entities/manufacturer_catalog.dart';
 import 'package:ironsight_ai/domain/exceptions/duplicate_serial_number_exception.dart';
 import 'package:ironsight_ai/domain/use_cases/create_equipment.dart';
+import 'package:ironsight_ai/domain/use_cases/delete_equipment.dart';
 import 'package:ironsight_ai/domain/use_cases/get_equipment_by_id.dart';
 import 'package:ironsight_ai/domain/use_cases/get_equipment_list.dart';
 import 'package:ironsight_ai/domain/use_cases/update_equipment.dart';
@@ -408,6 +409,32 @@ void main() {
         throwsException,
       );
       expect(repository.updateCallCount, 1);
+    });
+  });
+
+  group('DeleteEquipment', () {
+    test('deletes the requested equipment through the repository', () async {
+      final repository = FakeEquipmentRepository(
+        equipment: [sampleEquipment(id: 'equipment-1')],
+      );
+      final useCase = DeleteEquipment(repository);
+
+      await useCase('equipment-1');
+
+      expect(repository.deleteCallCount, 1);
+      expect(repository.lastDeletedId, 'equipment-1');
+      expect(repository.equipment, isEmpty);
+    });
+
+    test('rejects a blank id before calling the repository', () async {
+      final repository = FakeEquipmentRepository(
+        equipment: [sampleEquipment(id: 'equipment-1')],
+      );
+      final useCase = DeleteEquipment(repository);
+
+      expect(() => useCase('   '), throwsArgumentError);
+      expect(repository.deleteCallCount, 0);
+      expect(repository.equipment, hasLength(1));
     });
   });
 }

@@ -54,6 +54,7 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   bool _isApplyingValues = false;
   bool _notFound = false;
   String? _errorMessage;
+  Equipment? _loadedEquipment;
 
   Map<String, String> _originalValues = const {};
 
@@ -129,6 +130,7 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 
   void _applyEquipment(Equipment equipment) {
     _isApplyingValues = true;
+    _loadedEquipment = equipment;
     _assetNameController.text = equipment.assetName;
     _manufacturerController.text = equipment.manufacturer;
     _modelController.text = equipment.model;
@@ -307,6 +309,10 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
                   _ErrorBanner(message: _errorMessage!),
                   const SizedBox(height: 16),
                 ],
+                if (_loadedEquipment != null) ...[
+                  _AuditInfoCard(equipment: _loadedEquipment!),
+                  const SizedBox(height: 16),
+                ],
                 TextFormField(
                   controller: _assetNameController,
                   enabled: !_isSaving,
@@ -455,6 +461,88 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AuditInfoCard extends StatelessWidget {
+  const _AuditInfoCard({required this.equipment});
+
+  final Equipment equipment;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      color: colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Audit', style: theme.textTheme.titleSmall),
+            const SizedBox(height: 12),
+            _AuditRow(
+              label: 'Created By',
+              value: _displayUser(equipment.createdByName, equipment.createdBy),
+            ),
+            const SizedBox(height: 8),
+            _AuditRow(
+              label: 'Last Updated By',
+              value: _displayUser(equipment.updatedByName, equipment.updatedBy),
+            ),
+            const SizedBox(height: 8),
+            _AuditRow(
+              label: 'Last Updated',
+              value: _formatTimestamp(equipment.updatedAt),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _displayUser(String? name, String? id) {
+    final trimmedName = name?.trim();
+    if (trimmedName != null && trimmedName.isNotEmpty) return trimmedName;
+    return id == null ? 'Not recorded' : 'Unknown user';
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final utc = timestamp.toUtc();
+    String twoDigits(int value) => value.toString().padLeft(2, '0');
+    return '${utc.year}-${twoDigits(utc.month)}-${twoDigits(utc.day)} '
+        '${twoDigits(utc.hour)}:${twoDigits(utc.minute)} UTC';
+  }
+}
+
+class _AuditRow extends StatelessWidget {
+  const _AuditRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 128,
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Text(value)),
+      ],
     );
   }
 }

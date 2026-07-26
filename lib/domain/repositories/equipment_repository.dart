@@ -22,6 +22,10 @@ abstract class EquipmentRepository {
   /// company.
   Future<Equipment> updateEquipment(String id, EquipmentDetails details);
 
+  /// Deletes an existing equipment record belonging to the current user's
+  /// company.
+  Future<void> deleteEquipment(String id);
+
   /// Returns true if [serialNumber] is already used by another equipment
   /// record in the current user's company.
   ///

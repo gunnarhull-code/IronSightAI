@@ -275,4 +275,51 @@ void main() {
 
     expect(find.text('Edit Screen'), findsOneWidget);
   });
+
+  testWidgets('delete confirmation cancel leaves equipment unchanged', (
+    tester,
+  ) async {
+    final repository = FakeEquipmentRepository(equipment: [sampleEquipment()]);
+
+    await pumpList(tester, repository);
+
+    await tester.tap(
+      find.byKey(const ValueKey('delete-equipment-equipment-1')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Delete equipment?'), findsOneWidget);
+    expect(
+      find.text('Delete Excavator 1? This cannot be undone.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.widgetWithText(TextButton, 'Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(repository.deleteCallCount, 0);
+    expect(repository.equipment, hasLength(1));
+    expect(find.text('Excavator 1'), findsOneWidget);
+  });
+
+  testWidgets('confirmed delete removes equipment and refreshes the list', (
+    tester,
+  ) async {
+    final repository = FakeEquipmentRepository(equipment: [sampleEquipment()]);
+
+    await pumpList(tester, repository);
+
+    await tester.tap(
+      find.byKey(const ValueKey('delete-equipment-equipment-1')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Delete'));
+    await tester.pumpAndSettle();
+
+    expect(repository.deleteCallCount, 1);
+    expect(repository.lastDeletedId, 'equipment-1');
+    expect(repository.equipment, isEmpty);
+    expect(find.text('Excavator 1'), findsNothing);
+    expect(find.text('No equipment yet'), findsOneWidget);
+  });
 }
