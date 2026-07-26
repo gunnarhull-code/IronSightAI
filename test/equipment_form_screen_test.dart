@@ -7,7 +7,11 @@ import 'package:ironsight_ai/features/equipment/presentation/equipment_form_scre
 import 'support/fake_equipment_repository.dart';
 
 void main() {
-  Equipment sampleEquipment({String? serialNumber}) {
+  Equipment sampleEquipment({
+    String? serialNumber,
+    String? createdByName = 'Gunnar Hull',
+    String? updatedByName = 'Alex Rep',
+  }) {
     return Equipment(
       id: 'equipment-1',
       companyId: 'company-1',
@@ -17,8 +21,12 @@ void main() {
       year: 2019,
       hours: 1200,
       serialNumber: serialNumber,
+      createdBy: 'user-1',
+      createdByName: createdByName,
+      updatedBy: 'user-2',
+      updatedByName: updatedByName,
       createdAt: DateTime.utc(2026, 1, 1),
-      updatedAt: DateTime.utc(2026, 1, 1),
+      updatedAt: DateTime.utc(2026, 1, 2, 3, 4),
     );
   }
 
@@ -104,6 +112,7 @@ void main() {
     expect(repository.createCallCount, 1);
     expect(repository.lastCreatedDetails?.assetName, 'Skid Steer');
     expect(repository.lastCreatedDetails?.manufacturer, 'Bobcat');
+    expect(find.text('Discard changes?'), findsNothing);
     expect(find.text('Open'), findsOneWidget);
   });
 
@@ -289,6 +298,112 @@ void main() {
     expect(repository.lastUpdatedId, 'equipment-1');
     expect(repository.lastUpdatedDetails?.assetName, 'Excavator 1 Updated');
     expect(repository.lastUpdatedDetails?.manufacturer, 'Caterpillar');
+  });
+
+  testWidgets('shows audit information when editing existing equipment', (
+    tester,
+  ) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository(equipment: [sampleEquipment()]);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: EquipmentFormScreen(
+          repository: repository,
+          equipmentId: 'equipment-1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Audit'), findsOneWidget);
+    expect(find.text('Created By'), findsOneWidget);
+    expect(find.text('Gunnar Hull'), findsOneWidget);
+    expect(find.text('Last Updated By'), findsOneWidget);
+    expect(find.text('Alex Rep'), findsOneWidget);
+    expect(find.text('Last Updated'), findsOneWidget);
+    expect(find.text('2026-01-02 03:04 UTC'), findsOneWidget);
+  });
+
+  testWidgets('dirty form warning can keep editing with values preserved', (
+    tester,
+  ) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => EquipmentFormScreen(repository: repository),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Asset Name'),
+      'Skid Steer',
+    );
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(TextButton, 'Keep Editing'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Discard changes?'), findsNothing);
+    expect(find.widgetWithText(TextFormField, 'Skid Steer'), findsOneWidget);
+    expect(find.text('Open'), findsNothing);
+  });
+
+  testWidgets('dirty form warning can discard without saving', (tester) async {
+    await useTallSurface(tester);
+    final repository = FakeEquipmentRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: ElevatedButton(
+              onPressed: () => Navigator.of(context).push<void>(
+                MaterialPageRoute(
+                  builder: (_) => EquipmentFormScreen(repository: repository),
+                ),
+              ),
+              child: const Text('Open'),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Asset Name'),
+      'Skid Steer',
+    );
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Discard'));
+    await tester.pumpAndSettle();
+
+    expect(repository.createCallCount, 0);
+    expect(find.text('Open'), findsOneWidget);
+    expect(find.text('Skid Steer'), findsNothing);
   });
 
   testWidgets(

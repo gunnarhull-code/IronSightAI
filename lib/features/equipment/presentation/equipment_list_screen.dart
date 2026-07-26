@@ -4,6 +4,7 @@ import '../../../app/router.dart';
 import '../../../domain/entities/equipment.dart';
 import '../../../domain/entities/manufacturer_catalog.dart';
 import '../../../domain/repositories/equipment_repository.dart';
+import '../../../domain/use_cases/delete_equipment.dart';
 import '../../../domain/use_cases/get_equipment_list.dart';
 
 const _allManufacturersFilter = 'All Manufacturers';
@@ -34,7 +35,9 @@ class EquipmentListScreen extends StatefulWidget {
 
 class _EquipmentListScreenState extends State<EquipmentListScreen> {
   late final GetEquipmentList _getEquipmentList;
+  late final DeleteEquipment _deleteEquipment;
   late Future<List<Equipment>> _equipmentFuture;
+  final Set<String> _deletingEquipmentIds = {};
   String _searchQuery = '';
   String _manufacturerFilter = _allManufacturersFilter;
   _EquipmentSortOption _sortOption = _EquipmentSortOption.newest;
@@ -43,6 +46,7 @@ class _EquipmentListScreenState extends State<EquipmentListScreen> {
   void initState() {
     super.initState();
     _getEquipmentList = GetEquipmentList(widget.repository);
+    _deleteEquipment = DeleteEquipment(widget.repository);
     _equipmentFuture = _getEquipmentList();
   }
 
@@ -146,6 +150,48 @@ class _EquipmentListScreenState extends State<EquipmentListScreen> {
     if (updated == true) _reload();
   }
 
+  Future<void> _confirmAndDelete(Equipment equipment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete equipment?'),
+        content: Text('Delete ${equipment.assetName}? This cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _deletingEquipmentIds.add(equipment.id));
+    try {
+      await _deleteEquipment(equipment.id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${equipment.assetName} deleted.')),
+      );
+      setState(() {
+        _deletingEquipmentIds.remove(equipment.id);
+        _equipmentFuture = _getEquipmentList();
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _deletingEquipmentIds.remove(equipment.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not delete equipment. Please try again.'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -205,6 +251,8 @@ class _EquipmentListScreenState extends State<EquipmentListScreen> {
                   _EquipmentTile(
                     equipment: item,
                     onTap: () => _openEditForm(item),
+                    onDelete: () => _confirmAndDelete(item),
+                    isDeleting: _deletingEquipmentIds.contains(item.id),
                   ),
                   if (item != visibleEquipment.last) const SizedBox(height: 8),
                 ],
@@ -312,10 +360,17 @@ class _EquipmentListControls extends StatelessWidget {
 }
 
 class _EquipmentTile extends StatelessWidget {
-  const _EquipmentTile({required this.equipment, required this.onTap});
+  const _EquipmentTile({
+    required this.equipment,
+    required this.onTap,
+    required this.onDelete,
+    required this.isDeleting,
+  });
 
   final Equipment equipment;
   final VoidCallback onTap;
+  final VoidCallback onDelete;
+  final bool isDeleting;
 
   @override
   Widget build(BuildContext context) {
@@ -335,7 +390,24 @@ class _EquipmentTile extends StatelessWidget {
         ),
         title: Text(equipment.assetName, style: theme.textTheme.titleMedium),
         subtitle: Text(subtitleParts.join(' · ')),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              key: ValueKey('delete-equipment-${equipment.id}'),
+              tooltip: 'Delete equipment',
+              onPressed: isDeleting ? null : onDelete,
+              icon: isDeleting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2.5),
+                    )
+                  : const Icon(Icons.delete_outline),
+            ),
+            const Icon(Icons.chevron_right),
+          ],
+        ),
       ),
     );
   }

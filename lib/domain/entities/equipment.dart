@@ -19,6 +19,10 @@ class Equipment {
     this.hours,
     this.location,
     this.notes,
+    this.createdBy,
+    this.createdByName,
+    this.updatedBy,
+    this.updatedByName,
   });
 
   final String id;
@@ -31,6 +35,10 @@ class Equipment {
   final double? hours;
   final String? location;
   final String? notes;
+  final String? createdBy;
+  final String? createdByName;
+  final String? updatedBy;
+  final String? updatedByName;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -46,6 +54,10 @@ class Equipment {
       hours: (map['hours'] as num?)?.toDouble(),
       location: map['location'] as String?,
       notes: map['notes'] as String?,
+      createdBy: map['created_by'] as String?,
+      createdByName: map['created_by_name'] as String?,
+      updatedBy: map['updated_by'] as String?,
+      updatedByName: map['updated_by_name'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );

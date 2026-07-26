@@ -18,7 +18,8 @@ class SupabaseEquipmentRepository implements EquipmentRepository {
 
   static const _columns =
       'id, company_id, asset_name, manufacturer, model, serial_number, '
-      'year, hours, location, notes, created_at, updated_at';
+      'year, hours, location, notes, created_by, updated_by, '
+      'created_at, updated_at';
 
   Future<String> _requireCurrentCompanyId() async {
     final userId = _client.auth.currentUser?.id;
@@ -49,9 +50,7 @@ class SupabaseEquipmentRepository implements EquipmentRepository {
         .eq('company_id', companyId)
         .order('created_at', ascending: false);
 
-    return (rows as List)
-        .map((row) => Equipment.fromMap(Map<String, dynamic>.from(row)))
-        .toList();
+    return _equipmentFromRows(rows as List);
   }
 
   @override
@@ -66,7 +65,7 @@ class SupabaseEquipmentRepository implements EquipmentRepository {
         .maybeSingle();
 
     if (row == null) return null;
-    return Equipment.fromMap(row);
+    return (await _equipmentFromRows([row])).single;
   }
 
   @override
@@ -79,7 +78,7 @@ class SupabaseEquipmentRepository implements EquipmentRepository {
         .select(_columns)
         .single();
 
-    return Equipment.fromMap(row);
+    return (await _equipmentFromRows([row])).single;
   }
 
   @override
@@ -94,7 +93,18 @@ class SupabaseEquipmentRepository implements EquipmentRepository {
         .select(_columns)
         .single();
 
-    return Equipment.fromMap(row);
+    return (await _equipmentFromRows([row])).single;
+  }
+
+  @override
+  Future<void> deleteEquipment(String id) async {
+    final companyId = await _requireCurrentCompanyId();
+
+    await _client
+        .from('equipment')
+        .delete()
+        .eq('id', id)
+        .eq('company_id', companyId);
   }
 
   @override
@@ -127,6 +137,42 @@ class SupabaseEquipmentRepository implements EquipmentRepository {
       'hours': details.hours,
       'location': details.location,
       'notes': details.notes,
+    };
+  }
+
+  Future<List<Equipment>> _equipmentFromRows(List rows) async {
+    final mappedRows = rows
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+    final userIds = <String>{
+      for (final row in mappedRows) ...[
+        if (row['created_by'] case final String id) id,
+        if (row['updated_by'] case final String id) id,
+      ],
+    };
+    final namesById = await _profileNamesById(userIds);
+
+    return mappedRows.map((row) {
+      return Equipment.fromMap({
+        ...row,
+        'created_by_name': namesById[row['created_by']],
+        'updated_by_name': namesById[row['updated_by']],
+      });
+    }).toList();
+  }
+
+  Future<Map<String, String>> _profileNamesById(Set<String> userIds) async {
+    if (userIds.isEmpty) return const {};
+
+    final rows = await _client
+        .from('user_profiles')
+        .select('id, full_name')
+        .inFilter('id', userIds.toList());
+
+    return {
+      for (final row in rows as List)
+        if (row case {'id': final String id, 'full_name': final String name})
+          id: name,
     };
   }
 }
