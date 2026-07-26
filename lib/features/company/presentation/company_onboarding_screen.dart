@@ -28,7 +28,20 @@ class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
   final _nameFocus = FocusNode();
 
   bool _isSubmitting = false;
+  bool _didRequestInitialFocus = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Flutter web does not reliably honor [autofocus] alone; request focus
+    // after the first frame so Company Name is ready immediately.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _didRequestInitialFocus) return;
+      _didRequestInitialFocus = true;
+      _nameFocus.requestFocus();
+    });
+  }
 
   @override
   void dispose() {
