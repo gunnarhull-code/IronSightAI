@@ -26,15 +26,31 @@ class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
   final _nameController = TextEditingController();
 
   bool _isSubmitting = false;
+  bool _hasUnsavedChanges = false;
   String? _errorMessage;
 
   @override
+  void initState() {
+    super.initState();
+    _nameController.addListener(_syncUnsavedChanges);
+  }
+
+  @override
   void dispose() {
+    _nameController.removeListener(_syncUnsavedChanges);
     _nameController.dispose();
     super.dispose();
   }
 
+  void _syncUnsavedChanges() {
+    final hasChanges = _nameController.text.trim().isNotEmpty;
+    if (hasChanges != _hasUnsavedChanges) {
+      setState(() => _hasUnsavedChanges = hasChanges);
+    }
+  }
+
   Future<void> _continue() async {
+    if (_isSubmitting) return;
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -45,6 +61,7 @@ class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
     try {
       await widget.createCompany(name: _nameController.text);
       if (!mounted) return;
+      _hasUnsavedChanges = false;
       widget.onCompleted();
     } catch (e) {
       if (!mounted) return;
@@ -58,69 +75,100 @@ class _CompanyOnboardingScreenState extends State<CompanyOnboardingScreen> {
     }
   }
 
+  Future<bool> _confirmDiscardChanges() async {
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard changes?'),
+        content: const Text('You have unsaved company changes.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Keep Editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+    return discard ?? false;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Set up your company',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Create your dealership workspace to start inspections.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (await _confirmDiscardChanges() && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Set up your company',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: 32),
-                    if (_errorMessage != null) ...[
-                      _ErrorBanner(message: _errorMessage!),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Create your dealership workspace to start inspections.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      if (_errorMessage != null) ...[
+                        _ErrorBanner(message: _errorMessage!),
+                        const SizedBox(height: 16),
+                      ],
+                      TextFormField(
+                        controller: _nameController,
+                        enabled: !_isSubmitting,
+                        textCapitalization: TextCapitalization.words,
+                        autofillHints: const [AutofillHints.organizationName],
+                        decoration: const InputDecoration(
+                          labelText: 'Company Name',
+                          helperText: 'Required',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Company name is required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      FilledButton(
+                        onPressed: _isSubmitting ? null : _continue,
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text('Continue'),
+                      ),
                     ],
-                    TextFormField(
-                      controller: _nameController,
-                      enabled: !_isSubmitting,
-                      textCapitalization: TextCapitalization.words,
-                      autofillHints: const [AutofillHints.organizationName],
-                      decoration: const InputDecoration(
-                        labelText: 'Company Name',
-                      ),
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter your company name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _continue,
-                      child: _isSubmitting
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                              ),
-                            )
-                          : const Text('Continue'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
