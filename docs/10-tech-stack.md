@@ -13,7 +13,7 @@ This document is the single source of truth for V1 technology choices and the re
 | On-device OCR | **Google ML Kit Text Recognition** (on-device) | Cloud Vision API, Tesseract |
 | Media capture | **Flutter `camera` plugin** + custom capture UI | `image_picker` only (rejected — insufficient control for guided walkaround) |
 | PDF report generation | **Supabase Edge Function (Deno) using a server-side PDF library**, with a client-side fallback renderer | Fully client-side PDF generation |
-| CI/CD | **Codemagic** (Flutter-native CI/CD) | GitHub Actions + Fastlane (manual) |
+| CI/CD | **GitHub Actions** for PR verification (format/analyze/test); **Codemagic** planned for Flutter store CI/CD later | Homegrown deploy scripts; Fastlane-only |
 | Error monitoring | **Sentry** (free tier) | Firebase Crashlytics |
 | Product analytics | **PostHog** (self-serve, generous free tier) | Mixpanel, Amplitude |
 | Source control / issue tracking | **GitHub** (private repo) | GitLab |
