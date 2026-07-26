@@ -1,13 +1,18 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../../domain/entities/country_catalog.dart';
+import '../../../domain/entities/country_time_zone.dart';
 import '../../../domain/entities/equipment.dart';
 import '../../../domain/entities/equipment_details.dart'
     show maxEquipmentYear, minEquipmentYear;
 import '../../../domain/entities/manufacturer_catalog.dart';
 import '../../../domain/exceptions/duplicate_serial_number_exception.dart';
+import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/repositories/equipment_repository.dart';
 import '../../../domain/use_cases/create_equipment.dart';
+import '../../../domain/use_cases/get_current_user_company.dart';
 import '../../../domain/use_cases/get_equipment_by_id.dart';
 import '../../../domain/use_cases/update_equipment.dart';
 
@@ -20,11 +25,20 @@ class EquipmentFormScreen extends StatefulWidget {
   const EquipmentFormScreen({
     super.key,
     required this.repository,
+    this.companyRepository,
     this.equipmentId,
+    this.companyCountry,
   });
 
   final EquipmentRepository repository;
+
+  /// Used to resolve the company country for local audit timestamps.
+  final CompanyRepository? companyRepository;
+
   final String? equipmentId;
+
+  /// Optional override for tests; otherwise loaded from [companyRepository].
+  final String? companyCountry;
 
   bool get isEditing => equipmentId != null;
 
@@ -44,6 +58,15 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
 
+  final _assetNameFocus = FocusNode();
+  final _manufacturerFocus = FocusNode();
+  final _modelFocus = FocusNode();
+  final _serialNumberFocus = FocusNode();
+  final _yearFocus = FocusNode();
+  final _hoursFocus = FocusNode();
+  final _locationFocus = FocusNode();
+  final _notesFocus = FocusNode();
+
   late final GetEquipmentById _getEquipmentById;
   late final CreateEquipment _createEquipment;
   late final UpdateEquipment _updateEquipment;
@@ -53,8 +76,10 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   bool _hasUnsavedChanges = false;
   bool _isApplyingValues = false;
   bool _notFound = false;
+  bool _didRequestInitialFocus = false;
   String? _errorMessage;
   Equipment? _loadedEquipment;
+  String? _companyCountry;
 
   Map<String, String> _originalValues = const {};
 
@@ -69,17 +94,30 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
     _notesController,
   ];
 
+  List<FocusNode> get _allFocusNodes => [
+    _assetNameFocus,
+    _manufacturerFocus,
+    _modelFocus,
+    _serialNumberFocus,
+    _yearFocus,
+    _hoursFocus,
+    _locationFocus,
+    _notesFocus,
+  ];
+
   @override
   void initState() {
     super.initState();
     _getEquipmentById = GetEquipmentById(widget.repository);
     _createEquipment = CreateEquipment(widget.repository);
     _updateEquipment = UpdateEquipment(widget.repository);
+    _companyCountry = widget.companyCountry ?? defaultCompanyCountry;
 
     for (final controller in _allControllers) {
       controller.addListener(_syncUnsavedChanges);
     }
 
+    _loadCompanyCountry();
     if (widget.isEditing) {
       _loadEquipment();
     } else {
@@ -88,12 +126,45 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
     }
   }
 
+  Future<void> _loadCompanyCountry() async {
+    if (widget.companyCountry != null) {
+      setState(() => _companyCountry = widget.companyCountry);
+      return;
+    }
+
+    final companyRepository = widget.companyRepository;
+    if (companyRepository == null) return;
+
+    try {
+      final company = await GetCurrentUserCompany(companyRepository)();
+      if (!mounted) return;
+      setState(() {
+        _companyCountry = company?.region ?? defaultCompanyCountry;
+      });
+    } catch (_) {
+      // Keep the default country so audit timestamps still render.
+    }
+  }
+
   @override
   void dispose() {
     for (final controller in _allControllers) {
       controller.dispose();
     }
+    for (final focusNode in _allFocusNodes) {
+      focusNode.dispose();
+    }
     super.dispose();
+  }
+
+  void _requestInitialFocusIfNeeded() {
+    if (_didRequestInitialFocus || _isLoading || _notFound) return;
+    _didRequestInitialFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_isSaving) {
+        _assetNameFocus.requestFocus();
+      }
+    });
   }
 
   Future<void> _loadEquipment() async {
@@ -215,6 +286,8 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 
       if (!mounted) return;
       _hasUnsavedChanges = false;
+      // Non-auth form: do not prompt the browser to save credentials.
+      TextInput.finishAutofillContext(shouldSave: false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -295,6 +368,8 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   }
 
   Widget _buildForm(BuildContext context) {
+    _requestInitialFocusIfNeeded();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Center(
@@ -302,161 +377,258 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_errorMessage != null) ...[
-                  _ErrorBanner(message: _errorMessage!),
-                  const SizedBox(height: 16),
-                ],
-                if (_loadedEquipment != null) ...[
-                  _AuditInfoCard(equipment: _loadedEquipment!),
-                  const SizedBox(height: 16),
-                ],
-                TextFormField(
-                  controller: _assetNameController,
-                  enabled: !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Asset Name'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Enter an asset name'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return FormField<String>(
-                      // Validates the controller's current text directly
-                      // (rather than a separately tracked selection) so the
-                      // inline error always matches exactly what would be
-                      // submitted on Save, whether it came from typing a
-                      // search term or tapping a menu entry.
-                      validator: (_) {
-                        final value = _manufacturerController.text.trim();
-                        if (value.isEmpty) {
-                          return 'Select a manufacturer';
-                        }
-                        if (!manufacturerCatalog.contains(value)) {
-                          return 'Select a manufacturer from the list';
-                        }
-                        return null;
+            child: FocusTraversalGroup(
+              policy: OrderedTraversalPolicy(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_errorMessage != null) ...[
+                    _ErrorBanner(message: _errorMessage!),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_loadedEquipment != null) ...[
+                    _AuditInfoCard(
+                      equipment: _loadedEquipment!,
+                      companyCountry: _companyCountry,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(1),
+                    child: TextFormField(
+                      controller: _assetNameController,
+                      focusNode: _assetNameFocus,
+                      autofocus: !widget.isEditing,
+                      enabled: !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Asset Name',
+                      ),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Enter an asset name'
+                          : null,
+                      onFieldSubmitted: (_) {
+                        _manufacturerFocus.requestFocus();
                       },
-                      builder: (field) {
-                        return DropdownMenu<String>(
-                          controller: _manufacturerController,
-                          enabled: !_isSaving,
-                          enableFilter: true,
-                          requestFocusOnTap: true,
-                          width: constraints.maxWidth,
-                          label: const Text('Manufacturer'),
-                          errorText: field.errorText,
-                          dropdownMenuEntries: manufacturerCatalog
-                              .map(
-                                (manufacturer) => DropdownMenuEntry<String>(
-                                  value: manufacturer,
-                                  label: manufacturer,
-                                ),
-                              )
-                              .toList(),
-                          onSelected: (_) => field.validate(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(2),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return FormField<String>(
+                          // Validates the controller's current text directly
+                          // (rather than a separately tracked selection) so the
+                          // inline error always matches exactly what would be
+                          // submitted on Save, whether it came from typing a
+                          // search term or tapping a menu entry.
+                          validator: (_) {
+                            final value = _manufacturerController.text.trim();
+                            if (value.isEmpty) {
+                              return 'Select a manufacturer';
+                            }
+                            if (!manufacturerCatalog.contains(value)) {
+                              return 'Select a manufacturer from the list';
+                            }
+                            return null;
+                          },
+                          builder: (field) {
+                            return DropdownMenu<String>(
+                              controller: _manufacturerController,
+                              // DropdownMenu does not expose autofillHints; the
+                              // surrounding fields disable autofill explicitly.
+                              focusNode: _manufacturerFocus,
+                              enabled: !_isSaving,
+                              enableFilter: true,
+                              requestFocusOnTap: true,
+                              width: constraints.maxWidth,
+                              label: const Text('Manufacturer'),
+                              errorText: field.errorText,
+                              dropdownMenuEntries: manufacturerCatalog
+                                  .map(
+                                    (manufacturer) => DropdownMenuEntry<String>(
+                                      value: manufacturer,
+                                      label: manufacturer,
+                                    ),
+                                  )
+                                  .toList(),
+                              onSelected: (_) {
+                                field.validate();
+                                _modelFocus.requestFocus();
+                              },
+                            );
+                          },
                         );
                       },
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _modelController,
-                  enabled: !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Model'),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? 'Enter a model'
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _serialNumberController,
-                  enabled: !_isSaving,
-                  decoration: const InputDecoration(labelText: 'Serial Number'),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _yearController,
-                        enabled: !_isSaving,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'Year'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return null;
-                          }
-                          final parsed = int.tryParse(value.trim());
-                          if (parsed == null) return 'Enter a valid year';
-                          if (parsed < minEquipmentYear) {
-                            return 'Year must be $minEquipmentYear or later';
-                          }
-                          final latestYear = maxEquipmentYear();
-                          if (parsed > latestYear) {
-                            return 'Year cannot be later than $latestYear';
-                          }
-                          return null;
-                        },
-                      ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _hoursController,
-                        enabled: !_isSaving,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(labelText: 'Hours'),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return null;
-                          }
-                          final parsed = double.tryParse(value.trim());
-                          if (parsed == null) return 'Enter a valid number';
-                          if (parsed < 0) return 'Hours cannot be negative';
-                          return null;
-                        },
-                      ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(3),
+                    child: TextFormField(
+                      controller: _modelController,
+                      focusNode: _modelFocus,
+                      enabled: !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Model'),
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
+                          ? 'Enter a model'
+                          : null,
+                      onFieldSubmitted: (_) {
+                        _serialNumberFocus.requestFocus();
+                      },
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _locationController,
-                  enabled: !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Location'),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _notesController,
-                  enabled: !_isSaving,
-                  maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Notes'),
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: _isSaving ? null : _save,
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : Text(
-                          widget.isEditing ? 'Save Changes' : 'Add Equipment',
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(4),
+                    child: TextFormField(
+                      controller: _serialNumberController,
+                      focusNode: _serialNumberFocus,
+                      enabled: !_isSaving,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Serial Number',
+                      ),
+                      onFieldSubmitted: (_) {
+                        _yearFocus.requestFocus();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: FocusTraversalOrder(
+                          order: const NumericFocusOrder(5),
+                          child: TextFormField(
+                            controller: _yearController,
+                            focusNode: _yearFocus,
+                            enabled: !_isSaving,
+                            keyboardType: TextInputType.number,
+                            textInputAction: TextInputAction.next,
+                            autofillHints: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Year',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null;
+                              }
+                              final parsed = int.tryParse(value.trim());
+                              if (parsed == null) return 'Enter a valid year';
+                              if (parsed < minEquipmentYear) {
+                                return 'Year must be $minEquipmentYear or later';
+                              }
+                              final latestYear = maxEquipmentYear();
+                              if (parsed > latestYear) {
+                                return 'Year cannot be later than $latestYear';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              _hoursFocus.requestFocus();
+                            },
+                          ),
                         ),
-                ),
-              ],
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: FocusTraversalOrder(
+                          order: const NumericFocusOrder(6),
+                          child: TextFormField(
+                            controller: _hoursController,
+                            focusNode: _hoursFocus,
+                            enabled: !_isSaving,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            textInputAction: TextInputAction.next,
+                            autofillHints: null,
+                            decoration: const InputDecoration(
+                              labelText: 'Hours',
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return null;
+                              }
+                              final parsed = double.tryParse(value.trim());
+                              if (parsed == null) {
+                                return 'Enter a valid number';
+                              }
+                              if (parsed < 0) {
+                                return 'Hours cannot be negative';
+                              }
+                              return null;
+                            },
+                            onFieldSubmitted: (_) {
+                              _locationFocus.requestFocus();
+                            },
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(7),
+                    child: TextFormField(
+                      controller: _locationController,
+                      focusNode: _locationFocus,
+                      enabled: !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Location'),
+                      onFieldSubmitted: (_) {
+                        _notesFocus.requestFocus();
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(8),
+                    child: TextFormField(
+                      controller: _notesController,
+                      focusNode: _notesFocus,
+                      enabled: !_isSaving,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.newline,
+                      autofillHints: null,
+                      decoration: const InputDecoration(labelText: 'Notes'),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(9),
+                    child: FilledButton(
+                      onPressed: _isSaving ? null : _save,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : Text(
+                              widget.isEditing
+                                  ? 'Save Changes'
+                                  : 'Add Equipment',
+                            ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -466,9 +638,13 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 }
 
 class _AuditInfoCard extends StatelessWidget {
-  const _AuditInfoCard({required this.equipment});
+  const _AuditInfoCard({
+    required this.equipment,
+    required this.companyCountry,
+  });
 
   final Equipment equipment;
+  final String? companyCountry;
 
   @override
   Widget build(BuildContext context) {
@@ -490,13 +666,24 @@ class _AuditInfoCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _AuditRow(
+              label: 'Created',
+              value: formatCompanyLocalTimestamp(
+                equipment.createdAt,
+                companyCountry: companyCountry,
+              ),
+            ),
+            const SizedBox(height: 8),
+            _AuditRow(
               label: 'Last Updated By',
               value: _displayUser(equipment.updatedByName, equipment.updatedBy),
             ),
             const SizedBox(height: 8),
             _AuditRow(
               label: 'Last Updated',
-              value: _formatTimestamp(equipment.updatedAt),
+              value: formatCompanyLocalTimestamp(
+                equipment.updatedAt,
+                companyCountry: companyCountry,
+              ),
             ),
           ],
         ),
@@ -508,13 +695,6 @@ class _AuditInfoCard extends StatelessWidget {
     final trimmedName = name?.trim();
     if (trimmedName != null && trimmedName.isNotEmpty) return trimmedName;
     return id == null ? 'Not recorded' : 'Unknown user';
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final utc = timestamp.toUtc();
-    String twoDigits(int value) => value.toString().padLeft(2, '0');
-    return '${utc.year}-${twoDigits(utc.month)}-${twoDigits(utc.day)} '
-        '${twoDigits(utc.hour)}:${twoDigits(utc.minute)} UTC';
   }
 }
 

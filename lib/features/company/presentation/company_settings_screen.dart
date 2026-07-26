@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../domain/entities/company_membership.dart';
+import '../../../domain/entities/country_catalog.dart';
+import '../../../domain/entities/country_time_zone.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/use_cases/get_current_user_company_membership.dart';
 import '../../../domain/use_cases/update_company_details.dart';
@@ -21,7 +24,9 @@ class CompanySettingsScreen extends StatefulWidget {
 class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _regionController = TextEditingController();
+  final _countryController = TextEditingController();
+  final _nameFocus = FocusNode();
+  final _countryFocus = FocusNode();
 
   late final GetCurrentUserCompanyMembership _getMembership;
   late final UpdateCompanyDetails _updateCompany;
@@ -31,6 +36,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
   bool _isSaving = false;
   bool _hasUnsavedChanges = false;
   bool _isApplyingMembership = false;
+  bool _didRequestInitialFocus = false;
   String? _errorMessage;
   String? _successMessage;
 
@@ -40,15 +46,27 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     _getMembership = GetCurrentUserCompanyMembership(widget.repository);
     _updateCompany = UpdateCompanyDetails(widget.repository);
     _nameController.addListener(_syncUnsavedChanges);
-    _regionController.addListener(_syncUnsavedChanges);
+    _countryController.addListener(_syncUnsavedChanges);
     _loadSettings();
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _regionController.dispose();
+    _countryController.dispose();
+    _nameFocus.dispose();
+    _countryFocus.dispose();
     super.dispose();
+  }
+
+  void _requestInitialFocusIfNeeded({required bool canEdit}) {
+    if (_didRequestInitialFocus || !canEdit) return;
+    _didRequestInitialFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && canEdit) {
+        _nameFocus.requestFocus();
+      }
+    });
   }
 
   Future<void> _loadSettings() async {
@@ -86,7 +104,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     _isApplyingMembership = true;
     _membership = membership;
     _nameController.text = membership.company.name;
-    _regionController.text = membership.company.region ?? '';
+    _countryController.text = membership.company.region ?? '';
     _hasUnsavedChanges = false;
     _isApplyingMembership = false;
   }
@@ -97,11 +115,17 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     final company = _membership!.company;
     final hasChanges =
         _nameController.text.trim() != company.name ||
-        _regionController.text.trim() != (company.region ?? '');
+        _countryController.text.trim() != (company.region ?? '');
 
-    if (hasChanges != _hasUnsavedChanges) {
-      setState(() => _hasUnsavedChanges = hasChanges);
-    }
+    // Always rebuild so the company-created timestamp reformats immediately
+    // when the Country dropdown selection changes.
+    setState(() => _hasUnsavedChanges = hasChanges);
+  }
+
+  String get _selectedCountryForDisplay {
+    final selected = _countryController.text.trim();
+    if (selected.isNotEmpty) return selected;
+    return _membership?.company.region ?? defaultCompanyCountry;
   }
 
   Future<void> _save() async {
@@ -117,7 +141,7 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
     try {
       final updatedCompany = await _updateCompany(
         name: _nameController.text,
-        region: _regionController.text,
+        region: _countryController.text,
       );
       if (!mounted) return;
 
@@ -129,6 +153,8 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
         _applyMembership(updatedMembership);
         _successMessage = 'Company settings saved.';
       });
+      // Non-auth form: do not prompt the browser to save credentials.
+      TextInput.finishAutofillContext(shouldSave: false);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Company settings saved.')));
@@ -194,6 +220,8 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
       return _RetryState(message: _errorMessage, onRetry: _loadSettings);
     }
 
+    _requestInitialFocusIfNeeded(canEdit: canEdit);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Center(
@@ -201,83 +229,155 @@ class _CompanySettingsScreenState extends State<CompanySettingsScreen> {
           constraints: const BoxConstraints(maxWidth: 480),
           child: Form(
             key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Basic company information',
-                  style: theme.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Keep the dealership workspace details current.',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                if (_errorMessage != null) ...[
-                  _StatusBanner(message: _errorMessage!, isError: true),
-                  const SizedBox(height: 16),
-                ],
-                if (_successMessage != null) ...[
-                  _StatusBanner(message: _successMessage!, isError: false),
-                  const SizedBox(height: 16),
-                ],
-                TextFormField(
-                  controller: _nameController,
-                  enabled: canEdit && !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Company name',
-                    helperText: 'Required',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Company name is required';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _regionController,
-                  enabled: canEdit && !_isSaving,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Region'),
-                ),
-                const SizedBox(height: 24),
-                _ReadOnlyInfo(
-                  label: 'Current user role',
-                  value: membership.role.label,
-                ),
-                _ReadOnlyInfo(
-                  label: 'Company ID',
-                  value: membership.company.id,
-                ),
-                if (!canEdit) ...[
-                  const SizedBox(height: 16),
+            child: FocusTraversalGroup(
+              policy: OrderedTraversalPolicy(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
                   Text(
-                    'Your role is read-only for company settings.',
+                    'Basic company information',
+                    style: theme.textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Keep the dealership workspace details current.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  if (_errorMessage != null) ...[
+                    _StatusBanner(message: _errorMessage!, isError: true),
+                    const SizedBox(height: 16),
+                  ],
+                  if (_successMessage != null) ...[
+                    _StatusBanner(message: _successMessage!, isError: false),
+                    const SizedBox(height: 16),
+                  ],
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(1),
+                    child: TextFormField(
+                      controller: _nameController,
+                      focusNode: _nameFocus,
+                      enabled: canEdit && !_isSaving,
+                      textCapitalization: TextCapitalization.words,
+                      textInputAction: TextInputAction.next,
+                      autofillHints: null,
+                      decoration: const InputDecoration(
+                        labelText: 'Company name',
+                        helperText: 'Required',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Company name is required';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (_) {
+                        if (canEdit && !_isSaving) {
+                          _countryFocus.requestFocus();
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(2),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final countryEntries = countryDropdownEntries(
+                          currentValue: membership.company.region,
+                        );
+                        return FormField<String>(
+                          // Validates the controller text so typed search terms
+                          // that were never selected from the list are rejected,
+                          // matching the equipment manufacturer dropdown pattern.
+                          validator: (_) {
+                            final value = _countryController.text.trim();
+                            if (!isAllowedCompanyCountry(
+                              value,
+                              existingRegion: membership.company.region,
+                            )) {
+                              return 'Select a country from the list';
+                            }
+                            return null;
+                          },
+                          builder: (field) {
+                            return DropdownMenu<String>(
+                              key: const Key('company_country_dropdown'),
+                              controller: _countryController,
+                              // DropdownMenu does not expose autofillHints; the
+                              // surrounding name field disables autofill explicitly.
+                              focusNode: _countryFocus,
+                              enabled: canEdit && !_isSaving,
+                              enableFilter: true,
+                              requestFocusOnTap: true,
+                              width: constraints.maxWidth,
+                              label: const Text('Country'),
+                              errorText: field.errorText,
+                              dropdownMenuEntries: countryEntries
+                                  .map(
+                                    (country) => DropdownMenuEntry<String>(
+                                      value: country,
+                                      label: country,
+                                    ),
+                                  )
+                                  .toList(),
+                              onSelected: (_) {
+                                field.validate();
+                                _syncUnsavedChanges();
+                              },
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  _ReadOnlyInfo(
+                    label: 'Company created',
+                    value: formatCompanyLocalTimestamp(
+                      membership.company.createdAt,
+                      companyCountry: _selectedCountryForDisplay,
+                    ),
+                  ),
+                  _ReadOnlyInfo(
+                    label: 'Current user role',
+                    value: membership.role.label,
+                  ),
+                  _ReadOnlyInfo(
+                    label: 'Company ID',
+                    value: membership.company.id,
+                  ),
+                  if (!canEdit) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      'Your role is read-only for company settings.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  FocusTraversalOrder(
+                    order: const NumericFocusOrder(3),
+                    child: FilledButton(
+                      onPressed: canEdit && !_isSaving && _hasUnsavedChanges
+                          ? _save
+                          : null,
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
+                            )
+                          : const Text('Save Changes'),
+                    ),
+                  ),
                 ],
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: canEdit && !_isSaving && _hasUnsavedChanges
-                      ? _save
-                      : null,
-                  child: _isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2.5),
-                        )
-                      : const Text('Save Changes'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
