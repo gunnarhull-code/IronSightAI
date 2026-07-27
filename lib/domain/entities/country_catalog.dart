@@ -56,9 +56,7 @@ const List<String> countryCatalog = [
 /// that are not in [countryCatalog] so existing company rows still load.
 List<String> countryDropdownEntries({String? currentValue}) {
   final current = currentValue?.trim();
-  if (current == null ||
-      current.isEmpty ||
-      countryCatalog.contains(current)) {
+  if (current == null || current.isEmpty || countryCatalog.contains(current)) {
     return countryCatalog;
   }
 
@@ -69,10 +67,7 @@ List<String> countryDropdownEntries({String? currentValue}) {
 ///
 /// Empty values remain allowed (optional field). Non-empty values must be in
 /// the supported catalog or match the company's existing legacy region value.
-bool isAllowedCompanyCountry(
-  String? value, {
-  String? existingRegion,
-}) {
+bool isAllowedCompanyCountry(String? value, {String? existingRegion}) {
   final trimmed = value?.trim() ?? '';
   if (trimmed.isEmpty) return true;
   return countryDropdownEntries(currentValue: existingRegion).contains(trimmed);

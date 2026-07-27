@@ -95,7 +95,9 @@ void main() {
             rating: ConditionRating.good,
             updatedAt: now,
           ),
-          ...ScorecardCategory.scorecardOrder.skip(1).map(
+          ...ScorecardCategory.scorecardOrder
+              .skip(1)
+              .map(
                 (category) => CategoryRating(
                   category: category,
                   rating: ConditionRating.notAssessed,
@@ -125,7 +127,10 @@ void main() {
       expect(restored.companyId, original.companyId);
       expect(restored.depth, InspectionDepth.detailed);
       expect(restored.overallNotes, 'Lot unit');
-      expect(restored.ratingFor(ScorecardCategory.engine), ConditionRating.good);
+      expect(
+        restored.ratingFor(ScorecardCategory.engine),
+        ConditionRating.good,
+      );
       expect(
         restored.detailedFor(ScorecardCategory.engine).items.single.itemKey,
         'engine_oil',
@@ -190,15 +195,15 @@ void main() {
   });
 
   group('DetailedCategoryResponse', () {
-    test('supports empty detailed structure for future checklist expansion', () {
-      const response = DetailedCategoryResponse(
-        category: ScorecardCategory.hydraulics,
-      );
-      expect(response.items, isEmpty);
-      expect(
-        DetailedCategoryResponse.fromMap(response.toMap()),
-        response,
-      );
-    });
+    test(
+      'supports empty detailed structure for future checklist expansion',
+      () {
+        const response = DetailedCategoryResponse(
+          category: ScorecardCategory.hydraulics,
+        );
+        expect(response.items, isEmpty);
+        expect(DetailedCategoryResponse.fromMap(response.toMap()), response);
+      },
+    );
   });
 }

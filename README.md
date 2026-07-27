@@ -2,7 +2,23 @@
 
 A mobile-first, AI-ready heavy equipment inspection platform for equipment dealerships, used equipment managers, and sales representatives.
 
-**Status: ✅ Implementation Ready.** This repository currently contains product documentation and a technical blueprint only — no application code has been written yet, by design (documentation-first per project process). **All founder decisions are resolved.** See [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md) for the formal sign-off.
+**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase (auth, company, and equipment flows on `main`). **All founder product decisions for the documentation phase are resolved** — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md).
+
+## Developer setup and verification
+
+**Source of truth:** [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md)
+
+That document covers Flutter/Dart versions, `.env` setup, local Supabase, analyzer/tests, Windows + Brave launch, Draft PR preparation, post-merge sync, and the production migration safety gate. Do not duplicate those instructions here.
+
+Quick start:
+
+```bash
+cp .env.example .env
+flutter pub get
+./scripts/verify.sh
+```
+
+Pull requests targeting `main` run the same format / analyze / test checks via GitHub Actions (see `.github/workflows/ci.yml`). CI never deploys, never uses production Supabase, and never applies migrations.
 
 ## Read in This Order
 
@@ -10,6 +26,7 @@ A mobile-first, AI-ready heavy equipment inspection platform for equipment deale
 2. **[`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)** — The single source of truth for the *product*. Consolidates and resolves every contradiction found across the supporting documents (`01`–`14`) and is built around the core product promise: *"IronSight AI enables salespeople to complete a professional trade appraisal in just a few minutes using only their phone — while supporting more detailed inspections when greater documentation is required."*
 3. **[`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md)** — All 8 founder decisions and their final rulings; retained as the live tracker for any future decision.
 4. **[`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md)** — Formal confirmation that documentation is complete and development may begin.
+5. **[`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md)** — Local engineering setup, verification, and PR workflow baseline.
 
 Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, diagrams) but defer to `15` wherever they conflict, and everything defers to `00` on questions of philosophy, priority, or principle. `docs/04`, `07`, and `08` have been fully synced with `15`; see `docs/18` §5 for the complete consistency status.
 
@@ -22,8 +39,9 @@ The [`management/`](./management/) folder is the operational system of IronSight
 3. Read [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)
 4. Read [`docs/13-roadmap.md`](./docs/13-roadmap.md)
 5. Read [`management/DECISIONS.md`](./management/DECISIONS.md)
-6. Summarize the current project state.
-7. Begin implementation.
+6. Read [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
+7. Summarize the current project state.
+8. Begin implementation.
 
 **Operating principle**: these management documents are maintained throughout the life of the company, not just during the initial documentation phase. Before every future coding session ends, update [`DASHBOARD.md`](./management/DASHBOARD.md), [`DECISIONS.md`](./management/DECISIONS.md) (if a new decision was made), and [`CHANGELOG.md`](./management/CHANGELOG.md) to reflect the current state of the project. The goal: if development stops for six months, any developer or AI assistant can immediately understand where the project stands and continue without losing context.
 
@@ -31,10 +49,10 @@ The [`management/`](./management/) folder is the operational system of IronSight
 
 There must never be duplicate sources of truth. Each of the following lives in exactly one place:
 
-- **`docs/`** — long-lived, mostly static documentation: the Constitution, technical architecture, the product specification, and the **strategic roadmap** (`docs/13-roadmap.md`, the company's single, permanent roadmap).
-- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, and Wins.
+- **`docs/`** — long-lived documentation: the Constitution, technical architecture, the product specification, the **strategic roadmap** (`docs/13-roadmap.md`), and the **developer workflow** (`docs/DEVELOPER_WORKFLOW.md`).
+- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, and active AFK sprint.
 
-The strategic roadmap exists **only** in `docs/13-roadmap.md`. The management folder references it; it never duplicates it.
+The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Other files reference them; they should not restate them at length.
 
 ## Management Folder
 
@@ -46,6 +64,7 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. The management fo
 | [`management/BACKLOG.md`](./management/BACKLOG.md) | Ideas intentionally deferred from the MVP, by priority |
 | [`management/FOUNDER_LOG.md`](./management/FOUNDER_LOG.md) | Founder journal — customer conversations, ideas, lessons learned |
 | [`management/WINS.md`](./management/WINS.md) | Milestone journal |
+| [`management/AFK_SPRINTS.md`](./management/AFK_SPRINTS.md) | Single approved AFK/Cloud Agent sprint |
 
 ## Key Decisions (Locked for V1)
 
@@ -82,8 +101,9 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. The management fo
 | 16 | [`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md) | Approved decisions, open founder decisions, and deferred future decisions |
 | 17 | [`docs/17-dealership-data-use-clause-draft.md`](./docs/17-dealership-data-use-clause-draft.md) | Draft dealership data-use consent language for future AI training — **not legal advice**, requires attorney review |
 | 18 | [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md) | **Formal sign-off** — documentation complete, all founder decisions resolved, development may begin |
+| — | [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) | **Engineering workflow source of truth** — local setup, verification, Draft PRs, migration safety |
 
-> **Numbering note**: `docs/00-ironsight-constitution.md` is "Document Zero" — the company's foundational document, read before the numbered product/technical sequence begins. Documents `01`–`18` are numbered sequentially in intended reading order. If a new document is added later, it should be appended at the end of the sequence rather than inserted mid-sequence, to avoid another renumbering pass.
+> **Numbering note**: `docs/00-ironsight-constitution.md` is "Document Zero" — the company's foundational document, read before the numbered product/technical sequence begins. Documents `01`–`18` are numbered sequentially in intended reading order. If a new document is added later, it should be appended at the end of the sequence rather than inserted mid-sequence, to avoid another renumbering pass. Unnumbered operational engineering docs (such as `DEVELOPER_WORKFLOW.md`) may sit alongside without renumbering the product set.
 
 ## Non-Goals for V1 (Read Before Proposing Features)
 
@@ -91,4 +111,4 @@ No pricing/valuation output, no AI damage detection, no customer-facing portal, 
 
 ## Next Step
 
-Documentation is complete and all founder decisions are resolved — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md) for the formal sign-off. The next phase is Week 1 implementation per [`docs/13-roadmap.md`](./docs/13-roadmap.md) and [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) Section 16 — Supabase project setup, Flutter scaffold, schema migrations (including the `completion_status`/`sync_status`/`report_status` split, the checklist parent/child hierarchy, and the new schema stubs), and the auth flow. No code has been written yet; beginning implementation requires the founder's explicit go-ahead.
+Continue implementation from [`management/DASHBOARD.md`](./management/DASHBOARD.md) and the active sprint in [`management/AFK_SPRINTS.md`](./management/AFK_SPRINTS.md). Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md).

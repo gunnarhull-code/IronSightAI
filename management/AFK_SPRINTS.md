@@ -18,73 +18,42 @@ Rules:
 
 - No separate sprint status field is required.
 
+- Sprint history is immutable. Do not rename, reuse, replace, reopen, or modify any historical sprint number or completed sprint scope.
+
 ---
 
-# Sprint 002 — Equipment V1 Polish
+# Sprint 009 — Engineering Reliability, CI, and Developer Workflow Baseline
 
 ## Goal
 
-Finish the remaining high-value Equipment polish without changing architecture.
+Establish a dependable engineering-verification baseline so future Draft PRs can be analyzed, tested, manually verified, and reviewed consistently without production access.
 
-## Tasks
+## Immutable scope
 
-- Add a delete confirmation dialog.
+- Audit and correct stale workflow documentation (including false “no application code” claims).
+- Establish one source of truth for local setup and verification (`docs/DEVELOPER_WORKFLOW.md`).
+- Add GitHub Actions CI for PRs targeting `main` (controlled Flutter version, safe `.env` from `.env.example`, format check, analyze, test; no production Supabase, deployments, or automatic migrations).
+- Review test bootstrap for accidental production/network/path/order coupling; add focused regression coverage only where needed.
+- Add/improve the pull-request template with the required sprint verification fields.
+- Document Windows + Brave launch, post-merge sync, and the production migration safety gate.
+- Add lightweight workflow scripts only when they materially reduce mistakes.
 
-- Warn before leaving an equipment form with unsaved changes.
+## Out of scope
 
-- Add Created By.
+- Product features; inspection implementation/schema/persistence; equipment CRUD changes; feature database migrations; production deployments; automatic production migrations; store deployment; release automation; architecture rewrites; new state-management systems; broad dependency upgrades; large test-suite rewrites.
 
-- Add Last Updated By.
+## Independence
 
-- Add Last Updated timestamp.
+Sprint 008 (inspection local foundation) is already merged on `main`. Sprint 009 must not modify inspection-domain implementation, inspection persistence, or inspection schema. Including those files via merge from `main` is expected; changing them for Sprint 009 is out of scope.
 
 ## Acceptance Criteria
 
-- Delete requires explicit confirmation.
-
-- Canceling delete leaves the equipment unchanged.
-
-- Leaving a modified form triggers an unsaved-changes warning.
-
-- Choosing to stay preserves entered values.
-
-- Audit fields display clearly where appropriate.
-
-- Existing equipment workflows continue to work.
-
-- `flutter analyze` passes.
-
-- `flutter test` passes.
-
-## Deliverables
-
-Before reporting completion:
-
-1. Run `flutter analyze`.
-
-2. Run `flutter test`.
-
-3. Launch the app and manually perform the requested workflow when the environment supports it.
-
-4. If manual verification cannot be performed, explain why.
-
-Return:
-
-- Files changed
-
-- Tests added or updated
-
-- `flutter analyze` results
-
-- `flutter test` results
-
-- Manual verification performed / not performed
-
-- Assumptions made
-
-- Any migration created
-
-- Follow-up recommendations directly related to this sprint
+- Developer workflow source of truth is clear and not heavily duplicated.
+- CI fails clearly on format, analyze, test, or missing safe test configuration problems.
+- PR template captures sprint verification fields.
+- Windows/Brave, post-merge sync, and production migration safety gate are documented.
+- `flutter analyze` and `flutter test` pass for this sprint’s changes.
+- Draft PR opened targeting `main`; never merged by the agent.
 
 ## Safety Rules
 

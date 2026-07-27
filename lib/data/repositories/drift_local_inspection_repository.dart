@@ -21,8 +21,8 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     this._db, {
     DateTime Function()? clock,
     String Function()? idGenerator,
-  })  : _clock = clock ?? (() => DateTime.now().toUtc()),
-        _idGenerator = idGenerator ?? const Uuid().v4;
+  }) : _clock = clock ?? (() => DateTime.now().toUtc()),
+       _idGenerator = idGenerator ?? const Uuid().v4;
 
   final AppDatabase _db;
   final DateTime Function() _clock;
@@ -43,14 +43,17 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     final inspectionId = _idGenerator();
 
     await _db.transaction(() async {
-      await _db.into(_db.inspections).insert(
+      await _db
+          .into(_db.inspections)
+          .insert(
             InspectionsCompanion.insert(
               id: inspectionId,
               companyId: companyId,
               equipmentId: equipmentId,
               createdByUserId: createdByUserId,
               updatedByUserId: Value(createdByUserId),
-              completionStatus: InspectionCompletionStatus.inProgress.storageValue,
+              completionStatus:
+                  InspectionCompletionStatus.inProgress.storageValue,
               localLifecycle: InspectionLocalLifecycle.active.storageValue,
               depth: depth.storageValue,
               syncStatus: InspectionSyncStatus.localOnly.storageValue,
@@ -62,7 +65,9 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
           );
 
       for (final category in ScorecardCategory.scorecardOrder) {
-        await _db.into(_db.inspectionCategoryRatings).insert(
+        await _db
+            .into(_db.inspectionCategoryRatings)
+            .insert(
               InspectionCategoryRatingsCompanion.insert(
                 id: _idGenerator(),
                 inspectionId: inspectionId,
@@ -90,13 +95,13 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     _requireNonEmpty(companyId, 'companyId');
     _requireNonEmpty(inspectionId, 'inspectionId');
 
-    final row = await (_db.select(_db.inspections)
-          ..where(
-            (table) =>
-                table.id.equals(inspectionId) &
-                table.companyId.equals(companyId),
-          ))
-        .getSingleOrNull();
+    final row =
+        await (_db.select(_db.inspections)..where(
+              (table) =>
+                  table.id.equals(inspectionId) &
+                  table.companyId.equals(companyId),
+            ))
+            .getSingleOrNull();
     if (row == null) return null;
     return _assemble(row);
   }
@@ -111,16 +116,15 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     final query = _db.select(_db.inspections)
       ..where((table) => table.companyId.equals(companyId))
       ..orderBy([
-        (table) => OrderingTerm(
-              expression: table.updatedAt,
-              mode: OrderingMode.desc,
-            ),
+        (table) =>
+            OrderingTerm(expression: table.updatedAt, mode: OrderingMode.desc),
       ]);
 
     if (!includeDiscarded) {
       query.where(
-        (table) => table.localLifecycle
-            .equals(InspectionLocalLifecycle.active.storageValue),
+        (table) => table.localLifecycle.equals(
+          InspectionLocalLifecycle.active.storageValue,
+        ),
       );
     }
 
@@ -152,43 +156,38 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     InspectionLifecycle.ensureCanMutate(existing);
 
     final now = _clock();
-    await (_db.update(_db.inspections)
-          ..where(
-            (table) =>
-                table.id.equals(inspectionId) &
-                table.companyId.equals(companyId),
-          ))
+    await (_db.update(_db.inspections)..where(
+          (table) =>
+              table.id.equals(inspectionId) & table.companyId.equals(companyId),
+        ))
         .write(
-      InspectionsCompanion(
-        updatedByUserId: updatedByUserId == null
-            ? const Value.absent()
-            : Value(updatedByUserId),
-        depth: depth == null
-            ? const Value.absent()
-            : Value(depth.storageValue),
-        overallNotes: clearOverallNotes
-            ? const Value(null)
-            : (overallNotes == null
+          InspectionsCompanion(
+            updatedByUserId: updatedByUserId == null
                 ? const Value.absent()
-                : Value(overallNotes)),
-        remoteId: clearRemoteId
-            ? const Value(null)
-            : (remoteId == null ? const Value.absent() : Value(remoteId)),
-        syncStatus: syncStatus == null
-            ? const Value.absent()
-            : Value(syncStatus.storageValue),
-        reportStatus: reportStatus == null
-            ? const Value.absent()
-            : Value(reportStatus.storageValue),
-        updatedAt: Value(now),
-        localUpdatedAt: Value(now),
-      ),
-    );
+                : Value(updatedByUserId),
+            depth: depth == null
+                ? const Value.absent()
+                : Value(depth.storageValue),
+            overallNotes: clearOverallNotes
+                ? const Value(null)
+                : (overallNotes == null
+                      ? const Value.absent()
+                      : Value(overallNotes)),
+            remoteId: clearRemoteId
+                ? const Value(null)
+                : (remoteId == null ? const Value.absent() : Value(remoteId)),
+            syncStatus: syncStatus == null
+                ? const Value.absent()
+                : Value(syncStatus.storageValue),
+            reportStatus: reportStatus == null
+                ? const Value.absent()
+                : Value(reportStatus.storageValue),
+            updatedAt: Value(now),
+            localUpdatedAt: Value(now),
+          ),
+        );
 
-    return (await getById(
-      companyId: companyId,
-      inspectionId: inspectionId,
-    ))!;
+    return (await getById(companyId: companyId, inspectionId: inspectionId))!;
   }
 
   @override
@@ -212,17 +211,19 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
 
     final now = _clock();
     await _db.transaction(() async {
-      final current = await (_db.select(_db.inspectionCategoryRatings)
-            ..where(
-              (table) =>
-                  table.inspectionId.equals(inspectionId) &
-                  table.companyId.equals(companyId) &
-                  table.category.equals(category.storageValue),
-            ))
-          .getSingleOrNull();
+      final current =
+          await (_db.select(_db.inspectionCategoryRatings)..where(
+                (table) =>
+                    table.inspectionId.equals(inspectionId) &
+                    table.companyId.equals(companyId) &
+                    table.category.equals(category.storageValue),
+              ))
+              .getSingleOrNull();
 
       if (current == null) {
-        await _db.into(_db.inspectionCategoryRatings).insert(
+        await _db
+            .into(_db.inspectionCategoryRatings)
+            .insert(
               InspectionCategoryRatingsCompanion.insert(
                 id: _idGenerator(),
                 inspectionId: inspectionId,
@@ -233,9 +234,9 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
               ),
             );
       } else {
-        await (_db.update(_db.inspectionCategoryRatings)
-              ..where((table) => table.id.equals(current.id)))
-            .write(
+        await (_db.update(
+          _db.inspectionCategoryRatings,
+        )..where((table) => table.id.equals(current.id))).write(
           InspectionCategoryRatingsCompanion(
             rating: Value(rating.storageValue),
             updatedAt: Value(now),
@@ -243,27 +244,23 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
         );
       }
 
-      await (_db.update(_db.inspections)
-            ..where(
-              (table) =>
-                  table.id.equals(inspectionId) &
-                  table.companyId.equals(companyId),
-            ))
+      await (_db.update(_db.inspections)..where(
+            (table) =>
+                table.id.equals(inspectionId) &
+                table.companyId.equals(companyId),
+          ))
           .write(
-        InspectionsCompanion(
-          updatedByUserId: updatedByUserId == null
-              ? const Value.absent()
-              : Value(updatedByUserId),
-          updatedAt: Value(now),
-          localUpdatedAt: Value(now),
-        ),
-      );
+            InspectionsCompanion(
+              updatedByUserId: updatedByUserId == null
+                  ? const Value.absent()
+                  : Value(updatedByUserId),
+              updatedAt: Value(now),
+              localUpdatedAt: Value(now),
+            ),
+          );
     });
 
-    return (await getById(
-      companyId: companyId,
-      inspectionId: inspectionId,
-    ))!;
+    return (await getById(companyId: companyId, inspectionId: inspectionId))!;
   }
 
   @override
@@ -277,11 +274,7 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     for (final item in response.items) {
       parseConditionRating(item.rating.storageValue);
       if (item.itemKey.trim().isEmpty) {
-        throw ArgumentError.value(
-          item.itemKey,
-          'itemKey',
-          'must not be empty',
-        );
+        throw ArgumentError.value(item.itemKey, 'itemKey', 'must not be empty');
       }
     }
 
@@ -293,17 +286,18 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
 
     final now = _clock();
     await _db.transaction(() async {
-      await (_db.delete(_db.inspectionDetailedResponses)
-            ..where(
-              (table) =>
-                  table.inspectionId.equals(inspectionId) &
-                  table.companyId.equals(companyId) &
-                  table.category.equals(response.category.storageValue),
-            ))
+      await (_db.delete(_db.inspectionDetailedResponses)..where(
+            (table) =>
+                table.inspectionId.equals(inspectionId) &
+                table.companyId.equals(companyId) &
+                table.category.equals(response.category.storageValue),
+          ))
           .go();
 
       for (final item in response.items) {
-        await _db.into(_db.inspectionDetailedResponses).insert(
+        await _db
+            .into(_db.inspectionDetailedResponses)
+            .insert(
               InspectionDetailedResponsesCompanion.insert(
                 id: _idGenerator(),
                 inspectionId: inspectionId,
@@ -320,30 +314,26 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
             );
       }
 
-      await (_db.update(_db.inspections)
-            ..where(
-              (table) =>
-                  table.id.equals(inspectionId) &
-                  table.companyId.equals(companyId),
-            ))
+      await (_db.update(_db.inspections)..where(
+            (table) =>
+                table.id.equals(inspectionId) &
+                table.companyId.equals(companyId),
+          ))
           .write(
-        InspectionsCompanion(
-          updatedByUserId: updatedByUserId == null
-              ? const Value.absent()
-              : Value(updatedByUserId),
-          depth: response.items.isEmpty
-              ? const Value.absent()
-              : Value(InspectionDepth.detailed.storageValue),
-          updatedAt: Value(now),
-          localUpdatedAt: Value(now),
-        ),
-      );
+            InspectionsCompanion(
+              updatedByUserId: updatedByUserId == null
+                  ? const Value.absent()
+                  : Value(updatedByUserId),
+              depth: response.items.isEmpty
+                  ? const Value.absent()
+                  : Value(InspectionDepth.detailed.storageValue),
+              updatedAt: Value(now),
+              localUpdatedAt: Value(now),
+            ),
+          );
     });
 
-    return (await getById(
-      companyId: companyId,
-      inspectionId: inspectionId,
-    ))!;
+    return (await getById(companyId: companyId, inspectionId: inspectionId))!;
   }
 
   @override
@@ -359,28 +349,25 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     InspectionLifecycle.ensureCanDiscard(existing);
 
     final now = _clock();
-    await (_db.update(_db.inspections)
-          ..where(
-            (table) =>
-                table.id.equals(inspectionId) &
-                table.companyId.equals(companyId),
-          ))
+    await (_db.update(_db.inspections)..where(
+          (table) =>
+              table.id.equals(inspectionId) & table.companyId.equals(companyId),
+        ))
         .write(
-      InspectionsCompanion(
-        localLifecycle: Value(InspectionLocalLifecycle.discarded.storageValue),
-        discardedAt: Value(now),
-        updatedByUserId: updatedByUserId == null
-            ? const Value.absent()
-            : Value(updatedByUserId),
-        updatedAt: Value(now),
-        localUpdatedAt: Value(now),
-      ),
-    );
+          InspectionsCompanion(
+            localLifecycle: Value(
+              InspectionLocalLifecycle.discarded.storageValue,
+            ),
+            discardedAt: Value(now),
+            updatedByUserId: updatedByUserId == null
+                ? const Value.absent()
+                : Value(updatedByUserId),
+            updatedAt: Value(now),
+            localUpdatedAt: Value(now),
+          ),
+        );
 
-    return (await getById(
-      companyId: companyId,
-      inspectionId: inspectionId,
-    ))!;
+    return (await getById(companyId: companyId, inspectionId: inspectionId))!;
   }
 
   @override
@@ -396,50 +383,45 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     InspectionLifecycle.ensureCanComplete(existing);
 
     final now = _clock();
-    await (_db.update(_db.inspections)
-          ..where(
-            (table) =>
-                table.id.equals(inspectionId) &
-                table.companyId.equals(companyId),
-          ))
+    await (_db.update(_db.inspections)..where(
+          (table) =>
+              table.id.equals(inspectionId) & table.companyId.equals(companyId),
+        ))
         .write(
-      InspectionsCompanion(
-        completionStatus:
-            Value(InspectionCompletionStatus.completed.storageValue),
-        completedAt: Value(now),
-        updatedByUserId: updatedByUserId == null
-            ? const Value.absent()
-            : Value(updatedByUserId),
-        updatedAt: Value(now),
-        localUpdatedAt: Value(now),
-      ),
-    );
+          InspectionsCompanion(
+            completionStatus: Value(
+              InspectionCompletionStatus.completed.storageValue,
+            ),
+            completedAt: Value(now),
+            updatedByUserId: updatedByUserId == null
+                ? const Value.absent()
+                : Value(updatedByUserId),
+            updatedAt: Value(now),
+            localUpdatedAt: Value(now),
+          ),
+        );
 
-    return (await getById(
-      companyId: companyId,
-      inspectionId: inspectionId,
-    ))!;
+    return (await getById(companyId: companyId, inspectionId: inspectionId))!;
   }
 
   Future<Inspection> _assemble(LocalInspectionRow row) async {
-    final ratingRows = await (_db.select(_db.inspectionCategoryRatings)
-          ..where(
-            (table) =>
-                table.inspectionId.equals(row.id) &
-                table.companyId.equals(row.companyId),
-          ))
-        .get();
+    final ratingRows =
+        await (_db.select(_db.inspectionCategoryRatings)..where(
+              (table) =>
+                  table.inspectionId.equals(row.id) &
+                  table.companyId.equals(row.companyId),
+            ))
+            .get();
 
-    final detailedRows = await (_db.select(_db.inspectionDetailedResponses)
-          ..where(
-            (table) =>
-                table.inspectionId.equals(row.id) &
-                table.companyId.equals(row.companyId),
-          )
-          ..orderBy([
-            (table) => OrderingTerm(expression: table.sortOrder),
-          ]))
-        .get();
+    final detailedRows =
+        await (_db.select(_db.inspectionDetailedResponses)
+              ..where(
+                (table) =>
+                    table.inspectionId.equals(row.id) &
+                    table.companyId.equals(row.companyId),
+              )
+              ..orderBy([(table) => OrderingTerm(expression: table.sortOrder)]))
+            .get();
 
     final ratingsByCategory = {
       for (final ratingRow in ratingRows)
@@ -491,8 +473,9 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
       equipmentId: row.equipmentId,
       createdByUserId: row.createdByUserId,
       updatedByUserId: row.updatedByUserId,
-      completionStatus:
-          InspectionCompletionStatus.fromStorage(row.completionStatus),
+      completionStatus: InspectionCompletionStatus.fromStorage(
+        row.completionStatus,
+      ),
       localLifecycle: InspectionLocalLifecycle.fromStorage(row.localLifecycle),
       depth: InspectionDepth.fromStorage(row.depth),
       syncStatus: InspectionSyncStatus.fromStorage(row.syncStatus),

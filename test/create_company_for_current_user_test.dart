@@ -15,17 +15,20 @@ void main() {
     expect(repository.updateCallCount, 0);
   });
 
-  test('CreateCompanyForCurrentUser trims and defaults country to US', () async {
-    final repository = FakeCompanyRepository();
-    final useCase = CreateCompanyForCurrentUser(repository);
+  test(
+    'CreateCompanyForCurrentUser trims and defaults country to US',
+    () async {
+      final repository = FakeCompanyRepository();
+      final useCase = CreateCompanyForCurrentUser(repository);
 
-    final company = await useCase(name: '  Hull Equipment  ');
+      final company = await useCase(name: '  Hull Equipment  ');
 
-    expect(company.name, 'Hull Equipment');
-    expect(company.region, defaultCompanyCountry);
-    expect(repository.createCallCount, 1);
-    expect(repository.updateCallCount, 1);
-    expect(repository.lastCreatedName, 'Hull Equipment');
-    expect(repository.lastUpdatedRegion, defaultCompanyCountry);
-  });
+      expect(company.name, 'Hull Equipment');
+      expect(company.region, defaultCompanyCountry);
+      expect(repository.createCallCount, 1);
+      expect(repository.updateCallCount, 1);
+      expect(repository.lastCreatedName, 'Hull Equipment');
+      expect(repository.lastUpdatedRegion, defaultCompanyCountry);
+    },
+  );
 }

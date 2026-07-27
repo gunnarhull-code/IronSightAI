@@ -6,9 +6,9 @@ enum InspectionCompletionStatus {
   completed;
 
   String get storageValue => switch (this) {
-        InspectionCompletionStatus.inProgress => 'in_progress',
-        InspectionCompletionStatus.completed => 'completed',
-      };
+    InspectionCompletionStatus.inProgress => 'in_progress',
+    InspectionCompletionStatus.completed => 'completed',
+  };
 
   static InspectionCompletionStatus fromStorage(String value) {
     return switch (value) {
@@ -44,12 +44,12 @@ enum InspectionSyncStatus {
   error;
 
   String get storageValue => switch (this) {
-        InspectionSyncStatus.localOnly => 'local_only',
-        InspectionSyncStatus.pending => 'pending',
-        InspectionSyncStatus.syncing => 'syncing',
-        InspectionSyncStatus.synced => 'synced',
-        InspectionSyncStatus.error => 'error',
-      };
+    InspectionSyncStatus.localOnly => 'local_only',
+    InspectionSyncStatus.pending => 'pending',
+    InspectionSyncStatus.syncing => 'syncing',
+    InspectionSyncStatus.synced => 'synced',
+    InspectionSyncStatus.error => 'error',
+  };
 
   static InspectionSyncStatus fromStorage(String value) {
     return switch (value) {
@@ -70,10 +70,10 @@ enum InspectionReportStatus {
   generated;
 
   String get storageValue => switch (this) {
-        InspectionReportStatus.notGenerated => 'not_generated',
-        InspectionReportStatus.generating => 'generating',
-        InspectionReportStatus.generated => 'generated',
-      };
+    InspectionReportStatus.notGenerated => 'not_generated',
+    InspectionReportStatus.generating => 'generating',
+    InspectionReportStatus.generated => 'generated',
+  };
 
   static InspectionReportStatus fromStorage(String value) {
     return switch (value) {

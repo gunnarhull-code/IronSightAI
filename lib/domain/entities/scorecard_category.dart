@@ -16,16 +16,17 @@ enum ScorecardCategory {
 
   /// Human-readable label for snapshots and future report rendering.
   String get displayLabel => switch (this) {
-        ScorecardCategory.engine => 'Engine',
-        ScorecardCategory.hydraulics => 'Hydraulics',
-        ScorecardCategory.undercarriage => 'Undercarriage',
-        ScorecardCategory.cab => 'Cab',
-        ScorecardCategory.structure => 'Structure',
-        ScorecardCategory.attachments => 'Attachments',
-        ScorecardCategory.cosmetic => 'Cosmetic',
-      };
+    ScorecardCategory.engine => 'Engine',
+    ScorecardCategory.hydraulics => 'Hydraulics',
+    ScorecardCategory.undercarriage => 'Undercarriage',
+    ScorecardCategory.cab => 'Cab',
+    ScorecardCategory.structure => 'Structure',
+    ScorecardCategory.attachments => 'Attachments',
+    ScorecardCategory.cosmetic => 'Cosmetic',
+  };
 
-  static const List<ScorecardCategory> scorecardOrder = ScorecardCategory.values;
+  static const List<ScorecardCategory> scorecardOrder =
+      ScorecardCategory.values;
 
   static ScorecardCategory fromStorage(String value) {
     for (final category in ScorecardCategory.values) {

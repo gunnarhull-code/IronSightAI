@@ -16,6 +16,8 @@
 - ✅ **Documentation frozen** — 2026-07-23. Every supporting document reconciled against the final specification; no known unresolved contradictions remain.
 - ✅ **Implementation Ready** — 2026-07-23. Formal sign-off (`docs/18-implementation-ready-report.md`) confirming the documentation phase is complete and development can begin.
 - ✅ **Operational management system established** — 2026-07-23. This `management/` folder, so the company's operating state is never dependent on any one person's memory.
+- ✅ **Application foundation on main** — 2026-07-25/26. Flutter app with local Supabase, auth, company, and equipment flows landed via merged foundation/polish PRs.
+- ✅ **Engineering verification baseline (Sprint 009)** — 2026-07-26. Single developer-workflow source of truth, PR template, and GitHub Actions format/analyze/test CI for PRs targeting `main` (no production access, no auto-migrations).
 
 ## Upcoming (Placeholders — Fill In When Achieved)
 

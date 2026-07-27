@@ -165,9 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           order: const NumericFocusOrder(4),
                           child: TextButton(
                             onPressed: _isSubmitting ? null : _goToSignUp,
-                            child: const Text(
-                              "Don't have an account? Sign Up",
-                            ),
+                            child: const Text("Don't have an account? Sign Up"),
                           ),
                         ),
                       ],

@@ -638,10 +638,7 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 }
 
 class _AuditInfoCard extends StatelessWidget {
-  const _AuditInfoCard({
-    required this.equipment,
-    required this.companyCountry,
-  });
+  const _AuditInfoCard({required this.equipment, required this.companyCountry});
 
   final Equipment equipment;
   final String? companyCountry;
