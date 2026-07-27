@@ -85,8 +85,8 @@
       "number": 11,
       "title": "Sprint Registry and Status-Consistency Guardrails",
       "status": "active",
-      "pullRequests": [],
-      "notes": "Operational documentation reconciliation, canonical sprint_registry.json, Dart validator, tests, and CI wiring. No product features. Draft PR number will be recorded when opened; nextSprintNumber remains 12 while this sprint is active.",
+      "pullRequests": [13],
+      "notes": "Operational documentation reconciliation, canonical sprint_registry.json, Dart validator, tests, and CI wiring. No product features. Draft PR #13 is open; nextSprintNumber remains 12 while this sprint is active.",
       "replacesOrResumes": null
     }
   ]
