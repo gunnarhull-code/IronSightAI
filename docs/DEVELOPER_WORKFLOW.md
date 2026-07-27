@@ -71,6 +71,8 @@ Or run the lightweight helper (same checks):
 ./scripts/verify.sh
 ```
 
+On Windows, run this helper through Git Bash or WSL. It is not a native PowerShell script. PowerShell users may run the four standard verification commands directly.
+
 Expected outcomes:
 
 - Formatting: no files need changes (command exits 0).
@@ -131,7 +133,7 @@ Your branch is up to date with 'origin/main'.
 nothing to commit, working tree clean
 ```
 
-If your working tree is dirty, stash or discard local changes before continuing.
+If your working tree is dirty, stop and review git status. Preserve all work. Commit intended changes or use git stash when appropriate. Never discard changes unless you have deliberately confirmed they are unnecessary.
 
 ---
 
