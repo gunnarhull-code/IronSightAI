@@ -17,9 +17,116 @@ Rules:
 
 ---
 
+# Sprint 012 — Offline Inspection Workspace and Local Completion Flow
+
+**Status (registry):** `active` (founder-approved parallel batch with Sprint 013). Pull-request evidence stays empty here until both founder merges are reconciled.
+
+## Goal
+
+Build a complete local-first inspection workflow on the Sprint 008 Drift foundation: tenant-scoped offline context, local equipment catalog, inspection list/capture/review/complete UI, and honest local-only status — without remote sync, media, OCR, or AI.
+
+## Immutable scope
+
+- Platform-safe application composition for the existing Drift inspection repository.
+- Preserve SQLCipher-compatible encryption on supported mobile platforms.
+- Persist tenant-scoped local company/user context needed for offline inspections.
+- Prevent cached data from leaking between users or companies.
+- Add a tenant-scoped local equipment catalog for inspection selection.
+- Refresh equipment from the existing remote repository when connectivity is available.
+- Inspection selection and capture must read locally and never wait for the network.
+- Handle account/company changes safely.
+- Add inspection routes and inject repositories from the composition root.
+- Replace dashboard inspection placeholders with functional navigation.
+- Enable Start Quick Appraisal.
+- Add a company-scoped inspection list.
+- Include loading, empty, populated, completed, draft, and recoverable error states.
+- Start a draft from locally available equipment.
+- Reopen active drafts.
+- Address duplicate active drafts with an explicit Resume/Create Another decision or a safer documented rule.
+- Render all existing scorecard categories in their established order.
+- Provide large Good/Fair/Poor controls suitable for one-handed field use.
+- Persist every rating immediately.
+- Allow optional Detailed Inspection expansion per category using the existing domain model.
+- Detailed inspection must remain optional and must not slow the default Quick Appraisal path.
+- Persist detailed responses immediately.
+- Add optional overall notes.
+- Add a review screen showing equipment, category ratings, detailed responses, notes, and incomplete categories.
+- Complete inspections locally and offline through existing lifecycle rules.
+- Require confirmation before discarding an incomplete draft.
+- Preserve completed/discarded mutation protections.
+- Show honest local-only status; never imply synchronization occurred.
+- Preserve drafts and completed inspections across app restart.
+- Support Brave founder QA where practical without weakening mobile encryption.
+
+## Out of scope
+
+- Supabase inspection tables; SQL migrations; remote inspection synchronization; outbox processing; media upload; PDF/report generation; walkaround video; OCR or camera capture; AI; valuation; billing; team administration; production access; videos.
+- Sprint 013 on-device equipment identification capture (serial/hour OCR, camera permissions, reusable capture module).
+
+## Acceptance Criteria
+
+- Local-first inspection list, start/resume draft, quick scorecard, optional detailed expansion, notes, review, complete, and discard confirmation work offline against Drift.
+- Presentation/domain code does not import Drift or Supabase; widgets depend on repository/service interfaces.
+- Tenant isolation covers local context and equipment cache; account/company switches do not leak cached data.
+- Registry keeps Sprints 012 and 013 `active` with empty `pullRequests` until founder merge reconciliation; `nextSprintNumber` = 14.
+- `dart format`, `dart run tool/verify_sprint_registry.dart`, `flutter analyze`, and `flutter test` pass.
+- Draft PR opened targeting `main`; never merged by the agent.
+
+## Safety Rules
+
+- Do not modify unrelated features.
+- Do not refactor auth/company/equipment architecture beyond narrow composition wiring.
+- Do not invent additional backlog items.
+- Use local Supabase by default.
+- Never connect to production.
+- Use hosted `agent-sandbox` only when explicitly required.
+- Stop if safe offline equipment/company context requires a major architecture rewrite.
+- Do not merge to `main`.
+
+---
+
+# Sprint 013 — On-Device Equipment Identification Capture
+
+**Status (registry):** `active` (founder-approved parallel batch with Sprint 012). Pull-request evidence stays empty here until both founder merges are reconciled.
+
+## Goal
+
+Add on-device serial-number and hour-meter capture with OCR candidate confirmation, manual fallback, and reusable camera/OCR failure handling — without implementing Sprint 012 inspection workspace flows.
+
+## Immutable scope
+
+- On-device serial-number OCR.
+- On-device hour-meter OCR.
+- Candidate confirmation.
+- Manual capture fallback.
+- Camera/OCR permission and failure states.
+- Reusable capture module.
+
+## Out of scope
+
+- Sprint 012 offline inspection workspace / local completion flow.
+- Remote inspection sync; SQL migrations for inspections; media upload pipelines beyond capture needs; AI valuation; production access; videos as sprint deliverables beyond capture UX verification when required.
+
+## Acceptance Criteria
+
+- Serial and hour-meter capture support OCR candidates plus manual fallback with honest permission/failure states.
+- Capture module is reusable and does not own inspection lifecycle completion rules.
+- Registry keeps Sprints 012 and 013 `active` with empty `pullRequests` until founder merge reconciliation; `nextSprintNumber` = 14.
+- Draft PR opened targeting `main`; never merged by the agent.
+
+## Safety Rules
+
+- Do not implement Sprint 012 scope.
+- Do not modify unrelated features.
+- Use local Supabase by default.
+- Never connect to production.
+- Do not merge to `main`.
+
+---
+
 # Sprint 011 — Sprint Registry and Status-Consistency Guardrails
 
-**Status (registry):** `completed` through **PR #13**. `nextSprintNumber` = **12** (next assignable sprint may be **012**). No immediate post-merge reconciliation PR is required once PR #13 merges.
+**Status (registry):** `completed` through **PR #13**. Historical note: when Sprint 011 completed, `nextSprintNumber` was **12**. The founder-approved 012/013 parallel batch later advanced `nextSprintNumber` to **14**.
 
 ## Goal
 

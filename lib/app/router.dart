@@ -8,6 +8,11 @@ import '../features/company/presentation/company_settings_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/equipment/presentation/equipment_form_screen.dart';
 import '../features/equipment/presentation/equipment_list_screen.dart';
+import '../features/inspection/presentation/inspection_equipment_select_screen.dart';
+import '../features/inspection/presentation/inspection_list_screen.dart';
+import '../features/inspection/presentation/inspection_review_screen.dart';
+import '../features/inspection/presentation/inspection_workspace_screen.dart';
+import 'inspection_session.dart';
 
 /// Named route identifiers for the app.
 ///
@@ -22,8 +27,12 @@ abstract final class AppRoutes {
   static const String dashboard = '/dashboard';
   static const String equipmentList = '/equipment';
   static const String equipmentNew = '/equipment/new';
+  static const String inspections = '/inspections';
+  static const String inspectionNew = '/inspections/new';
 
   static const String _equipmentEditPrefix = '/equipment/edit/';
+  static const String _inspectionWorkspacePrefix = '/inspections/workspace/';
+  static const String _inspectionReviewPrefix = '/inspections/review/';
 
   /// Builds the route name for editing a specific equipment record.
   ///
@@ -33,9 +42,20 @@ abstract final class AppRoutes {
   /// package.
   static String equipmentEdit(String id) => '$_equipmentEditPrefix$id';
 
+  static String inspectionWorkspace(String id) =>
+      '$_inspectionWorkspacePrefix$id';
+
+  static String inspectionReview(String id) => '$_inspectionReviewPrefix$id';
+
   static String? _equipmentIdFromRoute(String name) {
     if (!name.startsWith(_equipmentEditPrefix)) return null;
     final id = name.substring(_equipmentEditPrefix.length);
+    return id.isEmpty ? null : id;
+  }
+
+  static String? _inspectionIdFromPrefix(String name, String prefix) {
+    if (!name.startsWith(prefix)) return null;
+    final id = name.substring(prefix.length);
     return id.isEmpty ? null : id;
   }
 }
@@ -59,6 +79,7 @@ Route<dynamic>? buildAppRoute(
   RouteSettings settings, {
   required CompanyRepository companyRepository,
   required EquipmentRepository equipmentRepository,
+  InspectionSession? inspectionSession,
 }) {
   final name = settings.name;
   if (name == null) return null;
@@ -102,6 +123,67 @@ Route<dynamic>? buildAppRoute(
         equipmentId: editId,
       ),
     );
+  }
+
+  final session = inspectionSession;
+  if (session != null) {
+    if (name == AppRoutes.inspections) {
+      return MaterialPageRoute<void>(
+        settings: settings,
+        builder: (context) => InspectionListScreen(
+          companyId: session.companyId,
+          userId: session.userId,
+          inspections: session.workspace.inspections,
+          equipmentCatalog: session.workspace.equipmentCatalog,
+        ),
+      );
+    }
+
+    if (name == AppRoutes.inspectionNew) {
+      return MaterialPageRoute<bool?>(
+        settings: settings,
+        builder: (context) => InspectionEquipmentSelectScreen(
+          companyId: session.companyId,
+          userId: session.userId,
+          inspections: session.workspace.inspections,
+          equipmentCatalog: session.workspace.equipmentCatalog,
+        ),
+      );
+    }
+
+    final workspaceId = AppRoutes._inspectionIdFromPrefix(
+      name,
+      AppRoutes._inspectionWorkspacePrefix,
+    );
+    if (workspaceId != null) {
+      return MaterialPageRoute<bool?>(
+        settings: settings,
+        builder: (context) => InspectionWorkspaceScreen(
+          companyId: session.companyId,
+          userId: session.userId,
+          inspectionId: workspaceId,
+          inspections: session.workspace.inspections,
+          equipmentCatalog: session.workspace.equipmentCatalog,
+        ),
+      );
+    }
+
+    final reviewId = AppRoutes._inspectionIdFromPrefix(
+      name,
+      AppRoutes._inspectionReviewPrefix,
+    );
+    if (reviewId != null) {
+      return MaterialPageRoute<bool?>(
+        settings: settings,
+        builder: (context) => InspectionReviewScreen(
+          companyId: session.companyId,
+          userId: session.userId,
+          inspectionId: reviewId,
+          inspections: session.workspace.inspections,
+          equipmentCatalog: session.workspace.equipmentCatalog,
+        ),
+      );
+    }
   }
 
   return null;
