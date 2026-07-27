@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
@@ -364,6 +365,12 @@ void main() {
 
   group('persistence after database reconstruction', () {
     test('tenant context, equipment, and inspections survive reopen', () async {
+      // Avoid dual AppDatabase wrappers over one file during sequential reopen.
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      addTearDown(() {
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+      });
+
       final directory = await Directory.systemTemp.createTemp('ironsight_ws_');
       addTearDown(() async {
         await directory.delete(recursive: true);
@@ -486,7 +493,6 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Engine'), findsOneWidget);
-      expect(find.text('Cosmetic'), findsOneWidget);
       expect(find.byType(ConditionRatingControls), findsWidgets);
 
       await tester.tap(find.text('Good').first);
@@ -498,6 +504,18 @@ void main() {
       );
       expect(saved!.ratingFor(ScorecardCategory.engine), ConditionRating.good);
 
+      await tester.scrollUntilVisible(
+        find.text('Cosmetic'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Cosmetic'), findsOneWidget);
+
+      await tester.scrollUntilVisible(
+        find.byType(TextField),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.enterText(find.byType(TextField), 'Walkaround notes');
       await tester.tap(find.text('Save notes'));
       await tester.pumpAndSettle();
@@ -534,8 +552,18 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.textContaining('Incomplete:'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.textContaining('Incomplete:'), findsOneWidget);
 
+      await tester.scrollUntilVisible(
+        find.text('Complete locally'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.text('Complete locally'));
       await tester.pumpAndSettle();
       expect(find.text('Incomplete categories'), findsOneWidget);

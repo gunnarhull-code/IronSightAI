@@ -58,9 +58,10 @@ class DriftLocalTenantContextRepository
           ),
         );
 
-    final companyChanged = previous == null || previous.companyId != companyId;
-    final userChanged = previous == null || previous.userId != userId;
-    if (companyChanged || userChanged) {
+    final switchedTenant =
+        previous != null &&
+        (previous.companyId != companyId || previous.userId != userId);
+    if (switchedTenant) {
       // Drop other tenants' cached equipment so selection never mixes catalogs.
       await _equipmentCatalog.clearAllExceptCompany(companyId);
     }

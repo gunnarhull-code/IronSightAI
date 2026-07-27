@@ -15,12 +15,16 @@ class InspectionEquipmentSelectScreen extends StatefulWidget {
     required this.userId,
     required this.inspections,
     required this.equipmentCatalog,
+    this.refreshCatalog,
   });
 
   final String companyId;
   final String userId;
   final LocalInspectionRepository inspections;
   final LocalEquipmentCatalogRepository equipmentCatalog;
+
+  /// Optional best-effort remote refresh. Never required for offline selection.
+  final Future<bool> Function(String companyId)? refreshCatalog;
 
   @override
   State<InspectionEquipmentSelectScreen> createState() =>
@@ -32,17 +36,38 @@ class _InspectionEquipmentSelectScreenState
   late final FindActiveDraftsForEquipment _findDrafts;
   late Future<List<Equipment>> _future;
   bool _starting = false;
+  bool _refreshing = false;
+  String? _refreshMessage;
 
   @override
   void initState() {
     super.initState();
     _findDrafts = FindActiveDraftsForEquipment(widget.inspections);
-    _future = widget.equipmentCatalog.listForCompany(widget.companyId);
+    _future = _loadLocalCatalog(refreshRemote: true);
   }
 
-  void _reload() {
+  Future<List<Equipment>> _loadLocalCatalog({
+    bool refreshRemote = false,
+  }) async {
+    if (refreshRemote && widget.refreshCatalog != null) {
+      final ok = await widget.refreshCatalog!(widget.companyId);
+      if (mounted) {
+        setState(() {
+          _refreshing = false;
+          _refreshMessage = ok
+              ? null
+              : 'Could not refresh from network. Showing local cache only.';
+        });
+      }
+    }
+    return widget.equipmentCatalog.listForCompany(widget.companyId);
+  }
+
+  void _reload({bool refreshRemote = false}) {
     setState(() {
-      _future = widget.equipmentCatalog.listForCompany(widget.companyId);
+      _refreshing = refreshRemote;
+      _refreshMessage = null;
+      _future = _loadLocalCatalog(refreshRemote: refreshRemote);
     });
   }
 
@@ -136,11 +161,22 @@ class _InspectionEquipmentSelectScreenState
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
+          if (_refreshMessage != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+              child: Text(
+                _refreshMessage!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+            ),
           Expanded(
             child: FutureBuilder<List<Equipment>>(
               future: _future,
               builder: (context, snapshot) {
-                if (snapshot.connectionState != ConnectionState.done) {
+                if (snapshot.connectionState != ConnectionState.done ||
+                    _refreshing) {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
@@ -156,7 +192,7 @@ class _InspectionEquipmentSelectScreenState
                           ),
                           const SizedBox(height: 12),
                           FilledButton(
-                            onPressed: _reload,
+                            onPressed: () => _reload(),
                             child: const Text('Retry'),
                           ),
                         ],
@@ -184,8 +220,8 @@ class _InspectionEquipmentSelectScreenState
                           ),
                           const SizedBox(height: 12),
                           FilledButton(
-                            onPressed: _reload,
-                            child: const Text('Reload local catalog'),
+                            onPressed: () => _reload(refreshRemote: true),
+                            child: const Text('Refresh catalog'),
                           ),
                         ],
                       ),

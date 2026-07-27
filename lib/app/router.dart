@@ -147,6 +147,8 @@ Route<dynamic>? buildAppRoute(
           userId: session.userId,
           inspections: session.workspace.inspections,
           equipmentCatalog: session.workspace.equipmentCatalog,
+          refreshCatalog:
+              session.workspace.catalogRefresh.refreshCompanyCatalog,
         ),
       );
     }
