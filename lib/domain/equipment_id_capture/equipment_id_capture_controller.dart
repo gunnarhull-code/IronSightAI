@@ -142,10 +142,10 @@ class EquipmentIdCaptureController {
 
   /// Updates the always-visible manual field. Clears confirmation.
   void updateManualEntry(String value) {
-    final matchesSelected = _state.selectedCandidateId != null &&
+    final matchesSelected =
+        _state.selectedCandidateId != null &&
         _state.candidates.any(
-          (c) =>
-              c.id == _state.selectedCandidateId && c.displayValue == value,
+          (c) => c.id == _state.selectedCandidateId && c.displayValue == value,
         );
 
     _emit(
@@ -192,7 +192,8 @@ class EquipmentIdCaptureController {
   bool confirm() {
     if (!_state.canConfirm) return false;
 
-    final method = _state.selectedCandidateId != null &&
+    final method =
+        _state.selectedCandidateId != null &&
             _state.candidates.any(
               (c) =>
                   c.id == _state.selectedCandidateId &&

@@ -1,5 +1,2 @@
 /// What the capture module is trying to identify.
-enum EquipmentIdCaptureKind {
-  serialNumber,
-  hourMeter,
-}
+enum EquipmentIdCaptureKind { serialNumber, hourMeter }

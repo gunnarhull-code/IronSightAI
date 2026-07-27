@@ -210,8 +210,7 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
               focusNode: _manualFocus,
               enabled: !_busy,
               textInputAction: TextInputAction.done,
-              keyboardType:
-                  state.kind == EquipmentIdCaptureKind.hourMeter
+              keyboardType: state.kind == EquipmentIdCaptureKind.hourMeter
                   ? const TextInputType.numberWithOptions(decimal: true)
                   : TextInputType.visiblePassword,
               autofillHints: const [],
@@ -280,10 +279,7 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
                   onPressed: state.canConfirm && !_busy
                       ? () => widget.controller.confirm()
                       : null,
-                  child: const Text(
-                    'Confirm',
-                    style: TextStyle(fontSize: 18),
-                  ),
+                  child: const Text('Confirm', style: TextStyle(fontSize: 18)),
                 ),
               ),
             ),

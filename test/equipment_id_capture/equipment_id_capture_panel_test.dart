@@ -59,7 +59,10 @@ void main() {
       find.text(EquipmentIdCaptureLabels.unsupportedPlatformBanner),
       findsOneWidget,
     );
-    expect(find.textContaining('Manual entry is always available'), findsOneWidget);
+    expect(
+      find.textContaining('Manual entry is always available'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('manual entry, candidate selection, and confirmation UX', (
@@ -79,10 +82,7 @@ void main() {
     );
     await pumpPanel(tester, controller: controller);
 
-    await tester.enterText(
-      find.byType(TextFormField),
-      'TYPED-BEFORE-SCAN',
-    );
+    await tester.enterText(find.byType(TextFormField), 'TYPED-BEFORE-SCAN');
     await tester.pump();
     expect(controller.state.draftValue, 'TYPED-BEFORE-SCAN');
 

@@ -54,10 +54,7 @@ class UnsupportedCameraPermission implements CameraPermissionPort {
 /// Image capture driven by an injected UI callback (keeps `camera` out of
 /// domain / general widgets).
 class CallbackImageCapture implements ImageCapturePort {
-  CallbackImageCapture({
-    required this.capture,
-    this.isSupported = true,
-  });
+  CallbackImageCapture({required this.capture, this.isSupported = true});
 
   final Future<CapturedImage> Function() capture;
 

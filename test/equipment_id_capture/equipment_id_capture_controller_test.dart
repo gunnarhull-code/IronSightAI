@@ -41,7 +41,10 @@ void main() {
     await controller.captureAndRecognize();
     expect(controller.state.candidates, hasLength(2));
     controller.selectCandidate(controller.state.candidates.first.id);
-    expect(controller.state.phase, EquipmentIdCapturePhase.awaitingConfirmation);
+    expect(
+      controller.state.phase,
+      EquipmentIdCapturePhase.awaitingConfirmation,
+    );
     expect(controller.state.isConfirmed, isFalse);
     expect(controller.state.confirmed, isNull);
     expect(controller.state.draftValue, 'AAA111');
@@ -53,7 +56,10 @@ void main() {
     controller.selectCandidate(controller.state.candidates.single.id);
     expect(controller.confirm(), isTrue);
     expect(controller.state.isConfirmed, isTrue);
-    expect(controller.state.confirmed!.method, EquipmentIdCaptureMethod.ocrConfirmed);
+    expect(
+      controller.state.confirmed!.method,
+      EquipmentIdCaptureMethod.ocrConfirmed,
+    );
     expect(controller.state.confirmed!.value, 'CAT-001');
   });
 

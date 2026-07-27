@@ -29,8 +29,7 @@ class MlKitTextRecognitionAdapter implements TextRecognitionPort {
       for (final block in recognized.blocks)
         RecognizedTextBlock(rawText: block.text),
       for (final block in recognized.blocks)
-        for (final line in block.lines)
-          RecognizedTextBlock(rawText: line.text),
+        for (final line in block.lines) RecognizedTextBlock(rawText: line.text),
     ];
   }
 

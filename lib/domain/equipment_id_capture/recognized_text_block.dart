@@ -2,10 +2,7 @@
 ///
 /// Must not carry ML Kit / camera package types into domain entities.
 class RecognizedTextBlock {
-  const RecognizedTextBlock({
-    required this.rawText,
-    this.confidence,
-  });
+  const RecognizedTextBlock({required this.rawText, this.confidence});
 
   final String rawText;
 

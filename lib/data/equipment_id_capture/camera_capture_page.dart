@@ -197,9 +197,7 @@ class NavigatorCameraImageCapture implements ImageCapturePort {
       );
     }
     final result = await nav.push<CapturedImage>(
-      MaterialPageRoute(
-        builder: (_) => CameraCapturePage(title: pageTitle),
-      ),
+      MaterialPageRoute(builder: (_) => CameraCapturePage(title: pageTitle)),
     );
     if (result == null) {
       throw EquipmentIdCaptureException(

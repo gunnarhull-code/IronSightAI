@@ -15,9 +15,7 @@ class SerialNormalizer {
   );
 
   /// Zero-width / BOM noise that OCR sometimes injects.
-  static final RegExp _zeroWidth = RegExp(
-    r'[\u200B-\u200D\uFEFF\u2060]',
-  );
+  static final RegExp _zeroWidth = RegExp(r'[\u200B-\u200D\uFEFF\u2060]');
 
   String normalize(String input) {
     var text = input.replaceAll(_zeroWidth, '');
