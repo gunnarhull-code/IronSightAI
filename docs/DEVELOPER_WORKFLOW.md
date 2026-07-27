@@ -61,6 +61,7 @@ From the repo root:
 ```bash
 flutter pub get
 dart format --output=none --set-exit-if-changed .
+dart run tool/verify_sprint_registry.dart
 flutter analyze
 flutter test
 ```
@@ -71,15 +72,63 @@ Or run the lightweight helper (same checks):
 ./scripts/verify.sh
 ```
 
-On Windows, run this helper through Git Bash or WSL. It is not a native PowerShell script. PowerShell users may run the four standard verification commands directly.
+On Windows, run this helper through Git Bash or WSL. It is not a native PowerShell script. PowerShell users may run the standard verification commands directly.
 
 Expected outcomes:
 
 - Formatting: no files need changes (command exits 0).
+- Sprint registry: `management/sprint_registry.json` validates (command exits 0).
 - Analyze: no issues (or only an explicitly understood missing-`.env` asset warning if `.env` was not created).
 - Tests: all tests pass.
 
 GitHub Actions runs these same checks on pull requests targeting `main`. CI creates `.env` from `.env.example` only — it never uses production secrets, never deploys, and never applies migrations.
+
+**Live PR and CI status belongs to GitHub.** Repository docs may link to PRs/Actions but must not pretend to be a live unchecked task list for open PR merge state.
+
+---
+
+## Sprint registry (canonical numbers & lifecycle)
+
+Canonical file: [`management/sprint_registry.json`](../management/sprint_registry.json).
+
+Schema (parsed with Dart `dart:convert` only):
+
+| Field | Meaning |
+|---|---|
+| `schemaVersion` | Integer schema version (currently `1`) |
+| `nextSprintNumber` | Next unused sprint number; must be greater than every recorded sprint number |
+| `sprints` | Array of sprint records |
+
+Each sprint record supports: `number`, `title`, `status`, `pullRequests`, `mergeCommit` (when verified), `notes`, and `replacesOrResumes` when applicable.
+
+Allowed `status` values: `planned`, `active`, `blocked`, `deferred`, `completed`, `cancelled`.
+
+Completed sprints require verified completion evidence: one or more `pullRequests` and/or a `mergeCommit`. A completed sprint may use its merged PR number alone as completion evidence when the merge commit SHA was not known while preparing the PR (`mergeCommit` may be omitted).
+
+Validate any time (read-only; never rewrites the file):
+
+```bash
+dart run tool/verify_sprint_registry.dart
+```
+
+Multiple sprints may be `active` at once when numbers are unique and scopes do not overlap. Deferred/blocked numbers cannot be reused. Historical identities for Sprint 003 (deferred), Sprint 009 (Engineering Reliability/CI), and Sprint 010 (Node.js 24 checkout compatibility) are enforced by the validator.
+
+---
+
+## Pre-Sprint Status Gate (mandatory before assigning a new sprint)
+
+Before a new sprint number is assigned:
+
+1. Local `main` must be clean (`git status` shows nothing to commit).
+2. Local `main` must match `origin/main` (`git pull origin main` / up to date).
+3. `management/sprint_registry.json` must validate via `dart run tool/verify_sprint_registry.dart`.
+4. The proposed sprint number must equal `nextSprintNumber`.
+5. Deferred/blocked numbers cannot be reused (including Sprint 003).
+6. Existing active sprint scopes must be checked for file/scope overlap.
+7. The registry must be updated in the new sprint’s Draft PR (add/update the sprint record, advance `nextSprintNumber`). Prefer preparing the registry’s **final post-merge state** in that same PR when practical (for example mark the sprint `completed` with its PR number as completion evidence when the merge commit is not yet known), so an immediate follow-up reconciliation PR is unnecessary.
+8. If verified history or numbering is contradictory or ambiguous, **stop** — do not guess.
+
+Agents never merge to `main`. The founder performs every merge. Never push documentation commits directly to `main`; land registry/doc updates through a Draft PR.
 
 ---
 
@@ -117,21 +166,24 @@ Notes:
 
 ## Post-merge synchronization
 
-After a PR is merged, sync your local machine:
+After every successful merge (founder merges on GitHub), sync local `main` and validate the registry before assigning another sprint:
 
 ```bash
 git checkout main
 git pull origin main
 git status
+dart run tool/verify_sprint_registry.dart
 ```
 
-Expected result:
+Expected `git status` result:
 
 ```text
 On branch main
 Your branch is up to date with 'origin/main'.
 nothing to commit, working tree clean
 ```
+
+If the merged sprint’s Draft PR already recorded final registry state (`completed` with PR completion evidence, `nextSprintNumber` advanced correctly), **no immediate follow-up reconciliation PR is required**. Open a follow-up Draft PR only when the registry still contradicts verified history after merge. Never push documentation commits directly to `main`.
 
 If your working tree is dirty, stop and review git status. Preserve all work. Commit intended changes or use git stash when appropriate. Never discard changes unless you have deliberately confirmed they are unnecessary.
 
@@ -172,5 +224,6 @@ If your working tree is dirty, stop and review git status. Preserve all work. Co
 
 - Product / architecture authority: `docs/00-ironsight-constitution.md`, `docs/15-final-product-specification.md`
 - Day-to-day operational status: `management/DASHBOARD.md`
-- Active AFK sprint rules: `management/AFK_SPRINTS.md`
+- Canonical sprint numbers / lifecycle: `management/sprint_registry.json`
+- Active AFK sprint scope notes: `management/AFK_SPRINTS.md`
 - Agent safety rules: `AGENTS.md`
