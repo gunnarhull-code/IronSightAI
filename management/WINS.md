@@ -17,7 +17,9 @@
 - ✅ **Implementation Ready** — 2026-07-23. Formal sign-off (`docs/18-implementation-ready-report.md`) confirming the documentation phase is complete and development can begin.
 - ✅ **Operational management system established** — 2026-07-23. This `management/` folder, so the company's operating state is never dependent on any one person's memory.
 - ✅ **Application foundation on main** — 2026-07-25/26. Flutter app with local Supabase, auth, company, and equipment flows landed via merged foundation/polish PRs.
-- ✅ **Engineering verification baseline (Sprint 009)** — 2026-07-26. Single developer-workflow source of truth, PR template, and GitHub Actions format/analyze/test CI for PRs targeting `main` (no production access, no auto-migrations).
+- ✅ **Inspection local foundation (Sprint 008)** — 2026-07-26. Inspection domain model and local-first Drift/SQLite persistence foundation merged through PR #9 lineage (no inspection list UI in that sprint).
+- ✅ **Engineering verification baseline (Sprint 009)** — 2026-07-26/27. Single developer-workflow source of truth, PR template, and GitHub Actions format/analyze/test CI for PRs targeting `main` (no production access, no auto-migrations). Merged through PR #7.
+- ✅ **Node.js 24 / actions/checkout compatibility (Sprint 010)** — 2026-07-27. CI checkout upgraded to `actions/checkout@v6` with `persist-credentials: false`. Merged through PR #12.
 
 ## Upcoming (Placeholders — Fill In When Achieved)
 

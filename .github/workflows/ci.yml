@@ -48,6 +48,9 @@ jobs:
       - name: Verify formatting
         run: dart format --output=none --set-exit-if-changed .
 
+      - name: Verify sprint registry
+        run: dart run tool/verify_sprint_registry.dart
+
       - name: Analyze
         run: flutter analyze
 

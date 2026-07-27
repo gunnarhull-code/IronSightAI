@@ -62,7 +62,23 @@ Every completed task must end with:
 
 This is a **Flutter (Dart) mobile-first app** for equipment dealerships ("IronSight AI — WIW") with a **Supabase** backend (Postgres + Auth). It is a thin client that talks directly to Supabase via PostgREST/GoTrue; there is no custom server.
 
-**Local setup, verification commands, Windows/Brave launch, Draft PR prep, post-merge sync, and production migration safety are documented only in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md).** Follow that document; do not invent alternate workflows.
+**Local setup, verification commands, Windows/Brave launch, Draft PR prep, Pre-Sprint Status Gate, post-merge sync, and production migration safety are documented only in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md).** Follow that document; do not invent alternate workflows.
+
+### Pre-Sprint Status Gate (mandatory)
+
+Before a new sprint is assigned:
+
+- Local `main` must be clean and match `origin/main`.
+- `management/sprint_registry.json` must validate (`dart run tool/verify_sprint_registry.dart`).
+- The proposed number must equal `nextSprintNumber`.
+- Deferred/blocked numbers cannot be reused (Sprint 003 remains deferred/archived forever).
+- Existing active sprint scopes must be checked for overlap (multiple active sprints are allowed only with unique numbers and independent scopes).
+- The registry must be updated in the new sprint’s Draft PR.
+- Contradictions or unverifiable history require stopping rather than guessing.
+
+After every successful founder merge: switch to `main`, pull `origin/main`, check `git status`, run the sprint-registry validator, and reconcile merged status before assigning another sprint. Never push documentation commits directly to `main`. Agents never merge to `main`.
+
+Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json). Live PR/CI status belongs to GitHub.
 
 ### Toolchain (pre-installed in the environment snapshot)
 
@@ -78,7 +94,7 @@ Unit/widget tests use in-repo fakes under `test/support/` and do **not** need Su
 
 ### Lint / test / run (summary)
 
-- Prefer `./scripts/verify.sh`, or the commands listed in `docs/DEVELOPER_WORKFLOW.md`.
+- Prefer `./scripts/verify.sh`, or the commands listed in `docs/DEVELOPER_WORKFLOW.md` (includes `dart run tool/verify_sprint_registry.dart`).
 - Dev web: `flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080`.
 
 ### Notes / gotchas
