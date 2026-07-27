@@ -19,6 +19,8 @@ Rules:
 
 # Sprint 011 — Sprint Registry and Status-Consistency Guardrails
 
+**Status (registry):** `completed` through **PR #13**. `nextSprintNumber` = **12** (next assignable sprint may be **012**). No immediate post-merge reconciliation PR is required once PR #13 merges.
+
 ## Goal
 
 Correct stale operational documentation and establish one machine-readable sprint registry plus automated validation so sprint numbers cannot be silently reused or contradicted again. This sprint must not add product features.
@@ -29,7 +31,7 @@ Correct stale operational documentation and establish one machine-readable sprin
 - Add canonical `management/sprint_registry.json`.
 - Add read-only Dart validator `tool/verify_sprint_registry.dart` (+ testable validation library) and focused tests.
 - Wire the validator into `.github/workflows/ci.yml` without redesigning CI.
-- Document a mandatory Pre-Sprint Status Gate and post-merge reconciliation in `docs/DEVELOPER_WORKFLOW.md` / `AGENTS.md`.
+- Document a mandatory Pre-Sprint Status Gate and post-merge sync in `docs/DEVELOPER_WORKFLOW.md` / `AGENTS.md`.
 - Narrowly update `.github/PULL_REQUEST_TEMPLATE.md` with registry checklist fields.
 
 ## Out of scope
@@ -42,14 +44,14 @@ Correct stale operational documentation and establish one machine-readable sprin
 - Sprint 008 is Inspection Local Foundation (merged through PR #9 lineage).
 - Sprint 009 is Engineering Reliability, CI, and Developer Workflow Baseline (merged through PR #7) — never rename it “Inspection List Foundation.”
 - Sprint 010 is Node.js 24 / actions/checkout compatibility (merged through PR #12).
-- Do not assign a product sprint after Sprint 011 in this PR.
+- Do not invent or assign product Sprint 012 scope in this PR; after merge, Sprint 012 may be assigned via the Pre-Sprint Status Gate.
 
 ## Acceptance Criteria
 
-- `management/sprint_registry.json` validates and records Sprint 011 as `active` with `nextSprintNumber` = 12.
-- Validator rejects duplicate numbers, unsupported statuses, invalid `nextSprintNumber`, missing/reassigned Sprint 003, Sprint 009/010 identity reassignment, contradictory PR ownership, and empty titles; allows multiple active sprints.
+- `management/sprint_registry.json` validates and records Sprint 011 as `completed` through PR #13 with `nextSprintNumber` = 12 (`mergeCommit` may be absent when unknown at PR time).
+- Validator rejects duplicate numbers, unsupported statuses, invalid `nextSprintNumber`, missing/reassigned Sprint 003, Sprint 009/010 identity reassignment, contradictory PR ownership, empty titles, and completed sprints lacking all completion evidence; allows multiple active sprints; accepts PR-number-only completion evidence.
 - CI runs the registry validator on PRs to `main`.
-- Operational docs no longer instruct anyone to merge already-merged Sprint 009/010 work as unchecked long-lived tasks.
+- Operational docs no longer instruct anyone to merge already-merged Sprint 009/010 work as unchecked long-lived tasks, and do not require an immediate Sprint 011 reconciliation PR after PR #13 merges.
 - `dart format`, `dart run tool/verify_sprint_registry.dart`, `flutter analyze`, and `flutter test` pass.
 - Draft PR opened targeting `main`; never merged by the agent.
 

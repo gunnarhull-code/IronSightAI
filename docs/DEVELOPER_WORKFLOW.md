@@ -103,6 +103,8 @@ Each sprint record supports: `number`, `title`, `status`, `pullRequests`, `merge
 
 Allowed `status` values: `planned`, `active`, `blocked`, `deferred`, `completed`, `cancelled`.
 
+Completed sprints require verified completion evidence: one or more `pullRequests` and/or a `mergeCommit`. A completed sprint may use its merged PR number alone as completion evidence when the merge commit SHA was not known while preparing the PR (`mergeCommit` may be omitted).
+
 Validate any time (read-only; never rewrites the file):
 
 ```bash
@@ -123,10 +125,10 @@ Before a new sprint number is assigned:
 4. The proposed sprint number must equal `nextSprintNumber`.
 5. Deferred/blocked numbers cannot be reused (including Sprint 003).
 6. Existing active sprint scopes must be checked for file/scope overlap.
-7. The registry must be updated in the new sprint’s Draft PR (mark the new sprint `active`, advance `nextSprintNumber`).
+7. The registry must be updated in the new sprint’s Draft PR (add/update the sprint record, advance `nextSprintNumber`). Prefer preparing the registry’s **final post-merge state** in that same PR when practical (for example mark the sprint `completed` with its PR number as completion evidence when the merge commit is not yet known), so an immediate follow-up reconciliation PR is unnecessary.
 8. If verified history or numbering is contradictory or ambiguous, **stop** — do not guess.
 
-Agents never merge to `main`. The founder performs every merge. Never push documentation-only reconciliation commits directly to `main`; land them through a Draft PR like any other sprint change.
+Agents never merge to `main`. The founder performs every merge. Never push documentation commits directly to `main`; land registry/doc updates through a Draft PR.
 
 ---
 
@@ -164,7 +166,7 @@ Notes:
 
 ## Post-merge synchronization
 
-After every successful merge (founder merges on GitHub), reconcile before assigning another sprint:
+After every successful merge (founder merges on GitHub), sync local `main` and validate the registry before assigning another sprint:
 
 ```bash
 git checkout main
@@ -181,7 +183,7 @@ Your branch is up to date with 'origin/main'.
 nothing to commit, working tree clean
 ```
 
-Then reconcile merged sprint status in a follow-up Draft PR when the registry still lists the merged sprint as `active` (set it to `completed`, record `pullRequests` / `mergeCommit` when verified). Never push documentation commits directly to `main`.
+If the merged sprint’s Draft PR already recorded final registry state (`completed` with PR completion evidence, `nextSprintNumber` advanced correctly), **no immediate follow-up reconciliation PR is required**. Open a follow-up Draft PR only when the registry still contradicts verified history after merge. Never push documentation commits directly to `main`.
 
 If your working tree is dirty, stop and review git status. Preserve all work. Commit intended changes or use git stash when appropriate. Never discard changes unless you have deliberately confirmed they are unnecessary.
 

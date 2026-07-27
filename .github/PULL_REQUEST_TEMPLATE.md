@@ -3,11 +3,12 @@
 - Sprint number:
 - Immutable scope summary:
 - Registry checklist:
-  - [ ] Sprint number matches `management/sprint_registry.json` (`nextSprintNumber` / active record)
+  - [ ] Sprint number matches `management/sprint_registry.json` (`nextSprintNumber` / sprint record)
   - [ ] `dart run tool/verify_sprint_registry.dart` passes
   - [ ] Historical sprint numbers were not reused (including deferred Sprint 003)
   - [ ] Active parallel sprints were checked for overlapping files/scope
-  - [ ] Post-merge reconciliation is required (founder merges; agents never merge to `main`)
+  - [ ] Registry reflects intended post-merge state (completed + PR evidence when merge commit unknown), so no immediate follow-up reconciliation PR is required
+  - [ ] Founder merges; agents never merge to `main`
 
 ## Changes
 

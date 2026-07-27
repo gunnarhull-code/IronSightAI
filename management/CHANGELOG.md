@@ -8,10 +8,10 @@
 
 ## [Unreleased]
 
-Application foundation exists on `main` (Flutter + local Supabase: auth, company, equipment, Sprint 008 local inspection foundation). Sprints 009 and 010 are merged. Sprint 011 adds the canonical sprint registry and status-consistency guardrails (no product features).
+Application foundation exists on `main` (Flutter + local Supabase: auth, company, equipment, Sprint 008 local inspection foundation). Sprints 009 and 010 are merged. Sprint 011 (sprint registry + status-consistency guardrails) is completed through PR #13; `nextSprintNumber` is 12.
 
 ### Added
-- **2026-07-27**: Sprint 011 — sprint registry and status-consistency guardrails: `management/sprint_registry.json` (canonical sprint numbers/lifecycle), `tool/sprint_registry_validation.dart` + `tool/verify_sprint_registry.dart` (read-only validator), focused tests, CI step, Pre-Sprint Status Gate documentation, and PR-template registry checklist. No feature migrations. No product features.
+- **2026-07-27**: Sprint 011 — sprint registry and status-consistency guardrails: `management/sprint_registry.json` (canonical sprint numbers/lifecycle), `tool/sprint_registry_validation.dart` + `tool/verify_sprint_registry.dart` (read-only validator), focused tests, CI step, Pre-Sprint Status Gate documentation, and PR-template registry checklist. No feature migrations. No product features. **Completed through PR #13** (final registry state prepared in that PR; no immediate reconciliation PR required).
 - **2026-07-26**: Sprint 009 — engineering reliability baseline: `docs/DEVELOPER_WORKFLOW.md` (setup/verification source of truth), `.github/workflows/ci.yml` (format/analyze/test on PRs to `main`), `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/verify.sh`, and `test/env_example_test.dart` for safe `.env.example` bootstrap coverage. No feature migrations. **Merged through PR #7.**
 - **2026-07-23**: `management/sprints/SPRINT-1.md` — detailed Sprint 1 (Foundation) implementation plan: sprint goal, deliverables, in/out of scope, a 20-task dependency-ordered breakdown (purpose, dependencies, complexity, expected outcome per task), recommended build order, git milestones, a per-deliverable testing plan, a measurable Definition of Done, Sprint-1-specific risks with mitigations, and a Sprint 2 preview. Maps directly to `docs/13-roadmap.md`'s "Weeks 1–2: Foundation" section without duplicating it — this is the execution-level detail one layer below the strategic roadmap. Housed in a new `management/sprints/` subfolder so the top-level `management/` structure stays fixed at six files. `management/DASHBOARD.md`'s "Current Sprint," "Current Objective," "Current Tasks," and "Next Recommended Action" populated from this plan.
 
@@ -23,7 +23,7 @@ Application foundation exists on `main` (Flutter + local Supabase: auth, company
 - **2026-07-23 (earlier)**: `management/ROADMAP.md` restructured from 8 phases to 7 (superseded later the same day by the removal above). The standalone "Version 2 (Kickoff & Planning)" phase was removed and merged into a single "AI Assistance" phase that covers both planning and delivery as one business stage.
 
 ### Planned Next
-- After Sprint 011 merges, follow the Pre-Sprint Status Gate in [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md) and assign the next sprint only via `management/sprint_registry.json` (`nextSprintNumber`). Do not invent a product sprint number in changelog prose. See [`docs/13-roadmap.md`](../docs/13-roadmap.md).
+- After PR #13 is on `main`, sync and validate the registry, then assign Sprint **012** only via the Pre-Sprint Status Gate (`nextSprintNumber` = 12). No immediate Sprint 011 reconciliation PR is required. Do not invent Sprint 012 product scope in changelog prose. See [`docs/13-roadmap.md`](../docs/13-roadmap.md).
 
 ---
 

@@ -73,10 +73,10 @@ Before a new sprint is assigned:
 - The proposed number must equal `nextSprintNumber`.
 - Deferred/blocked numbers cannot be reused (Sprint 003 remains deferred/archived forever).
 - Existing active sprint scopes must be checked for overlap (multiple active sprints are allowed only with unique numbers and independent scopes).
-- The registry must be updated in the new sprint’s Draft PR.
+- The registry must be updated in the new sprint’s Draft PR (prefer final post-merge registry state in that PR when practical).
 - Contradictions or unverifiable history require stopping rather than guessing.
 
-After every successful founder merge: switch to `main`, pull `origin/main`, check `git status`, run the sprint-registry validator, and reconcile merged status before assigning another sprint. Never push documentation commits directly to `main`. Agents never merge to `main`.
+After every successful founder merge: switch to `main`, pull `origin/main`, check `git status`, and run the sprint-registry validator before assigning another sprint. If the merged PR already left the registry in final completed state, no immediate reconciliation PR is required. Never push documentation commits directly to `main`. Agents never merge to `main`.
 
 Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json). Live PR/CI status belongs to GitHub.
 

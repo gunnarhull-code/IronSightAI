@@ -84,9 +84,9 @@
     {
       "number": 11,
       "title": "Sprint Registry and Status-Consistency Guardrails",
-      "status": "active",
+      "status": "completed",
       "pullRequests": [13],
-      "notes": "Operational documentation reconciliation, canonical sprint_registry.json, Dart validator, tests, and CI wiring. No product features. Draft PR #13 is open; nextSprintNumber remains 12 while this sprint is active.",
+      "notes": "Completed through PR #13. mergeCommit left absent because it was not known while preparing the PR; the merged PR number is sufficient completion evidence. nextSprintNumber remains 12 so the next assignable sprint may be 012. No immediate post-merge reconciliation PR is required.",
       "replacesOrResumes": null
     }
   ]

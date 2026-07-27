@@ -332,6 +332,41 @@ void main() {
     expect(result.errors.first, contains('Invalid JSON'));
   });
 
+  test('completed sprint with PR number only (no mergeCommit) is accepted', () {
+    final registry = _validRegistry(
+      sprints: [
+        {
+          'number': 3,
+          'title': 'Deferred / archived (number reserved — do not reuse)',
+          'status': 'deferred',
+          'pullRequests': <int>[],
+        },
+        {
+          'number': 9,
+          'title':
+              'Engineering Reliability, CI, and Developer Workflow Baseline',
+          'status': 'completed',
+          'pullRequests': [7],
+        },
+        {
+          'number': 10,
+          'title': 'Node.js 24 / actions/checkout compatibility',
+          'status': 'completed',
+          'pullRequests': [12],
+        },
+        {
+          'number': 11,
+          'title': 'Sprint Registry and Status-Consistency Guardrails',
+          'status': 'completed',
+          'pullRequests': [13],
+        },
+      ],
+    );
+
+    final result = validateSprintRegistryMap(registry);
+    expect(result.errors, isEmpty, reason: result.errors.join('\n'));
+  });
+
   test('completed sprint without completion evidence fails', () {
     final registry = _validRegistry(
       sprints: [

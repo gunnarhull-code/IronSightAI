@@ -2,7 +2,7 @@
 
 A mobile-first, AI-ready heavy equipment inspection platform for equipment dealerships, used equipment managers, and sales representatives.
 
-**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, Sprint 008 local inspection foundation, Sprint 009 engineering/CI baseline, Sprint 010 Node.js 24 checkout compatibility). Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json). **All founder product decisions for the documentation phase are resolved** — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md).
+**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, Sprint 008 local inspection foundation, Sprint 009 engineering/CI baseline, Sprint 010 Node.js 24 checkout compatibility, Sprint 011 sprint registry guardrails through PR #13). Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json) (`nextSprintNumber` = 12). **All founder product decisions for the documentation phase are resolved** — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md).
 
 ## Developer setup and verification
 
