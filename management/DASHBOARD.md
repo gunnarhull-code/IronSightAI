@@ -20,20 +20,26 @@ This is the company's single, permanent strategic roadmap — covering the Week 
 
 ## Current Sprint
 
-No product sprint is assigned yet. Canonical machine-readable registry: [`management/sprint_registry.json`](./sprint_registry.json) (`nextSprintNumber` = **12**, so the next sprint may be **012**). AFK scope notes: [`management/AFK_SPRINTS.md`](./AFK_SPRINTS.md). Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
+**Sprints 012 and 013 are active independent parallel sprints.** Canonical machine-readable registry: [`management/sprint_registry.json`](./sprint_registry.json) (`nextSprintNumber` = **14**, so the next assignable sprint may be **014**). AFK scope notes: [`management/AFK_SPRINTS.md`](./AFK_SPRINTS.md). Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
 
-**Sprint 011 — Sprint Registry and Status-Consistency Guardrails** is **completed through PR #13**. No immediate follow-up reconciliation PR is required after that merge.
+- **Sprint 012 — Offline Inspection Workspace and Local Completion Flow** — `active` (independent of Sprint 013).
+- **Sprint 013 — On-Device Equipment Identification Capture** — `active` (independent of Sprint 012; do not integrate into Sprint 012 screens).
+- **Sprint 014** is next after both parallel sprints are reconciled post-merge.
 
-**Live PR and CI status belongs to GitHub** (pull requests and Actions). Do not duplicate open-PR merge checkboxes here as long-lived unchecked repository tasks.
+**Sprint 011 — Sprint Registry and Status-Consistency Guardrails** is **completed through PR #13**.
+
+**Live PR and CI status belongs to GitHub** (pull requests and Actions). Do not duplicate open-PR merge checkboxes here as long-lived unchecked repository tasks. Do not independently mark Sprint 012 or 013 completed in shared registry files until both founder merges are reconciled.
 
 Sprint history note (immutable numbering): Sprint 003 remains deferred/archived and must never be reused. Sprint 008 (Inspection Local Foundation) merged through PR #9. Sprint 009 (Engineering Reliability, CI, and Developer Workflow Baseline) merged through PR #7 — never rename it “Inspection List Foundation.” Sprint 010 (Node.js 24 / actions/checkout compatibility) merged through PR #12. Sprint 011 completed through PR #13. Multiple sprints may be active in parallel when numbers and scopes do not conflict; validate with `dart run tool/verify_sprint_registry.dart`.
 
 ## Current Objective
 
-Assign and execute the next founder-approved sprint via the Pre-Sprint Status Gate using `nextSprintNumber` **12**. Do not invent Sprint 012 product scope from dashboard prose.
+Execute founder-approved parallel Sprints **012** and **013** with non-overlapping scopes. Leave both registry entries `active` with empty `pullRequests` until post-merge reconciliation. Next sprint after reconciliation: **014**.
 
 ## Current Tasks
 
+- [ ] Sprint 012 — Offline Inspection Workspace and Local Completion Flow (active; separate PR)
+- [ ] Sprint 013 — On-Device Equipment Identification Capture (active; separate PR)
 - [x] Reconcile operational docs for merged Sprints 008–010
 - [x] Add `management/sprint_registry.json`
 - [x] Add Dart registry validator + focused tests
@@ -75,7 +81,7 @@ Full detail: [`WINS.md`](./WINS.md).
 
 ## Current Blockers
 
-No technical blockers. Next sprint number available: **012** (`nextSprintNumber` = 12). Assign only through the Pre-Sprint Status Gate; do not invent product scope here.
+No technical blockers. Parallel Sprints **012** and **013** are active. Next sprint number available after reconciliation: **014** (`nextSprintNumber` = 14).
 
 ## Active Risks
 
@@ -102,4 +108,4 @@ Full definition: [`docs/15-final-product-specification.md`](../docs/15-final-pro
 
 ## Next Recommended Action
 
-After PR #13 is on `main`, sync local `main`, run `dart run tool/verify_sprint_registry.dart`, then assign Sprint **012** only via the Pre-Sprint Status Gate. No immediate Sprint 011 reconciliation PR is required.
+Continue Sprint **012** and Sprint **013** Draft PRs independently. After both founder merges, reconcile registry completion evidence and assign Sprint **014** only via the Pre-Sprint Status Gate.

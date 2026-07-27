@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "nextSprintNumber": 12,
+  "nextSprintNumber": 14,
   "sprints": [
     {
       "number": 1,
@@ -88,6 +88,20 @@
       "pullRequests": [13],
       "notes": "Completed through PR #13. mergeCommit left absent because it was not known while preparing the PR; the merged PR number is sufficient completion evidence. nextSprintNumber remains 12 so the next assignable sprint may be 012. No immediate post-merge reconciliation PR is required.",
       "replacesOrResumes": null
+    },
+    {
+      "number": 12,
+      "title": "Offline Inspection Workspace and Local Completion Flow",
+      "status": "active",
+      "pullRequests": [],
+      "notes": "Founder-approved parallel batch with Sprint 013. Immutable scope is recorded in management/AFK_SPRINTS.md. Completion and PR evidence will be reconciled after founder merges."
+    },
+    {
+      "number": 13,
+      "title": "On-Device Equipment Identification Capture",
+      "status": "active",
+      "pullRequests": [],
+      "notes": "Founder-approved parallel batch with Sprint 012. Immutable scope is recorded in management/AFK_SPRINTS.md. Completion and PR evidence will be reconciled after founder merges."
     }
   ]
 }

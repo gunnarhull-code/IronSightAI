@@ -17,9 +17,135 @@ Rules:
 
 ---
 
+# Sprint 012 — Offline Inspection Workspace and Local Completion Flow
+
+**Status (registry):** `active` (founder-approved parallel batch with Sprint 013). `pullRequests` left empty until both founder merges are reconciled. `nextSprintNumber` = **14**.
+
+## Goal
+
+Deliver a local-first inspection workspace so a rep can compose, score, review, and complete or discard an inspection entirely on-device without remote sync.
+
+## Immutable scope
+
+- Local inspection composition
+- Local company/equipment context
+- Inspection list
+- Draft creation and reopening
+- Quick scorecard
+- Detailed category expansion
+- Notes
+- Review
+- Local completion/discard
+
+## Out of scope
+
+- On-device serial/hour-meter OCR capture module (Sprint 013)
+- Walkaround video
+- Photo galleries
+- Supabase inspection schema
+- Remote sync or uploads
+- Reports
+- AI/vendor APIs
+- Valuation
+- Production access
+- Videos
+
+## Safety Rules
+
+- Do not modify unrelated features.
+- Do not refactor architecture.
+- Do not invent additional backlog items.
+- Do not mark Sprint 012 or 013 completed in shared registry files from this sprint alone.
+- Use local Supabase by default when backend QA is needed.
+- Never connect to production.
+- Do not merge to `main`.
+
+---
+
+# Sprint 013 — On-Device Equipment Identification Capture
+
+**Status (registry):** `active` (founder-approved parallel batch with Sprint 012). `pullRequests` left empty until both founder merges are reconciled. `nextSprintNumber` = **14**.
+
+## Goal
+
+Build a reusable offline equipment-identification capture module for serial numbers and hour-meter readings, with camera/OCR behind application-owned interfaces, explicit human confirmation, and always-available manual entry.
+
+## Immutable scope
+
+- On-device OCR for equipment serial numbers
+- On-device OCR for hour-meter readings
+- Camera/image acquisition behind an application-owned platform interface
+- OCR processing behind an application-owned abstraction
+- Business logic and general widgets must not call camera/OCR packages directly
+- Present detected values as selectable candidates
+- Never silently accept OCR output
+- Require explicit human confirmation
+- Always provide manual entry and editing
+- Normalize whitespace and obvious formatting noise without changing meaningful serial characters
+- Preserve letters, digits, leading zeros, and meaningful separators unless the user edits them
+- Parse hour-meter candidates conservatively
+- Reject negative hours
+- Do not invent digits or automatically correct ambiguous values
+- Handle multiple candidates
+- Handle no text detected
+- Handle permission denied
+- Handle permanently denied permission with useful guidance
+- Handle unavailable camera
+- Handle capture cancellation
+- Handle OCR failure
+- Preserve manually entered data after failures
+- Provide manual-entry fallback on unsupported platforms such as web/Brave
+- Keep capture fully offline
+- Make the module reusable by inspection and equipment workflows
+- Do not integrate it into Sprint 012 screens
+
+## UX requirements
+
+- Camera-first and typing-last
+- One-handed operation
+- Large tap targets
+- Clear selected and confirmed states
+- Accessible labels
+- Logical keyboard/focus order
+- Manual fallback always visible
+- No tutorial should be required
+- Never imply OCR is authoritative
+- Never show false success
+
+## Out of scope
+
+- Inspection list
+- Draft creation
+- Quick scorecard
+- Detailed inspection
+- Inspection review/completion
+- Walkaround video
+- Photo galleries
+- Supabase inspection schema
+- Remote sync or uploads
+- Reports
+- AI/vendor APIs
+- Valuation
+- Automatic unconfirmed saves
+- Production access
+- Videos
+
+## Safety Rules
+
+- Do not modify unrelated features.
+- Do not refactor architecture.
+- Do not invent additional backlog items.
+- Do not implement or integrate Sprint 012 work.
+- Do not mark Sprint 012 or 013 completed in shared registry files from this sprint alone.
+- Do not require Supabase for this sprint.
+- Never connect to production.
+- Do not merge to `main`.
+
+---
+
 # Sprint 011 — Sprint Registry and Status-Consistency Guardrails
 
-**Status (registry):** `completed` through **PR #13**. `nextSprintNumber` = **12** (next assignable sprint may be **012**). No immediate post-merge reconciliation PR is required once PR #13 merges.
+**Status (registry):** `completed` through **PR #13**. Historical record retained below.
 
 ## Goal
 
