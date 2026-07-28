@@ -1,0 +1,20 @@
+---
+description: Supabase schema, migrations, RLS, and local-vs-production database safety for IronSight
+globs: supabase/**
+alwaysApply: false
+---
+
+# Supabase (IronSight)
+
+- Default environment is **local Supabase**. Never connect to production.
+- Use hosted `agent-sandbox` only when the task explicitly requires hosted integration testing.
+- Treat migrations as versioned code. Never apply production migrations automatically.
+- Never silently modify database schema.
+- When creating or changing a migration:
+  - Name the migration file clearly
+  - State whether it was for local Supabase or hosted `agent-sandbox`
+  - Review the SQL; test locally
+  - Remind the user to review and apply production migrations manually
+- Keep least privilege and tenant/user scoping on every data operation.
+- Never bypass RLS, auth, or environment restrictions.
+- Never expose secrets from `.env`, service role keys, or connection strings.

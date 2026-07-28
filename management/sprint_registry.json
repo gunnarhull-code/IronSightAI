@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "nextSprintNumber": 12,
+  "nextSprintNumber": 13,
   "sprints": [
     {
       "number": 1,
@@ -87,6 +87,14 @@
       "status": "completed",
       "pullRequests": [13],
       "notes": "Completed through PR #13. mergeCommit left absent because it was not known while preparing the PR; the merged PR number is sufficient completion evidence. nextSprintNumber remains 12 so the next assignable sprint may be 012. No immediate post-merge reconciliation PR is required.",
+      "replacesOrResumes": null
+    },
+    {
+      "number": 12,
+      "title": "Agent rules reorganization (AGENTS + selective cursor rules)",
+      "status": "active",
+      "pullRequests": [],
+      "notes": "Reorganize agent guidance: tighten AGENTS.md (keep Pre-Sprint gate), add selective .cursor/rules for architecture and Supabase. No product features. Draft PR number will be recorded when opened; nextSprintNumber is 13 while this sprint is active.",
       "replacesOrResumes": null
     }
   ]
