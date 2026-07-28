@@ -145,6 +145,7 @@ local.properties
 !.cursor/settings.json
 !.cursor/rules/
 !.cursor/commands/
+!.cursor/commands/**
 
 # -----------------------------------------------------------------------------
 # OS-generated files
