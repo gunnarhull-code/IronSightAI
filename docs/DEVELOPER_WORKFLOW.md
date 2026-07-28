@@ -147,9 +147,15 @@ flutter run -d chrome
 
 Notes:
 
+- On macOS/Linux Cloud Agent environments, **do not** set the Windows Brave `CHROME_EXECUTABLE` path. Prefer:
+
+  ```bash
+  flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080
+  ```
+
+  Open the forwarded/local URL on port **8080**. The project Cursor command `/testpr` follows this Cloud path automatically.
 - Flutter’s Chrome device uses `CHROME_EXECUTABLE` when set; pointing it at Brave launches Brave instead of Google Chrome.
 - Adjust the Brave path if your install location differs.
-- On macOS/Linux Cloud Agent environments, prefer `flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080` or the available Chrome/Linux devices. Brave path above is Windows-specific.
 
 ---
 
