@@ -1,0 +1,18 @@
+---
+description: Architecture boundaries for IronSight — UI, domain, and data/infrastructure separation
+globs: lib/**
+alwaysApply: false
+---
+
+# Architecture (IronSight)
+
+- Prefer readable, straightforward code and small cohesive functions.
+- Reuse existing patterns before introducing new abstractions.
+- Keep UI, domain/business logic, and data/infrastructure concerns separated.
+- Depend on interfaces at architectural boundaries.
+- Keep vendor SDKs and persistence details out of domain and presentation layers.
+- Avoid unnecessary packages, speculative abstractions, architecture rewrites, premature optimization, and duplicated business rules.
+- Validate at trust boundaries; fail clearly; preserve recoverable user data.
+- Design external-service failures to degrade gracefully when the product can continue safely.
+- Do not remove existing functionality without permission.
+- Stop and ask before major refactors, architecture changes, or new dependencies.
