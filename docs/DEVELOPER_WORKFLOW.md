@@ -212,7 +212,7 @@ If your working tree is dirty, stop and review git status. Preserve all work. Co
 ## Related documents
 
 - Product / architecture authority: `docs/00-ironsight-constitution.md`, `docs/15-final-product-specification.md`
-- Day-to-day operational status: `management/DASHBOARD.md`
+- Day-to-day founder operational summary: `management/DASHBOARD.md` (occasional; not live Work Item status)
 - Permanent AFK / Cloud Agent policy: `management/AFK_AGENTS.md` (not an assignment board)
 - Historical numbered sprints: `management/LEGACY_SPRINT_HISTORY.md`
 - Agent safety rules: `AGENTS.md`

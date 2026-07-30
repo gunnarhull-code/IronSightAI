@@ -2,7 +2,7 @@
 
 **Purpose**: the official, chronological history of the project — every meaningful event, from the first documentation draft through every future release. Unlike [`DECISIONS.md`](./DECISIONS.md) (which records *why* a decision was made), this file records *what happened and when*, in the order it happened.
 
-**Maintenance rule**: add a new dated entry every session in which meaningful progress occurs — a document created, a decision resolved, a feature shipped, a milestone hit. Newest entries at the top, under an `## [Unreleased]` heading for work in progress. Once a version is actually released (e.g., V1 ships to the first pilot dealership), move its entries under a versioned heading (e.g., `## [1.0.0] - 2026-XX-XX`), following the spirit of [Keep a Changelog](https://keepachangelog.com/), adapted for a pre-launch product+documentation history.
+**Maintenance rule**: add a new dated entry when meaningful progress is recorded by the founder (or by an explicit Work Item that includes changelog updates). Newest entries at the top, under an `## [Unreleased]` heading for work in progress. Once a version is actually released (e.g., V1 ships to the first pilot dealership), move its entries under a versioned heading (e.g., `## [1.0.0] - 2026-XX-XX`), following the spirit of [Keep a Changelog](https://keepachangelog.com/), adapted for a pre-launch product+documentation history. Agents must **not** routinely edit this file for individual Work Item status — live status belongs to GitHub Issues, PRs, and Actions.
 
 ---
 

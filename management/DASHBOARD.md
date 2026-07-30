@@ -1,8 +1,8 @@
 # IronSight AI — Operational Dashboard
 
-**This file always answers: "What should we be working on today?"**
+**This file answers: "What should we be working on today?"** as a founder-maintained, occasional operational summary.
 
-**Maintenance rule**: update this file at the start and end of every work session — human or AI. If you make progress, change a priority, resolve a blocker, or complete a task, this file must reflect it before the session ends. A stale dashboard is worse than no dashboard.
+**Maintenance rule**: the **founder** updates this file occasionally when priorities, phase, blockers, or milestones meaningfully change. It is **not** a live Work Item board. **GitHub Issues, Pull Requests, and Actions** are the live sources for Work Item, PR, and CI status. Agents must **not** routinely edit `DASHBOARD.md` for individual Work Items (or every session).
 
 **Last updated**: 2026-07-29
 
@@ -80,7 +80,7 @@ No dedicated risk register file — tracked here directly, kept short and curren
 1. **Silent data loss during offline sync** (High impact) — mitigated by design via the outbox pattern, but not yet validated against a real implementation.
 2. **Scope creep back into a slower, more granular default experience**, eroding the core promise — mitigated by the Constitution's Final Decision Framework, but requires ongoing discipline during implementation.
 3. **Solo-founder bandwidth / bus-factor risk** — mitigated by this management system and emphasis on simple, well-documented architecture.
-4. **Stale operational docs vs. living code** — mitigated by `docs/DEVELOPER_WORKFLOW.md`, GitHub Issues as Work Items, and keeping `DASHBOARD.md` current each session; treat GitHub as canonical for live PR/CI state.
+4. **Stale operational docs vs. living code** — mitigated by `docs/DEVELOPER_WORKFLOW.md`, GitHub Issues/PRs/Actions as live Work Item and CI sources, and occasional founder updates to this summary; agents must not routinely rewrite shared status files per Work Item.
 
 ## MVP Definition
 

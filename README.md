@@ -32,18 +32,20 @@ Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, d
 
 ## Daily Development Workflow
 
-The [`management/`](./management/) folder is the operational system of IronSight AI — it answers "what should we be working on today?" and preserves company context independently of any one person's memory. **Every development session, human or AI, should begin by:**
+The [`management/`](./management/) folder preserves company context independently of any one person's memory. **GitHub Issues, Pull Requests, and Actions** are the live sources for Work Item, PR, and CI status. `management/DASHBOARD.md` is a founder-maintained occasional summary — agents must not routinely edit it for individual Work Items.
 
-1. Read [`management/DASHBOARD.md`](./management/DASHBOARD.md)
-2. Read [`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)
-3. Read [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)
-4. Read [`docs/13-roadmap.md`](./docs/13-roadmap.md)
-5. Read [`management/DECISIONS.md`](./management/DECISIONS.md)
-6. Read [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
-7. Summarize the current project state.
+At the start of a development session, read as needed:
+
+1. [`management/DASHBOARD.md`](./management/DASHBOARD.md) (occasional summary)
+2. [`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)
+3. [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)
+4. [`docs/13-roadmap.md`](./docs/13-roadmap.md)
+5. [`management/DECISIONS.md`](./management/DECISIONS.md)
+6. [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
+7. The assigned **GitHub Issue** (complete Work Item source when one is assigned)
 8. Begin implementation.
 
-**Operating principle**: these management documents are maintained throughout the life of the company, not just during the initial documentation phase. Before every future coding session ends, update [`DASHBOARD.md`](./management/DASHBOARD.md), [`DECISIONS.md`](./management/DECISIONS.md) (if a new decision was made), and [`CHANGELOG.md`](./management/CHANGELOG.md) to reflect the current state of the project. The goal: if development stops for six months, any developer or AI assistant can immediately understand where the project stands and continue without losing context.
+**Operating principle**: management docs are maintained for the life of the company. The founder occasionally updates `DASHBOARD.md` and related summaries when phase or priorities change. Agents do **not** update shared status files at the end of every session. Record decisions in `DECISIONS.md` and changelog entries only when the founder (or an explicit Work Item) requires it — never as routine per-Work-Item status sync. Live work state stays on GitHub.
 
 ## Documentation Philosophy: `docs/` vs `management/`
 
@@ -58,7 +60,7 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 
 | File | Purpose |
 |---|---|
-| [`management/DASHBOARD.md`](./management/DASHBOARD.md) | Operational command center — what to work on today; references `docs/13-roadmap.md` for the strategic roadmap |
+| [`management/DASHBOARD.md`](./management/DASHBOARD.md) | Founder-maintained occasional operational summary (not a live Work Item board) |
 | [`management/DECISIONS.md`](./management/DECISIONS.md) | Permanent architectural decision log (ADRs) |
 | [`management/CHANGELOG.md`](./management/CHANGELOG.md) | Chronological project history |
 | [`management/BACKLOG.md`](./management/BACKLOG.md) | Ideas intentionally deferred from the MVP, by priority |
