@@ -2,6 +2,16 @@
 
 # AI SAFETY RULES
 
+IronSight AI — WIW is a Flutter (Dart) mobile-first commercial SaaS app for equipment dealerships, with a Supabase backend (Postgres + Auth). Thin client via PostgREST/GoTrue; no custom server. Future AI and multi-company support are expected.
+
+## Product and engineering standards
+
+- Write production-quality code; no temporary hacks.
+- Prefer simple, scalable solutions. Keep security in mind.
+- Do not remove existing functionality without permission.
+- Explain major decisions and impact before large changes; suggest alternatives when relevant.
+- Comment only complex or non-obvious logic. Ask if requirements are unclear.
+
 ## Development Mode
 
 - Default development environment is LOCAL SUPABASE.
@@ -10,16 +20,15 @@
 
 ## Git Safety
 
-- Never commit.
-- Never push.
-- Never merge.
+- Never commit, push, or merge unless the user explicitly instructs you.
 - Never create or update a pull request unless the user explicitly instructs you.
-- Never modify GitHub settings.
-- Never modify deployment workflows.
+- When asked to open a PR: create a **Draft** PR targeting `main`. Agents never merge to `main`.
+- Never modify GitHub settings or deployment workflows.
 
 ## Scope Control
 
 - Complete only the requested task.
+- When a Work Item is assigned, read the **GitHub Issue as the complete assignment source** (identity, frozen scope, status). Do not use `management/AFK_AGENTS.md` for assignments.
 - Do not invent additional backlog items or features.
 - Stop if requirements are ambiguous.
 - Stop if architecture changes are required.
@@ -31,6 +40,7 @@ Before reporting a task complete:
 
 - Run `flutter analyze`.
 - Run `flutter test`.
+- Prefer `./scripts/verify.sh` or the commands in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md).
 - Report any failures honestly.
 - Do not claim manual verification unless it was actually performed.
 - Clearly list every file changed.
@@ -40,9 +50,7 @@ Before reporting a task complete:
 If a task creates or modifies a Supabase migration:
 
 - Clearly report the migration filename.
-- State whether the migration was:
-  - Local Supabase
-  - Hosted `agent-sandbox`
+- State whether the migration was local Supabase or hosted `agent-sandbox`.
 - Never silently modify database schema.
 - Never apply migrations to production.
 - Always remind the user to review and apply production migrations manually.
@@ -58,47 +66,25 @@ Every completed task must end with:
 - Whether any manual steps are still required
 - Any assumptions made during implementation
 
-## Cursor Cloud specific instructions
+## Setup and workflow
 
-This is a **Flutter (Dart) mobile-first app** for equipment dealerships ("IronSight AI — WIW") with a **Supabase** backend (Postgres + Auth). It is a thin client that talks directly to Supabase via PostgREST/GoTrue; there is no custom server.
+Procedures live in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) (source of truth), project skills under [`.cursor/skills/`](./.cursor/skills/), and slash commands under [`.cursor/commands/`](./.cursor/commands/). Do not invent alternate workflows.
 
-**Local setup, verification commands, Windows/Brave launch, Draft PR prep, Pre-Sprint Status Gate, post-merge sync, and production migration safety are documented only in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md).** Follow that document; do not invent alternate workflows.
+| When | Use |
+|---|---|
+| Start / continue a Work Item | skill `ironsight-work-item` or command `start-work-item` |
+| Verify / finish task / before Draft PR | skill `ironsight-verify` |
+| Open Draft PR | skill `ironsight-draft-pr` |
+| Migrations / production schema | skill `ironsight-migration-safety` |
+| Detached PR QA | command `testpr` |
+| Sync local `main` | command `sync-main` |
+| Read-only status | command `project-status` |
+| Launch local app (Brave / web-server) | command `run-local` |
 
-### Pre-Sprint Status Gate (mandatory)
+Always-on reminders:
 
-Before a new sprint is assigned:
-
-- Local `main` must be clean and match `origin/main`.
-- `management/sprint_registry.json` must validate (`dart run tool/verify_sprint_registry.dart`).
-- The proposed number must equal `nextSprintNumber`.
-- Deferred/blocked numbers cannot be reused (Sprint 003 remains deferred/archived forever).
-- Existing active sprint scopes must be checked for overlap (multiple active sprints are allowed only with unique numbers and independent scopes).
-- The registry must be updated in the new sprint’s Draft PR (prefer final post-merge registry state in that PR when practical).
-- Contradictions or unverifiable history require stopping rather than guessing.
-
-After every successful founder merge: switch to `main`, pull `origin/main`, check `git status`, and run the sprint-registry validator before assigning another sprint. If the merged PR already left the registry in final completed state, no immediate reconciliation PR is required. Never push documentation commits directly to `main`. Agents never merge to `main`.
-
-Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json). Live PR/CI status belongs to GitHub.
-
-### Toolchain (pre-installed in the environment snapshot)
-
-- Flutter SDK is installed at `~/flutter` and added to `PATH` via `~/.bashrc` (Flutter 3.44.8 / Dart 3.12.2, matching the revision pinned in `.metadata` and CI). If `flutter` is not on `PATH` in a non-login shell, use `$HOME/flutter/bin/flutter`.
-- Docker CE and the Supabase CLI are installed. The startup update script runs `flutter pub get`.
-
-### Required services (summary)
-
-1. **`.env`** at repo root (git-ignored). Create with `cp .env.example .env` when missing.
-2. **Local Supabase** when launching the app or doing backend manual QA: start Docker (`sudo dockerd` once per VM boot if needed), then `supabase start` from the repo root.
-
-Unit/widget tests use in-repo fakes under `test/support/` and do **not** need Supabase running, but they **do** need `.env` because it is a declared asset.
-
-### Lint / test / run (summary)
-
-- Prefer `./scripts/verify.sh`, or the commands listed in `docs/DEVELOPER_WORKFLOW.md` (includes `dart run tool/verify_sprint_registry.dart`).
-- Dev web: `flutter run -d web-server --web-hostname 0.0.0.0 --web-port 8080`.
-
-### Notes / gotchas
-
-- The Flutter web debug build can show a blank white screen for ~15–30s on first load while the debug service connects; give it time or refresh once.
-- `supabase/config.toml` is committed so local dev is reproducible; `project_id = "workspace"`.
-- Documentation may lag implementation. If documentation conflicts with working application code, inspect the code first and report the discrepancy rather than assuming the documentation is correct or automatically rewriting it.
+- Canonical work tracking: **GitHub Issues (Work Items)** only. `management/AFK_AGENTS.md` is permanent policy, not an assignment board.
+- Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
+- Pre-Work-Item Status Gate is mandatory before starting a new assigned Work Item (see `ironsight-work-item` + DEVELOPER_WORKFLOW).
+- Agents open Draft PRs; agents never merge to `main`; never push documentation commits directly to `main`.
+- Cloud summary: Flutter at `~/flutter` (3.44.8); require `.env`; unit tests need `.env` not running Supabase; web-server `0.0.0.0:8080` may be blank 15–30s on first debug load.

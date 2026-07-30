@@ -2,7 +2,7 @@
 
 A mobile-first, AI-ready heavy equipment inspection platform for equipment dealerships, used equipment managers, and sales representatives.
 
-**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, Sprint 008 local inspection foundation, Sprint 009 engineering/CI baseline, Sprint 010 Node.js 24 checkout compatibility, Sprint 011 sprint registry guardrails through PR #13). Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json) (`nextSprintNumber` = 12). **All founder product decisions for the documentation phase are resolved** — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md).
+**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, local inspection foundation, engineering/CI baseline, and informational Supabase migration checks). Canonical work tracking is **GitHub Issues (Work Items)** — see [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md). Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md). **All founder product decisions for the documentation phase are resolved** — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md).
 
 ## Developer setup and verification
 
@@ -32,40 +32,42 @@ Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, d
 
 ## Daily Development Workflow
 
-The [`management/`](./management/) folder is the operational system of IronSight AI — it answers "what should we be working on today?" and preserves company context independently of any one person's memory. **Every development session, human or AI, should begin by:**
+The [`management/`](./management/) folder preserves company context independently of any one person's memory. **GitHub Issues, Pull Requests, and Actions** are the live sources for Work Item, PR, and CI status. `management/DASHBOARD.md` is a founder-maintained occasional summary — agents must not routinely edit it for individual Work Items.
 
-1. Read [`management/DASHBOARD.md`](./management/DASHBOARD.md)
-2. Read [`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)
-3. Read [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)
-4. Read [`docs/13-roadmap.md`](./docs/13-roadmap.md)
-5. Read [`management/DECISIONS.md`](./management/DECISIONS.md)
-6. Read [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
-7. Summarize the current project state.
+At the start of a development session, read as needed:
+
+1. [`management/DASHBOARD.md`](./management/DASHBOARD.md) (occasional summary)
+2. [`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)
+3. [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)
+4. [`docs/13-roadmap.md`](./docs/13-roadmap.md)
+5. [`management/DECISIONS.md`](./management/DECISIONS.md)
+6. [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
+7. The assigned **GitHub Issue** (complete Work Item source when one is assigned)
 8. Begin implementation.
 
-**Operating principle**: these management documents are maintained throughout the life of the company, not just during the initial documentation phase. Before every future coding session ends, update [`DASHBOARD.md`](./management/DASHBOARD.md), [`DECISIONS.md`](./management/DECISIONS.md) (if a new decision was made), and [`CHANGELOG.md`](./management/CHANGELOG.md) to reflect the current state of the project. The goal: if development stops for six months, any developer or AI assistant can immediately understand where the project stands and continue without losing context.
+**Operating principle**: management docs are maintained for the life of the company. The founder occasionally updates `DASHBOARD.md` and related summaries when phase or priorities change. Agents do **not** update shared status files at the end of every session. Record decisions in `DECISIONS.md` and changelog entries only when the founder (or an explicit Work Item) requires it — never as routine per-Work-Item status sync. Live work state stays on GitHub.
 
 ## Documentation Philosophy: `docs/` vs `management/`
 
 There must never be duplicate sources of truth. Each of the following lives in exactly one place:
 
 - **`docs/`** — long-lived documentation: the Constitution, technical architecture, the product specification, the **strategic roadmap** (`docs/13-roadmap.md`), and the **developer workflow** (`docs/DEVELOPER_WORKFLOW.md`).
-- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, AFK sprint notes, and the canonical sprint registry.
+- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, permanent AFK/Cloud Agent policy, and legacy sprint history.
 
-The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Sprint numbers and lifecycle state exist **only** in `management/sprint_registry.json` (docs may summarize; they must not invent alternate numbering). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
+The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Active work tracking exists **only** as GitHub Issues (Work Items). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
 
 ## Management Folder
 
 | File | Purpose |
 |---|---|
-| [`management/DASHBOARD.md`](./management/DASHBOARD.md) | Operational command center — what to work on today; references `docs/13-roadmap.md` for the strategic roadmap |
-| [`management/sprint_registry.json`](./management/sprint_registry.json) | **Canonical** machine-readable sprint numbers and lifecycle state |
+| [`management/DASHBOARD.md`](./management/DASHBOARD.md) | Founder-maintained occasional operational summary (not a live Work Item board) |
 | [`management/DECISIONS.md`](./management/DECISIONS.md) | Permanent architectural decision log (ADRs) |
 | [`management/CHANGELOG.md`](./management/CHANGELOG.md) | Chronological project history |
 | [`management/BACKLOG.md`](./management/BACKLOG.md) | Ideas intentionally deferred from the MVP, by priority |
 | [`management/FOUNDER_LOG.md`](./management/FOUNDER_LOG.md) | Founder journal — customer conversations, ideas, lessons learned |
 | [`management/WINS.md`](./management/WINS.md) | Milestone journal |
-| [`management/AFK_SPRINTS.md`](./management/AFK_SPRINTS.md) | Approved AFK/Cloud Agent sprint scope notes (registry is canonical for numbers/status) |
+| [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md) | Permanent AFK/Cloud Agent policy (GitHub Issues are the only assignment source) |
+| [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md) | Archived numbered-sprint history (sprint registry retired) |
 
 ## Key Decisions (Locked for V1)
 
@@ -112,4 +114,4 @@ No pricing/valuation output, no AI damage detection, no customer-facing portal, 
 
 ## Next Step
 
-Continue implementation from [`management/DASHBOARD.md`](./management/DASHBOARD.md) and the active sprint in [`management/AFK_SPRINTS.md`](./management/AFK_SPRINTS.md). Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md).
+Continue implementation from [`management/DASHBOARD.md`](./management/DASHBOARD.md) and assigned Work Items on **GitHub Issues**. Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md).
