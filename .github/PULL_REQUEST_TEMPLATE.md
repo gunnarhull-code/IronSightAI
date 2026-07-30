@@ -1,14 +1,13 @@
-## Sprint
+## Work Item
 
-- Sprint number:
+- GitHub Issue:
 - Immutable scope summary:
-- Registry checklist:
-  - [ ] Sprint number matches `management/sprint_registry.json` (`nextSprintNumber` / sprint record)
-  - [ ] `dart run tool/verify_sprint_registry.dart` passes
-  - [ ] Historical sprint numbers were not reused (including deferred Sprint 003)
-  - [ ] Active parallel sprints were checked for overlapping files/scope
-  - [ ] Registry reflects intended post-merge state (completed + PR evidence when merge commit unknown), so no immediate follow-up reconciliation PR is required
+- Checklist:
+  - [ ] Draft PR references the GitHub Issue (Work Item)
+  - [ ] Scope matches the Issue; no unrelated work added
+  - [ ] Active parallel Work Items were checked for overlapping files/scope
   - [ ] Founder merges; agents never merge to `main`
+  - [ ] Historical numbered sprints were not revived (`management/LEGACY_SPRINT_HISTORY.md` only)
 
 ## Changes
 
@@ -17,7 +16,7 @@
 
 ## Verification
 
-- `dart run tool/verify_sprint_registry.dart` result:
+- `dart format --output=none --set-exit-if-changed .` result:
 - `flutter analyze` result:
 - `flutter test` result:
 - Manual verification status:

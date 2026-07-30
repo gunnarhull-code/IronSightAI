@@ -4,13 +4,13 @@
 
 **Maintenance rule**: update this file at the start and end of every work session — human or AI. If you make progress, change a priority, resolve a blocker, or complete a task, this file must reflect it before the session ends. A stale dashboard is worse than no dashboard.
 
-**Last updated**: 2026-07-27
+**Last updated**: 2026-07-29
 
 ---
 
 ## Current Phase
 
-**Implementation in progress.** Documentation for V1 is complete. The repository contains a Flutter application with Supabase-backed auth, company onboarding/settings, equipment CRUD, and the Sprint 008 local inspection foundation on `main`. Engineering verification (Sprint 009), Node.js 24 checkout compatibility (Sprint 010), and Sprint 011 sprint-registry guardrails are completed through their merged PRs (see registry).
+**Implementation in progress.** Documentation for V1 is complete. The repository contains a Flutter application with Supabase-backed auth, company onboarding/settings, equipment CRUD, and the local inspection foundation on `main`. Engineering verification, Node.js 24 checkout compatibility, sprint-registry guardrails (historical), and the Work Items workflow cleanup are tracked via GitHub.
 
 ## Strategic Roadmap
 
@@ -18,28 +18,24 @@
 
 This is the company's single, permanent strategic roadmap — covering the Week 1–12 V1 execution plan and the V2/V3/V4 long-term vision. It is not duplicated here; this dashboard only reflects current status against it.
 
-## Current Sprint
+## Current Work Item
 
-No product sprint is assigned yet. Canonical machine-readable registry: [`management/sprint_registry.json`](./sprint_registry.json) (`nextSprintNumber` = **12**, so the next sprint may be **012**). AFK scope notes: [`management/AFK_SPRINTS.md`](./AFK_SPRINTS.md). Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
-
-**Sprint 011 — Sprint Registry and Status-Consistency Guardrails** is **completed through PR #13**. No immediate follow-up reconciliation PR is required after that merge.
+No product Work Item is assigned yet. Canonical work tracking: **GitHub Issues**. AFK/Cloud Agent notes: [`management/AFK_AGENTS.md`](./AFK_AGENTS.md). Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
 
 **Live PR and CI status belongs to GitHub** (pull requests and Actions). Do not duplicate open-PR merge checkboxes here as long-lived unchecked repository tasks.
 
-Sprint history note (immutable numbering): Sprint 003 remains deferred/archived and must never be reused. Sprint 008 (Inspection Local Foundation) merged through PR #9. Sprint 009 (Engineering Reliability, CI, and Developer Workflow Baseline) merged through PR #7 — never rename it “Inspection List Foundation.” Sprint 010 (Node.js 24 / actions/checkout compatibility) merged through PR #12. Sprint 011 completed through PR #13. Multiple sprints may be active in parallel when numbers and scopes do not conflict; validate with `dart run tool/verify_sprint_registry.dart`.
+Historical numbered sprints are archived in [`LEGACY_SPRINT_HISTORY.md`](./LEGACY_SPRINT_HISTORY.md) (including deferred Sprint 003 and completed Sprints 008–011). Do not revive `sprint_registry.json`.
 
 ## Current Objective
 
-Assign and execute the next founder-approved sprint via the Pre-Sprint Status Gate using `nextSprintNumber` **12**. Do not invent Sprint 012 product scope from dashboard prose.
+Assign the next founder-approved Work Item as a GitHub Issue via the Pre-Work-Item Status Gate. Do not invent product scope from dashboard prose.
 
 ## Current Tasks
 
-- [x] Reconcile operational docs for merged Sprints 008–010
-- [x] Add `management/sprint_registry.json`
-- [x] Add Dart registry validator + focused tests
-- [x] Wire validator into PR CI
-- [x] Document Pre-Sprint Status Gate and post-merge sync
-- [x] Prepare Sprint 011 final registry state (`completed` via PR #13) so no immediate reconciliation PR is required after merge
+- [x] Reconcile operational docs for merged historical Sprints 008–011
+- [x] Retire sprint registry in favor of GitHub Issue Work Items
+- [x] Preserve legacy sprint history
+- [x] Update agent skills / workflow docs for Draft-PR-only delivery
 
 ## Completed Milestones
 
@@ -55,10 +51,10 @@ Assign and execute the next founder-approved sprint via the Pre-Sprint Status Ga
 - ✅ Operational management system established (this folder)
 - ✅ Local Flutter + Supabase development environment established
 - ✅ Application foundation on `main` (auth, company, equipment)
-- ✅ Sprint 008 Inspection Local Foundation on `main` (PR #9)
-- ✅ Sprint 009 engineering verification baseline on `main` (PR #7)
-- ✅ Sprint 010 Node.js 24 / actions/checkout@v6 compatibility on `main` (PR #12)
-- ✅ Sprint 011 sprint registry + status-consistency guardrails completed through PR #13
+- ✅ Inspection Local Foundation on `main` (historical Sprint 008 / PR #9)
+- ✅ Engineering verification baseline on `main` (historical Sprint 009 / PR #7)
+- ✅ Node.js 24 / actions/checkout@v6 compatibility on `main` (historical Sprint 010 / PR #12)
+- ✅ Sprint registry guardrails completed historically (Sprint 011 / PR #13), then retired for Work Items
 
 Full detail: [`WINS.md`](./WINS.md).
 
@@ -75,7 +71,7 @@ Full detail: [`WINS.md`](./WINS.md).
 
 ## Current Blockers
 
-No technical blockers. Next sprint number available: **012** (`nextSprintNumber` = 12). Assign only through the Pre-Sprint Status Gate; do not invent product scope here.
+No technical blockers. Assign the next Work Item only through the Pre-Work-Item Status Gate; do not invent product scope here.
 
 ## Active Risks
 
@@ -84,7 +80,7 @@ No dedicated risk register file — tracked here directly, kept short and curren
 1. **Silent data loss during offline sync** (High impact) — mitigated by design via the outbox pattern, but not yet validated against a real implementation.
 2. **Scope creep back into a slower, more granular default experience**, eroding the core promise — mitigated by the Constitution's Final Decision Framework, but requires ongoing discipline during implementation.
 3. **Solo-founder bandwidth / bus-factor risk** — mitigated by this management system and emphasis on simple, well-documented architecture.
-4. **Stale operational docs vs. living code / sprint identity drift** — mitigated by Sprint 009’s developer-workflow source of truth and Sprint 011’s sprint registry + CI validator; keep `DASHBOARD.md` current each session and treat GitHub as canonical for live PR/CI state.
+4. **Stale operational docs vs. living code** — mitigated by `docs/DEVELOPER_WORKFLOW.md`, GitHub Issues as Work Items, and keeping `DASHBOARD.md` current each session; treat GitHub as canonical for live PR/CI state.
 
 ## MVP Definition
 
@@ -102,4 +98,4 @@ Full definition: [`docs/15-final-product-specification.md`](../docs/15-final-pro
 
 ## Next Recommended Action
 
-After PR #13 is on `main`, sync local `main`, run `dart run tool/verify_sprint_registry.dart`, then assign Sprint **012** only via the Pre-Sprint Status Gate. No immediate Sprint 011 reconciliation PR is required.
+Sync local `main`, then create/assign the next founder-approved GitHub Issue Work Item via the Pre-Work-Item Status Gate. Do not invent product scope here.

@@ -17,7 +17,6 @@ fi
 
 flutter pub get
 dart format --output=none --set-exit-if-changed .
-dart run tool/verify_sprint_registry.dart
 flutter analyze
 flutter test
 
