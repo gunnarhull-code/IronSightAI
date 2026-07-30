@@ -68,23 +68,23 @@ Every completed task must end with:
 
 ## Setup and workflow
 
-Procedures live in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) (source of truth) and project skills under [`.cursor/skills/`](./.cursor/skills/) (loaded when relevant). Do not invent alternate workflows.
+Procedures live in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) (source of truth), project skills under [`.cursor/skills/`](./.cursor/skills/), and slash commands under [`.cursor/commands/`](./.cursor/commands/). Do not invent alternate workflows.
 
-| When | Use skill |
+| When | Use |
 |---|---|
-| Verify / finish task / before Draft PR | `ironsight-verify` |
-| Open Draft PR | `ironsight-draft-pr` |
-| Assign / start a Work Item | `ironsight-pre-work-item` |
-| After founder merge | `ironsight-post-merge` |
-| First-time setup / local Supabase | `ironsight-local-setup` |
-| Windows Brave / web-server run | `ironsight-windows-run` |
-| Migrations / production schema | `ironsight-migration-safety` |
-| AFK / Cloud Agent assigned work | `ironsight-afk-agent` |
+| Start / continue a Work Item | skill `ironsight-work-item` or command `start-work-item` |
+| Verify / finish task / before Draft PR | skill `ironsight-verify` |
+| Open Draft PR | skill `ironsight-draft-pr` |
+| Migrations / production schema | skill `ironsight-migration-safety` |
+| Detached PR QA | command `testpr` |
+| Sync local `main` | command `sync-main` |
+| Read-only status | command `project-status` |
+| Launch local app (Brave / web-server) | command `run-local` |
 
 Always-on reminders:
 
 - Canonical work tracking: **GitHub Issues (Work Items)**. Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
-- Pre-Work-Item Status Gate is mandatory before starting a new assigned Work Item (see skill + DEVELOPER_WORKFLOW).
+- Pre-Work-Item Status Gate is mandatory before starting a new assigned Work Item (see `ironsight-work-item` + DEVELOPER_WORKFLOW).
 - Agents open Draft PRs; agents never merge to `main`; never push documentation commits directly to `main`.
 - Cloud summary: Flutter at `~/flutter` (3.44.8); require `.env`; unit tests need `.env` not running Supabase; web-server `0.0.0.0:8080` may be blank 15–30s on first debug load.
 

@@ -146,6 +146,8 @@ local.properties
 !.cursor/rules/
 !.cursor/skills/
 !.cursor/skills/**
+!.cursor/commands/
+!.cursor/commands/**
 
 # -----------------------------------------------------------------------------
 # OS-generated files

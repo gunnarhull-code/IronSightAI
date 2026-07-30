@@ -8,17 +8,13 @@ description: >-
 
 # IronSight Draft PR
 
-Canonical detail: `docs/DEVELOPER_WORKFLOW.md` → Draft PR preparation. Prefer Draft. Never merge. Never push to `main`.
+Canonical: `docs/DEVELOPER_WORKFLOW.md` → Draft PR preparation. Prefer Draft. Never merge. Never push to `main`.
 
-## Steps
-
-1. Feature branch from latest `origin/main` (not commits left only on local `main`).
-2. Keep Work Item / Issue scope immutable — no unrelated work.
-3. Run the `ironsight-verify` skill checks; paste results into the PR body.
-4. Fill `.github/PULL_REQUEST_TEMPLATE.md` (GitHub Issue link, immutable scope, files, tests, analyze/test, manual verification, architecture/UX, assumptions, follow-ups, migrations, dry-run).
-5. Screenshots only if they meaningfully show UI. Never create videos.
-6. Push **only** the feature branch: `git push -u origin HEAD`.
-7. Open Draft PR targeting `main` with `gh pr create --draft --base main --head <branch>`.
-8. Reference the GitHub Issue in the PR body/title. Agents never merge.
-
-If `gh` is not authenticated, stop and tell the user to run `gh auth login` (or open the GitHub compare URL). Do not extract or print credentials.
+1. Feature branch from latest `origin/main`.
+2. Keep Issue / Work Item scope immutable.
+3. Run `ironsight-verify`; paste results into the PR body.
+4. Fill `.github/PULL_REQUEST_TEMPLATE.md` (Issue link, scope, files, tests, analyze/test, migrations).
+5. Screenshots only if meaningful for UI. Never create videos.
+6. `git push -u origin HEAD` (feature branch only).
+7. `gh pr create --draft --base main --head <branch>`; reference the Issue.
+8. If `gh` is unauthenticated, stop and ask for `gh auth login` (or give the compare URL). Never print credentials.

@@ -8,9 +8,7 @@ description: >-
 
 # IronSight verify
 
-Canonical detail: `docs/DEVELOPER_WORKFLOW.md` → Standard verification. Do not invent alternate checks.
-
-From the repo root, run:
+Canonical: `docs/DEVELOPER_WORKFLOW.md` → Standard verification.
 
 ```bash
 flutter pub get
@@ -19,14 +17,6 @@ flutter analyze
 flutter test
 ```
 
-Or `./scripts/verify.sh` (Git Bash/WSL). On Windows PowerShell, run the commands above directly.
+Or `./scripts/verify.sh` (Git Bash/WSL). On Windows PowerShell, run the commands above.
 
-## Expected outcomes
-
-- Format: exit 0 (no files need changes)
-- Analyze: no issues (or only an understood missing-`.env` asset warning)
-- Tests: all pass
-
-Report exact commands and results. Never claim a check passed unless it ran successfully.
-
-CI on PRs to `main` runs the same checks; it copies `.env.example` only and never applies migrations or touches production. The informational Supabase migration review workflow is separate.
+Report exact results. Never claim a check passed unless it ran successfully. CI copies `.env.example` only; never applies migrations or touches production.

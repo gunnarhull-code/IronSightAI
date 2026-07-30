@@ -216,6 +216,7 @@ If your working tree is dirty, stop and review git status. Preserve all work. Co
 - Active AFK / Cloud Agent scope notes: `management/AFK_AGENTS.md`
 - Historical numbered sprints: `management/LEGACY_SPRINT_HISTORY.md`
 - Agent safety rules: `AGENTS.md`
-- Agent playbooks (selective): `.cursor/skills/` — verify, Draft PR, Pre-Work-Item, post-merge, local setup, Windows/Brave run, migration safety, AFK agent loader
+- Agent playbooks: `.cursor/skills/` — `ironsight-work-item`, `ironsight-draft-pr`, `ironsight-verify`, `ironsight-migration-safety`
+- Agent slash commands: `.cursor/commands/` — `testpr`, `sync-main`, `project-status`, `start-work-item`, `run-local`
 
-Prefer updating **this document** when procedures change, then keep matching `.cursor/skills/*/SKILL.md` playbooks in sync. Skills must not invent alternate workflows.
+Prefer updating **this document** when procedures change, then keep matching `.cursor/skills/*/SKILL.md` and `.cursor/commands/*.md` in sync. Skills/commands must not invent alternate workflows.
