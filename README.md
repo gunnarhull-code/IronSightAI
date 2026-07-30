@@ -50,7 +50,7 @@ The [`management/`](./management/) folder is the operational system of IronSight
 There must never be duplicate sources of truth. Each of the following lives in exactly one place:
 
 - **`docs/`** — long-lived documentation: the Constitution, technical architecture, the product specification, the **strategic roadmap** (`docs/13-roadmap.md`), and the **developer workflow** (`docs/DEVELOPER_WORKFLOW.md`).
-- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, AFK/Cloud Agent notes, and legacy sprint history.
+- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, permanent AFK/Cloud Agent policy, and legacy sprint history.
 
 The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Active work tracking exists **only** as GitHub Issues (Work Items). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
 
@@ -64,7 +64,7 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 | [`management/BACKLOG.md`](./management/BACKLOG.md) | Ideas intentionally deferred from the MVP, by priority |
 | [`management/FOUNDER_LOG.md`](./management/FOUNDER_LOG.md) | Founder journal — customer conversations, ideas, lessons learned |
 | [`management/WINS.md`](./management/WINS.md) | Milestone journal |
-| [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md) | Approved AFK/Cloud Agent Work Item scope notes (GitHub Issues are canonical) |
+| [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md) | Permanent AFK/Cloud Agent policy (GitHub Issues are the only assignment source) |
 | [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md) | Archived numbered-sprint history (sprint registry retired) |
 
 ## Key Decisions (Locked for V1)
@@ -112,4 +112,4 @@ No pricing/valuation output, no AI damage detection, no customer-facing portal, 
 
 ## Next Step
 
-Continue implementation from [`management/DASHBOARD.md`](./management/DASHBOARD.md) and assigned Work Items (GitHub Issues; AFK notes in [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md)). Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md).
+Continue implementation from [`management/DASHBOARD.md`](./management/DASHBOARD.md) and assigned Work Items on **GitHub Issues**. Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md).

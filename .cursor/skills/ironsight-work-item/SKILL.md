@@ -2,8 +2,8 @@
 name: ironsight-work-item
 description: >-
   Start or continue an IronSight GitHub Issue Work Item: run the Pre-Work-Item
-  Status Gate, load Issue + AFK_AGENTS scope, and keep scope frozen. Use when
-  assigning, starting, or continuing Work Item / AFK / Cloud Agent Issue work.
+  Status Gate, read the Issue as the full assignment, and keep scope frozen. Use
+  when assigning, starting, or continuing Work Item / AFK / Cloud Agent Issue work.
 ---
 
 # IronSight Work Item
@@ -12,9 +12,9 @@ Canonical: `docs/DEVELOPER_WORKFLOW.md` → Work Items + Pre-Work-Item Status Ga
 
 Read live sources (do not copy status into this skill):
 
-1. The GitHub Issue (canonical identity + immutable scope)
-2. `management/AFK_AGENTS.md` when AFK/Cloud assigned
-3. `AGENTS.md`
+1. The **GitHub Issue** — complete assignment source (identity, frozen scope, status)
+2. `AGENTS.md` — safety rules
+3. `management/AFK_AGENTS.md` — permanent AFK/Cloud **policy only** (never update it per Work Item)
 
 ## Pre-Work-Item Status Gate
 
@@ -24,8 +24,9 @@ Before starting or assigning a Work Item:
 2. Sync from latest `origin/main` (`git fetch` + branch from `origin/main`).
 3. Issue exists with clear, frozen scope — stop if ambiguous.
 4. Check open PRs / active Work Items for file/scope overlap.
-5. Update `management/AFK_AGENTS.md` only for AFK/Cloud assignments.
-6. Open a **Draft** PR via `ironsight-draft-pr`. Agents never merge to `main`.
+5. Open a **Draft** PR via `ironsight-draft-pr`. Agents never merge to `main`.
+
+Do **not** update `management/AFK_AGENTS.md` for assignments.
 
 ## Rules
 

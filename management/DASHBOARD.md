@@ -20,7 +20,7 @@ This is the company's single, permanent strategic roadmap — covering the Week 
 
 ## Current Work Item
 
-No product Work Item is assigned yet. Canonical work tracking: **GitHub Issues**. AFK/Cloud Agent notes: [`management/AFK_AGENTS.md`](./AFK_AGENTS.md). Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
+No product Work Item is assigned yet. Canonical work tracking: **GitHub Issues** (identity, assignment, frozen scope, and status). Permanent AFK/Cloud Agent policy: [`management/AFK_AGENTS.md`](./AFK_AGENTS.md) — do not record assignments there. Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
 
 **Live PR and CI status belongs to GitHub** (pull requests and Actions). Do not duplicate open-PR merge checkboxes here as long-lived unchecked repository tasks.
 

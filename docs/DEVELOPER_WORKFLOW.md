@@ -91,9 +91,9 @@ Canonical work tracking is **GitHub Issues**. Each assignable unit of work is a 
 
 | Concept | Source of truth |
 |---|---|
-| Work Item identity / status | GitHub Issue |
+| Work Item identity / assignment / frozen scope / status | GitHub Issue (complete assignment source) |
 | Live PR / CI state | GitHub Pull Requests and Actions |
-| AFK / Cloud Agent scope notes | [`management/AFK_AGENTS.md`](../management/AFK_AGENTS.md) |
+| AFK / Cloud Agent permanent policy | [`management/AFK_AGENTS.md`](../management/AFK_AGENTS.md) (never per-Work-Item updates) |
 | Historical numbered sprints | [`management/LEGACY_SPRINT_HISTORY.md`](../management/LEGACY_SPRINT_HISTORY.md) |
 
 Rules:
@@ -103,6 +103,7 @@ Rules:
 - Draft PRs must reference the GitHub Issue they implement.
 - Agents open **Draft** PRs and **never merge** to `main`. The founder merges.
 - Numbered sprints and `management/sprint_registry.json` are retired. Do not recreate the registry.
+- Do **not** update `management/AFK_AGENTS.md` for individual assignments.
 
 ---
 
@@ -112,13 +113,12 @@ Before a new Work Item is started or assigned to an agent:
 
 1. Local `main` must be clean (`git status` shows nothing to commit).
 2. Local `main` must match `origin/main` (`git pull --ff-only origin main` / up to date).
-3. A GitHub Issue must exist with clear, immutable scope.
+3. A GitHub Issue must exist with clear, immutable scope — read the Issue as the complete assignment source.
 4. Existing active Work Item scopes must be checked for file/scope overlap.
-5. Update `management/AFK_AGENTS.md` when the work is AFK/Cloud Agent assigned.
-6. Land doc updates through a Draft PR; never push documentation commits directly to `main`.
-7. If the Issue scope is ambiguous or contradictory, **stop** — do not guess.
+5. Land doc updates through a Draft PR; never push documentation commits directly to `main`.
+6. If the Issue scope is ambiguous or contradictory, **stop** — do not guess.
 
-Agents never merge to `main`. The founder performs every merge.
+Agents never merge to `main`. The founder performs every merge. Never update `management/AFK_AGENTS.md` per Work Item.
 
 ---
 
@@ -213,7 +213,7 @@ If your working tree is dirty, stop and review git status. Preserve all work. Co
 
 - Product / architecture authority: `docs/00-ironsight-constitution.md`, `docs/15-final-product-specification.md`
 - Day-to-day operational status: `management/DASHBOARD.md`
-- Active AFK / Cloud Agent scope notes: `management/AFK_AGENTS.md`
+- Permanent AFK / Cloud Agent policy: `management/AFK_AGENTS.md` (not an assignment board)
 - Historical numbered sprints: `management/LEGACY_SPRINT_HISTORY.md`
 - Agent safety rules: `AGENTS.md`
 - Agent playbooks: `.cursor/skills/` — `ironsight-work-item`, `ironsight-draft-pr`, `ironsight-verify`, `ironsight-migration-safety`
