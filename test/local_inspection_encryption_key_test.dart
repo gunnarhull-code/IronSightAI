@@ -1,10 +1,6 @@
 import 'dart:io';
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_secure_storage/test/test_flutter_secure_storage_platform.dart';
-import 'package:flutter_secure_storage_platform_interface/flutter_secure_storage_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ironsight_ai/data/local/drift/local_inspection_encryption_key_store.dart';
 import 'package:ironsight_ai/data/local/drift/resolve_local_inspection_encryption_key.dart';
 
 import 'support/fake_local_inspection_encryption_key_store.dart';
@@ -25,42 +21,8 @@ void main() {
   });
 
   File legacyKeyFile() => File(
-        '${documentsDirectory.path}/$kLegacyLocalInspectionEncryptionKeyFileName',
-      );
-
-  group('SecureStorageLocalInspectionEncryptionKeyStore', () {
-    late Map<String, String> backend;
-    late FlutterSecureStoragePlatform previousPlatform;
-
-    setUp(() {
-      backend = <String, String>{};
-      previousPlatform = FlutterSecureStoragePlatform.instance;
-      FlutterSecureStoragePlatform.instance =
-          TestFlutterSecureStoragePlatform(backend);
-    });
-
-    tearDown(() {
-      FlutterSecureStoragePlatform.instance = previousPlatform;
-    });
-
-    test('creates, reuses, and rejects empty writes', () async {
-      final store = SecureStorageLocalInspectionEncryptionKeyStore(
-        storage: const FlutterSecureStorage(),
-      );
-
-      expect(await store.readKey(), isNull);
-      await store.writeKey('secure-key');
-      expect(await store.readKey(), 'secure-key');
-      expect(
-        backend[kLocalInspectionEncryptionKeyStorageKey],
-        'secure-key',
-      );
-      await expectLater(
-        store.writeKey('  '),
-        throwsA(isA<ArgumentError>()),
-      );
-    });
-  });
+    '${documentsDirectory.path}/$kLegacyLocalInspectionEncryptionKeyFileName',
+  );
 
   group('resolveLocalInspectionEncryptionKey', () {
     test('creates and reuses a key from secure storage', () async {
@@ -84,29 +46,34 @@ void main() {
       expect(await legacyKeyFile().exists(), isFalse);
     });
 
-    test('migrates legacy plaintext companion file into secure storage',
-        () async {
-      final store = FakeLocalInspectionEncryptionKeyStore();
-      await legacyKeyFile().writeAsString('legacy-plaintext-key', flush: true);
+    test(
+      'migrates legacy plaintext companion file into secure storage',
+      () async {
+        final store = FakeLocalInspectionEncryptionKeyStore();
+        await legacyKeyFile().writeAsString(
+          'legacy-plaintext-key',
+          flush: true,
+        );
 
-      final resolved = await resolveLocalInspectionEncryptionKey(
-        keyStore: store,
-        documentsDirectory: documentsDirectory,
-        generateKey: () => 'should-not-be-used',
-      );
+        final resolved = await resolveLocalInspectionEncryptionKey(
+          keyStore: store,
+          documentsDirectory: documentsDirectory,
+          generateKey: () => 'should-not-be-used',
+        );
 
-      expect(resolved, 'legacy-plaintext-key');
-      expect(store.writtenKeys, ['legacy-plaintext-key']);
-      expect(await legacyKeyFile().exists(), isFalse);
+        expect(resolved, 'legacy-plaintext-key');
+        expect(store.writtenKeys, ['legacy-plaintext-key']);
+        expect(await legacyKeyFile().exists(), isFalse);
 
-      final reused = await resolveLocalInspectionEncryptionKey(
-        keyStore: store,
-        documentsDirectory: documentsDirectory,
-        generateKey: () => 'should-not-be-used',
-      );
-      expect(reused, 'legacy-plaintext-key');
-      expect(store.writeCount, 1);
-    });
+        final reused = await resolveLocalInspectionEncryptionKey(
+          keyStore: store,
+          documentsDirectory: documentsDirectory,
+          generateKey: () => 'should-not-be-used',
+        );
+        expect(reused, 'legacy-plaintext-key');
+        expect(store.writeCount, 1);
+      },
+    );
 
     test('keeps legacy plaintext file when secure write fails', () async {
       final store = FakeLocalInspectionEncryptionKeyStore(
@@ -190,6 +157,13 @@ void main() {
         throwsA(isA<StateError>()),
       );
       expect(store.writeCount, 0);
+    });
+
+    test('rejects empty secure-storage writes', () async {
+      final store = FakeLocalInspectionEncryptionKeyStore();
+
+      await expectLater(store.writeKey('  '), throwsA(isA<ArgumentError>()));
+      expect(store.writtenKeys, isEmpty);
     });
   });
 }

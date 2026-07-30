@@ -20,16 +20,17 @@ class SecureStorageLocalInspectionEncryptionKeyStore
     implements LocalInspectionEncryptionKeyStore {
   SecureStorageLocalInspectionEncryptionKeyStore({
     FlutterSecureStorage? storage,
-  }) : _storage = storage ??
-            const FlutterSecureStorage(
-              aOptions: AndroidOptions(),
-              iOptions: IOSOptions(
-                accessibility: KeychainAccessibility.first_unlock_this_device,
-              ),
-              mOptions: MacOsOptions(
-                accessibility: KeychainAccessibility.first_unlock_this_device,
-              ),
-            );
+  }) : _storage =
+           storage ??
+           const FlutterSecureStorage(
+             aOptions: AndroidOptions(),
+             iOptions: IOSOptions(
+               accessibility: KeychainAccessibility.first_unlock_this_device,
+             ),
+             mOptions: MacOsOptions(
+               accessibility: KeychainAccessibility.first_unlock_this_device,
+             ),
+           );
 
   final FlutterSecureStorage _storage;
 
