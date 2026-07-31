@@ -8,7 +8,7 @@ This is a specification document. Application code may already exist on `main` a
 
 ## 0. Founder-Approved MVP Direction (Work Item #18) — Live Scope
 
-**This section is the live MVP product scope.** It supersedes contradictory live-scope statements elsewhere in this document (and in `README.md` / `docs/13-roadmap.md` / `docs/00` where those restated the older plan). Historical decisions and design detail below are preserved; they are not deleted.
+**This section is the live MVP product scope.** It supersedes contradictory live-scope statements elsewhere in this document (and in `README.md` / `docs/13-roadmap.md` / `docs/00` where those restated the older plan). Historical decisions and design detail below are preserved; they are not deleted. Founder confirmations resolving the former §19 open questions are incorporated here.
 
 ### Primary MVP Goal
 
@@ -18,21 +18,55 @@ This is a specification document. Application code may already exist on `main` a
 
 Make human trade valuation and pricing easier and faster by producing a **trustworthy inspection package**. The MVP does **not** calculate or recommend a dollar value.
 
+### MVP contains only Quick Appraisal
+
+MVP ships the **Quick Appraisal** workflow only. Expandable **Detailed Inspection** is **Later**. The shared inspection/checklist data model (`checklist_template_items` with optional `parent_item_id` hierarchy, one response table) is preserved so Detailed Inspection can be added later without an architecture rewrite — but no Detailed Inspection UI or required depth ships in MVP.
+
+### Under-two-minute minimum capture set
+
+**Required photos:**
+- front-left overview
+- rear-right overview
+- serial/data plate
+- hour-meter/dashboard
+
+**Also required:**
+- one continuous guided walkaround video (evidence only in MVP — **not** AI-analyzed in MVP)
+- equipment type, make, model
+- serial number **or** explicit “not found”
+- hours **or** explicit “unknown”
+- Quick Condition ratings
+
+**Optional:**
+- year
+- notes
+- additional damage/detail photos
+
+### Timing definition (how “under two minutes” is measured)
+
+- **Starts** when the user taps **Start Quick Appraisal**
+- **Ends** when the user confirms the completed inspection
+- **Excludes** login, first-time company onboarding, synchronization, and sharing
+- Must be validated on a real mid-range phone under realistic field conditions
+- If the path cannot meet two minutes, **reduce required work** rather than weaken the promise
+
 ### MVP Workflow
 
-1. Select or create equipment
-2. Capture required photos
-3. Record a guided walkaround video
-4. Enter serial number, hours, condition, notes, and required details
-5. AI may suggest:
-   - equipment/component recognition
-   - visible condition or damage
-   - field values from captured media
-   - missing information
-6. User reviews and corrects every suggestion
-7. User explicitly confirms final information
-8. Save and complete the inspection package offline
-9. Manual operation remains available when AI or connectivity fails
+1. Select or create equipment (type, make, model; year optional)
+2. Capture the four required photos (plus optional damage/detail photos)
+3. Record one continuous guided walkaround video (evidence; not AI-analyzed in MVP)
+4. Enter serial (or “not found”), hours (or “unknown”), Quick Condition ratings, and optional notes — on-device OCR may assist serial/hours
+5. Optional cloud photo recognition/autofill may suggest field values or missing information when connected (via backend `AIService`); user reviews and corrects every suggestion
+6. User explicitly confirms final information
+7. Save and complete the inspection package offline
+8. Manual capture always works when AI or connectivity is unavailable
+
+### Required MVP plumbing (workflow infrastructure)
+
+- Minimal company setup/context
+- Company-scoped inspection list
+- Reopen mutable draft
+- Discard draft with confirmation
 
 ### AI Rules (MVP)
 
@@ -41,17 +75,24 @@ Make human trade valuation and pricing easier and faster by producing a **trustw
 - AI is never final authority
 - Humans confirm all information
 - AI or provider outages never block inspections
-- Preserve the provider-agnostic `AIService` architecture (no provider hard-wiring in domain/UI layers)
+- **On-device OCR** for serial-number and hour-meter capture
+- **Optional photo recognition/autofill** may use **cloud AI when connected**
+- Flutter/domain code **never calls a vendor directly**; cloud AI goes through the **backend provider-agnostic `AIService`**
+- Manual capture always works when AI or connectivity is unavailable
+- Walkaround video is captured as evidence in MVP and is **not AI-analyzed in MVP**
+- **Vendor selection** is a later benchmark Work Item, not a hardcoded product-spec decision
 
 ### V2 (after MVP)
 
-- Generate a clean shareable summary image or PDF, **not** a literal screenshot
-- Generate a prefilled email draft
+- First V2 artifact is a **professional PDF** (not a literal screenshot)
+- Generate **server-side**, **cache/download locally**, then attach through a **reviewed native email/share draft**
 - Require review before sending
 - Use native device sharing
 
 ### Later (after V2)
 
+- Expandable **Detailed Inspection** (on the preserved shared checklist data model)
+- Separate **summary-image** renderer (unless pilot feedback proves it necessary earlier)
 - Company/manager portal
 - Live collaboration or chat
 - Manager review and approval
@@ -59,16 +100,18 @@ Make human trade valuation and pricing easier and faster by producing a **trustw
 - Historical equipment information
 - Recon costs and additions
 - Actual pricing/valuation recommendations
+- Cloud AI **vendor** selection / benchmarking (not frozen in this spec)
 
 ### What this amendment changes relative to the prior approved plan
 
-| Topic | Prior live scope (historical below) | Live scope after #18 |
+| Topic | Prior live scope (historical below) | Live scope after #18 + founder confirmations |
 |---|---|---|
-| Core speed promise | “Just a few minutes” with optional Detailed Inspection depth | **Under two minutes** for a useful Quick Appraisal, fully offline |
-| AI in MVP | Zero AI/ML in V1; AI assistance named for V2 | **Optional, advisory AI** allowed in MVP under the AI Rules above |
-| PDF / shareable package | Server-generated PDF + native share in V1 | **Moved to V2** (clean summary image/PDF + prefilled email draft + review-before-send + native share) |
-| Dollar valuation | Explicitly out of V1 (and remains out) | Still **out of MVP**; remains Later / valuation phase |
-| Manager portal / collaboration / automated email / recon / pricing | Various V2–V4 or excluded lists | Consolidated under **Later** as listed above |
+| Core speed promise | “Just a few minutes” with optional Detailed Inspection depth | **Under two minutes** Quick Appraisal only; timing defined above |
+| Detailed Inspection | In V1 as expandable depth (Decision #1) | **Later**; shared data model retained for future add |
+| AI in MVP | Zero AI/ML in V1; AI assistance named for V2 | On-device OCR + optional cloud photo assist via backend `AIService`; video not analyzed in MVP |
+| PDF / shareable package | Server-generated PDF + native share in V1 | **V2**: professional PDF server-side → local cache → reviewed native share; summary-image is Later |
+| Plumbing | Ambiguous after first #18 pass | Minimal company context, company-scoped list, reopen draft, discard-with-confirm **in MVP** |
+| Dollar valuation | Explicitly out of V1 | Still **out of MVP**; remains Later |
 
 **Preserved without change:** offline-first inspection completion; humans confirm capture/OCR/AI suggestions; no silent overwrites; MVP is an inspection package, not a valuation engine; PR #14 and PR #15 remain frozen.
 
@@ -80,7 +123,7 @@ Make human trade valuation and pricing easier and faster by producing a **trustw
 
 Every decision in this document is subordinate to this promise. The MVP does not calculate or recommend a dollar value.
 
-**Historical amendment (post-Founder Decision #1, retained for record):** the original two-minute promise was later softened to “just a few minutes” when Detailed Inspection depth was retained in V1 as an optional expandable path on one inspection engine (see Section 5 and `docs/16-founder-approval-checklist.md`). **Work Item #18 restores the under-two-minute Quick Appraisal target as the live MVP measuring stick** and reframes shareable PDF/email as V2. Whether expandable Detailed Inspection remains an in-MVP opt-in path or moves Later is called out in Section 19 for founder confirmation; it must never force the default Quick Appraisal path over two minutes.
+**Historical amendment (post-Founder Decision #1, retained for record):** the original two-minute promise was later softened to “just a few minutes” when Detailed Inspection depth was retained in V1 as an optional expandable path on one inspection engine (see Section 5 and `docs/16-founder-approval-checklist.md`). **Work Item #18 restores the under-two-minute Quick Appraisal target** and moves shareable PDF to V2. **Founder confirmation (same Work Item):** expandable Detailed Inspection is **Later**; MVP is Quick Appraisal only, while the shared checklist data model is preserved for a future add without rewrite.
 
 ---
 
@@ -102,34 +145,43 @@ Full role/permission model: Section 6.
 
 ## 3. MVP Scope (Version 1) — Live Scope per §0 / Work Item #18
 
-The MVP is a **capture-and-review** Quick Appraisal that works fully offline. Live in-scope behavior is defined by **§0**; this section restates it for implementers.
+The MVP is a **capture-and-review Quick Appraisal only** that works fully offline. Live in-scope behavior is defined by **§0**; this section restates it for implementers.
 
 **In scope for MVP:**
-1. Auth and company context sufficient for a rep to work (session persists offline after first sign-in).
-2. Select or create equipment.
-3. Capture required photos.
-4. Record a guided walkaround video.
-5. Enter serial number, hours, condition, notes, and required details (OCR/assistive capture may propose values; the rep confirms).
-6. Optional advisory AI suggestions (equipment/component recognition, visible condition or damage, field values from media, missing information) — always reviewable and correctable; never required for completion.
-7. Review screen where the user corrects suggestions and **explicitly confirms** final information.
-8. Save and complete the inspection package **offline**.
-9. Manual operation when AI or connectivity fails.
-10. Background sync of structured data + media when connectivity returns (does not block completion).
+1. Minimal company setup/context; session persists offline after first sign-in.
+2. Company-scoped inspection list; reopen mutable draft; discard draft with confirmation.
+3. Select or create equipment (type, make, model required; year optional).
+4. Capture the four required photos (front-left, rear-right, serial/data plate, hour-meter/dashboard) plus optional damage/detail photos.
+5. Record one continuous guided walkaround video (evidence only; not AI-analyzed in MVP).
+6. Serial number or explicit “not found”; hours or explicit “unknown”; Quick Condition ratings; optional notes — on-device OCR may assist serial/hours; human confirms.
+7. Optional cloud photo recognition/autofill when connected (via backend `AIService`) — always reviewable/correctable; never required.
+8. Review screen where the user corrects suggestions and **explicitly confirms** final information.
+9. Save and complete the inspection package **offline**.
+10. Manual capture when AI or connectivity fails.
+11. Background sync of structured data + media when connectivity returns (does not block completion; excluded from the two-minute timing budget).
 
 **Moved out of MVP (now V2 — see §0):**
-- Clean shareable summary image or PDF (not a literal screenshot)
-- Prefilled email draft, review-before-send, native device sharing
+- Professional PDF generated server-side, cached/downloaded locally, attached through a reviewed native email/share draft
 
-**Historical note (pre-#18 V1 list, retained for record):** the prior approved V1 list also included automatic server-generated branded PDF + native email/share in V1, expandable Detailed Inspection per scorecard category, inspection list/admin basics, and explicitly **zero** AI. Those items are superseded for *live* MVP scope by §0; design detail remains in Sections 5–13 as historical/engineering reference.
+**Moved out of MVP (Later — see §0):**
+- Expandable Detailed Inspection UI (shared checklist data model retained for future add)
+- Separate summary-image renderer
+- Portal, collaboration, manager approval, automated email, historical equipment info, recon, valuation
+
+**Historical note (pre-#18 V1 list, retained for record):** the prior approved V1 list also included automatic server-generated branded PDF + native email/share in V1, expandable Detailed Inspection in V1, and explicitly **zero** AI. Those items are superseded for *live* MVP scope by §0; design detail remains in Sections 5–13 as historical/engineering reference.
 
 **Everything else is out of scope for MVP** — see Section 4 and §0 “Later”.
 
 ## 4. Explicitly Excluded Features
 
 **Out of MVP until the named phase (see §0 and Section 16):**
+- Expandable Detailed Inspection UI (**Later**); keep the shared checklist data model ready for it.
 - Any pricing, valuation, or trade-value / dollar recommendation (**Later**).
-- Shareable summary image/PDF and prefilled email draft (**V2**).
+- Professional PDF + reviewed native email/share draft (**V2**).
+- Separate summary-image renderer (**Later**, unless pilot feedback proves it necessary).
 - Company/manager portal; live collaboration or chat; manager review and approval; automated email workflows; historical equipment information; recon costs and additions (**Later**).
+- Walkaround **video AI analysis** (video is evidence-only in MVP).
+- Hardcoded cloud AI vendor selection (later benchmark Work Item).
 - Voice-to-text notes (not in §0 MVP; revisit only with founder approval).
 - True push notifications requiring server-triggered delivery infrastructure.
 - Branded transactional email delivery with tracking (beyond V2’s native-share draft flow).
@@ -142,13 +194,13 @@ The MVP is a **capture-and-review** Quick Appraisal that works fully offline. Li
 - Cross-tenant data aggregation of any kind (requires its own anonymization design pass and legal review).
 - Offline capability for anything other than the mobile inspection app.
 
-**Clarification vs. prior text:** optional advisory AI is **in** MVP under §0 AI Rules. The older “AI-based damage detection is V2-only / V1 has zero AI” statements are superseded for live scope; AI remains non-authoritative and never blocks the inspection.
+**Clarification vs. prior text:** on-device OCR and optional cloud photo assist (via backend `AIService`) are **in** MVP under §0 AI Rules. Video is not AI-analyzed in MVP. AI remains non-authoritative and never blocks the inspection.
 
 ## 5. Complete Inspection Workflow
 
-**Live MVP workflow** is the capture-and-review sequence in **§0** (equipment → photos → walkaround video → required fields → optional AI suggestions → human review/confirm → offline complete). The mermaid diagram and step table below are the **pre-#18 progressive-depth design record** (Quick Appraisal + optional Detailed Inspection). They remain useful engineering reference (continuous video, OCR confirm, scorecard) but must not be read as overriding §0 on AI, PDF/share timing, or the under-two-minute measuring stick.
+**Live MVP workflow** is the Quick Appraisal capture-and-review sequence in **§0**, including the required photo set, walkaround evidence video, Quick Condition ratings, and timing definition. The mermaid diagram and step table below are the **pre-#18 progressive-depth design record** (Quick Appraisal + optional Detailed Inspection). They remain useful engineering reference (continuous video, OCR confirm, scorecard) but must not be read as overriding §0: Detailed Inspection UI is **Later**; video is not AI-analyzed in MVP; PDF/share is V2; the under-two-minute measuring stick and required capture set are in §0.
 
-**Historical framing (Founder Decision #1):** one inspection engine with **progressive depth** — a fast default Quick Appraisal and an optional expandable Detailed Inspection per category on the same data model — not two products. Whether that expandable Detailed path stays in MVP is an open founder confirmation item (Section 19).
+**Historical framing (Founder Decision #1):** one inspection engine with progressive depth on a shared data model. **Live confirmation (Work Item #18):** MVP ships Quick Appraisal only; Detailed Inspection moves Later; the shared checklist model is preserved so depth can return without rewrite.
 
 ```mermaid
 flowchart TD
@@ -224,11 +276,11 @@ No custom permission sets or per-feature toggles in V1 — this table is the ent
 
 ## 7. Offline Strategy
 
-**Local-first, not "offline-tolerant."** The phone's local SQLite database (`drift`) is the source of truth during an inspection. The entire inspection engine — equipment selection, video, serial/hour-meter capture, the Quick Condition Scorecard, any Detailed Inspection expansion, review, and "Complete" — works with zero network connectivity, full stop. Depth never costs connectivity; a rep can go fully detailed on every category in the middle of a dead zone.
+**Local-first, not "offline-tolerant."** The phone's local SQLite database (`drift`) is the source of truth during an inspection.
 
-**MVP connectivity rule (live, §0):** the entire capture-and-review Quick Appraisal — including save/complete of the inspection package — works with **zero** network connectivity. Optional AI suggestions degrade gracefully: if AI or a provider is unavailable, the rep continues manually. First sign-in on a new device still requires connectivity; subsequent opens use the cached session.
+**MVP connectivity rule (live, §0):** the entire Quick Appraisal — equipment, required photos, walkaround evidence video, serial/hours (on-device OCR or manual), Quick Condition ratings, review, and save/complete — works with **zero** network connectivity. Optional cloud photo recognition/autofill runs only when connected and degrades gracefully: if AI or a provider is unavailable, the rep continues manually. First sign-in on a new device still requires connectivity; subsequent opens use the cached session.
 
-**Historical note:** pre-#18 text also treated **PDF report generation** as a second connectivity requirement in V1. Shareable summary image/PDF generation is now **V2** (Section 12 / §0) and must not block MVP offline completion.
+**Historical note:** pre-#18 text treated Detailed Inspection expansion and **PDF report generation** as part of the V1 offline/connectivity story. Detailed Inspection UI is now **Later**; professional PDF generation is **V2** (Section 12 / §0) and must not block MVP offline completion.
 
 Everything else — including all structured data and all media (video, photos) — is captured locally first and syncs in the background whenever a connection becomes available, without the rep ever waiting on it or taking any action to trigger it.
 
@@ -254,7 +306,7 @@ Everything else — including all structured data and all media (video, photos) 
 - **Multi-tenant from day one.** Every tenant-scoped table carries `company_id`; Postgres Row Level Security — not application code — is the actual isolation boundary (Section 11). This is true even though V1 launches with a handful of hand-onboarded pilot dealerships.
 - **No hard deletes on inspection data.** Corrections happen via edits with `updated_at` tracking; "discarded" drafts are flagged, not removed. This preserves a defensible audit trail for data that may end up in front of a customer or lender.
 - **Reference data is data-driven, not hardcoded.** Equipment categories, makes, and checklist templates (including the V1 Quick Scorecard categories and their Detailed sub-items) live in database tables, seeded server-side and cached on-device for offline use. Adding a new equipment make, adjusting the Quick Scorecard's category list, or adding/editing Detailed sub-items under a category is a data change, not an app release.
-- **One inspection engine, one checklist model, two experience depths — never two systems.** `checklist_template_items` is self-referencing via a nullable `parent_item_id`. Rows with `parent_item_id = null` are the 6-8 top-level Quick Scorecard categories; rows with a non-null `parent_item_id` are that category's Detailed sub-items, hidden behind the category's expand affordance in the UI. `inspection_checklist_responses` is answered identically whether it's responding to a top-level category or a Detailed sub-item — same table, same foreign key, same validation and sync logic. A Quick-only inspection simply has no response rows pointing at child items; a fully Detailed inspection has them for every child. This single hierarchy is what makes "one engine, two depths" a real architectural property and not just a UX framing — there is no second template, second table, or second code path to keep in sync.
+- **One inspection engine, one checklist model — never two systems.** `checklist_template_items` is self-referencing via a nullable `parent_item_id`. Rows with `parent_item_id = null` are the top-level Quick Condition categories used in MVP; rows with a non-null `parent_item_id` are Detailed sub-items reserved for **Later** UI (Founder confirmation on Work Item #18). `inspection_checklist_responses` is answered identically whether responding to a top-level category or a future Detailed sub-item — same table, same foreign key, same validation and sync logic. **MVP writes only Quick (top-level) responses**; child rows may exist in seeded templates for future depth without shipping Detailed Inspection UI now. This preserves the ability to add Detailed Inspection later without an architecture rewrite.
 - **Snapshot-on-write for anything that appears on a generated report.** Following `14-pre-development-review.md` §4.1: scorecard category labels are copied onto the response row at the time the rep answers, not just referenced by foreign key. If an admin edits a category's wording later, previously generated reports remain historically accurate rather than silently inheriting new text.
 - **Client-generated UUIDs everywhere**, so offline-created records never need a server round trip to get an identity before local relationships (media, scorecard responses) can reference them.
 - **Schema stubs for known future needs, added now because they cannot be added retroactively to historical data**:
@@ -294,7 +346,12 @@ Everything else — including all structured data and all media (video, photos) 
 
 ## 10. AI Philosophy
 
-**Live MVP (Work Item #18):** optional, advisory AI **may** assist the capture-and-review workflow (equipment/component recognition, visible condition or damage, field values from captured media, missing-information prompts). AI is never required to complete an inspection.
+**Live MVP (Work Item #18 + founder confirmations):**
+- **On-device OCR** assists serial-number and hour-meter capture (offline-capable).
+- **Optional photo recognition/autofill** may use **cloud AI when connected**, always via the **backend provider-agnostic `AIService`** — Flutter/domain code never calls a vendor SDK/API directly.
+- **Walkaround video** is captured as evidence and is **not AI-analyzed in MVP**.
+- AI is never required to complete an inspection. Manual capture always works when AI or connectivity fails.
+- **Vendor selection** is a later benchmark Work Item, not frozen in this specification.
 
 **AI Rules (non-negotiable):**
 - AI is optional and advisory
@@ -302,11 +359,11 @@ Everything else — including all structured data and all media (video, photos) 
 - AI is never final authority
 - Humans confirm all information
 - AI or provider outages never block inspections
-- Preserve a provider-agnostic `AIService` architecture (domain/UI depend on an abstraction; providers are swappable adapters)
+- Provider-agnostic backend `AIService` for cloud assist; no vendor hard-wiring in Flutter/domain layers
 
-**Confirm, don't assume — for OCR and for AI-derived signal.** Serial numbers, hour-meter readings, and any AI suggestions are presented for human review/correction and explicit confirmation before they become part of the permanent inspection package. Suggestions are never written as fact without a human in the loop.
+**Confirm, don't assume — for OCR and for AI-derived signal.** Serial numbers, hour-meter readings, and any cloud photo suggestions are presented for human review/correction and explicit confirmation before they become part of the permanent inspection package. Suggestions are never written as fact without a human in the loop.
 
-**Historical note:** pre-#18 text stated “V1 contains zero AI/ML functionality” and deferred damage/condition assistance to V2. That zero-AI V1 rule is **superseded** for live MVP scope by §0; the data-model and media-labeling readiness guidance in Section 9 remains valid engineering foundation.
+**Historical note:** pre-#18 text stated “V1 contains zero AI/ML functionality” and deferred assistance to V2. That zero-AI V1 rule is **superseded** for live MVP scope by §0; the data-model and media-labeling readiness guidance in Section 9 remains valid engineering foundation (including for Later Detailed Inspection and future video analysis).
 
 **Dependency (Founder Decision #7, in progress)**: trade-in equipment inspected under the MVP frequently belongs, at inspection time, to a third-party customer, not the dealership. Before any inspection data is repurposed for model training or cross-tenant aggregation, dealership onboarding agreements need a data-use clause covering this. A plain-language draft starting point exists at `docs/17-dealership-data-use-clause-draft.md`; it requires attorney review and finalization before the first pilot dealership agreement is signed. This is a legal/business task, not an engineering one — flagged here so it isn't missed.
 
@@ -324,7 +381,7 @@ Everything else — including all structured data and all media (video, photos) 
 
 ## 12. Report Generation
 
-**Live scope (Work Item #18):** a clean shareable summary image or PDF is a **V2** deliverable, not MVP. MVP completes and stores the inspection package offline without requiring report generation. V2’s artifact must be a designed summary (not a literal screenshot), and sharing follows Section 13 / §0.
+**Live scope (Work Item #18 + founder confirmations):** the first V2 artifact is a **professional PDF** — not a literal screenshot and not a separate summary-image product. MVP completes and stores the inspection package offline without requiring report generation. V2 flow: generate **server-side**, **cache/download locally**, then attach via the reviewed native share path in Section 13. A separate summary-image renderer is **Later** unless pilot feedback proves it necessary.
 
 **Historical V1 design record (pre-#18):** server-side only, no client-side fallback — resolving the contradiction in `14-pre-development-review.md` §1.1 (`10-tech-stack.md` previously listed a "client-side fallback renderer" that no other document designed or supported). A Supabase Edge Function was specified as the sole report-generation path:
 
@@ -338,15 +395,16 @@ Everything else — including all structured data and all media (video, photos) 
 
 ## 13. Email Sharing Workflow
 
-**Live scope (Work Item #18) — V2:**
-1. Generate a clean shareable summary image or PDF (Section 12) — not a literal screenshot.
-2. Generate a prefilled email draft.
-3. Require human review before sending.
-4. Use native device sharing.
+**Live scope (Work Item #18 + founder confirmations) — V2:**
+1. Server generates the professional PDF (Section 12).
+2. Client caches/downloads the PDF locally.
+3. App opens a **reviewed** native email/share draft with the PDF attached (prefilled subject/body as appropriate).
+4. Human reviews before sending.
+5. Use native device sharing.
 
-Automated email workflows (server-sent, tracked, multi-step) remain **Later**, not V2.
+Automated email workflows (server-sent, tracked, multi-step) and a separate summary-image renderer remain **Later**, not V2.
 
-**Historical note — Founder Decision #6 (pre-#18):** V1 was approved to ship a **native share-based email workflow** once a server-generated PDF existed, deliberately not a custom transactional email system. Work Item #18 moves the shareable package + prefilled draft + review-before-send into **V2**, so MVP is not blocked on report generation. Decision #6’s preference for native share (vs. branded transactional infrastructure) remains the V2 sharing approach unless the founder revisits it.
+**Historical note — Founder Decision #6 (pre-#18):** V1 was approved to ship a **native share-based email workflow** once a server-generated PDF existed, deliberately not a custom transactional email system. Work Item #18 moves that PDF + reviewed native share into **V2**, so MVP is not blocked on report generation. Decision #6’s preference for native share (vs. branded transactional infrastructure) remains the V2 sharing approach.
 
 **Later enhancement (not V2):** a branded, in-app "Send via IronSight AI" option using a transactional email provider (e.g., Resend/Postmark) triggered from an Edge Function, with delivery/open tracking and multi-recipient support. Explicitly deferred.
 
@@ -358,10 +416,11 @@ Automated email workflows (server-sent, tracked, multi-step) remain **Later**, n
 | Backend platform | Supabase (Postgres + Auth + Storage + Edge Functions) |
 | Local/offline database | SQLite via `drift`, **encrypted (SQLCipher)** |
 | State management | Riverpod |
-| On-device OCR | Google ML Kit Text Recognition (on-device, offline) |
+| On-device OCR | Google ML Kit Text Recognition (serial / hour meter); human confirm; offline |
 | Media capture | Flutter `camera` plugin, custom continuous-capture UI with timestamp markers |
-| PDF / summary package | **V2** — clean shareable summary image or PDF (not a screenshot); historical V1 plan was Supabase Edge Function (Deno), server-side only |
-| Email sharing | **V2** — prefilled draft + review-before-send + native device sharing; automated/tracked email is Later |
+| PDF package | **V2** — professional PDF via Supabase Edge Function (Deno), server-side; cache/download locally; summary-image renderer is Later |
+| Email sharing | **V2** — reviewed native email/share draft with cached PDF; automated/tracked email is Later |
+| Cloud AI assist | Backend provider-agnostic `AIService` (optional photo recognition/autofill when connected); vendor choice deferred |
 | CI/CD | Codemagic (onboarded mid-build, not Week 1 — Section 15) |
 | Error monitoring | Sentry (onboarded early — Section 15) |
 | Product analytics | PostHog (onboarded mid-build, not Week 1) |
@@ -383,19 +442,19 @@ Full justification and AWS migration triggers: `10-tech-stack.md` (unchanged exc
 
 | Phase | Theme | Key features | Depends on |
 |---|---|---|---|
-| **MVP** (live, §0) | Capture-and-review Quick Appraisal | Under-two-minute offline inspection package; optional advisory AI with human confirmation; no dollar valuation | — |
-| **V2** | Shareable package | Clean summary image/PDF (not a screenshot); prefilled email draft; review before send; native device sharing | Completed MVP inspection packages |
-| **Later** | Collaboration, ops, and valuation | Company/manager portal; live collaboration/chat; manager review/approval; automated email workflows; historical equipment information; recon costs/additions; actual pricing/valuation recommendations | V2 sharing + sufficient confirmed inspection (and, for valuation, outcome) data |
+| **MVP** (live, §0) | Quick Appraisal only | Under-two-minute offline package (required capture set + plumbing); on-device OCR; optional cloud photo assist via backend `AIService`; video evidence not analyzed; no dollar valuation; no Detailed Inspection UI | — |
+| **V2** | Professional PDF share | Server-side PDF → local cache → reviewed native email/share draft | Completed MVP inspection packages |
+| **Later** | Depth, ops, and valuation | Detailed Inspection UI on preserved checklist model; summary-image renderer; portal; collaboration/chat; manager approval; automated email; historical equipment info; recon; pricing/valuation; AI vendor benchmarking | V2 sharing + sufficient confirmed inspection (and, for valuation, outcome) data |
 
 **Historical roadmap labels (V1 progressive-depth + zero-AI; V2 = AI assistance; V3 = valuation; V4 = market intelligence)** remain in `docs/13-roadmap.md` and older sections of this file as record. Live sequencing follows the MVP / V2 / Later table above and §0.
 
-The guiding rule still holds: **each phase must justify its own existence independent of what comes next.** The MVP must be valuable purely as a fast, trustworthy inspection package (AI optional, never required; no dollar output) before V2 sharing work is treated as mandatory.
+The guiding rule still holds: **each phase must justify its own existence independent of what comes next.** The MVP must be valuable purely as a fast, trustworthy inspection package (AI optional, never required; no dollar output) before V2 PDF sharing is treated as mandatory.
 
 ## 17. Contradictions Found and Resolved
 
 | # | Contradiction | Where it appeared | Resolution (final) |
 |---|---|---|---|
-| 17.1 | V1 promised "under 15 minutes" (`01`, `02`) vs. the "under two minutes" core promise introduced later, vs. the founder's subsequent refinement to "just a few minutes, with optional depth" | `01-executive-summary.md`, `02-product-requirements.md` §8; resolved via `docs/16` Decision #1 | **Historical resolution (Decision #1):** continuous video + progressive Quick/Detailed depth with a “just a few minutes” default. **Live amendment (Work Item #18 / §0):** under-two-minute Quick Appraisal is again the measuring stick; see Section 19 for whether Detailed Inspection remains in-MVP. |
+| 17.1 | V1 promised "under 15 minutes" (`01`, `02`) vs. the "under two minutes" core promise introduced later, vs. the founder's subsequent refinement to "just a few minutes, with optional depth" | `01-executive-summary.md`, `02-product-requirements.md` §8; resolved via `docs/16` Decision #1 | **Historical resolution (Decision #1):** continuous video + progressive Quick/Detailed depth with a “just a few minutes” default. **Live amendment (Work Item #18 / §0 + founder confirmations):** under-two-minute Quick Appraisal only; Detailed Inspection UI moved to Later; shared checklist data model preserved. |
 | 17.2 | "Client-side fallback renderer" for PDFs (`10`) vs. server-only generation everywhere else (`03`, `05`, `07`) | `10-tech-stack.md` | Server-side only, no client fallback. Section 12. |
 | 17.3 | "Finalize" meant an offline client action (`07`) and a server-only validation gate (`05`) with no data-model state to distinguish them | `05-api-design.md`, `07-inspection-workflow.md`, `04-data-model.md` | Split into `completion_status` (offline, client-set) and a server-side authoritative re-validation inside `generate-report`. Section 8. |
 | 17.4 | FR-27 implied only a single "final" sync moment; the outbox design implied continuous incremental sync | `02-product-requirements.md` FR-27 | Continuous incremental sync of everything is the real, stated behavior. Section 7/8. |
@@ -422,14 +481,18 @@ The guiding rule still holds: **each phase must justify its own existence indepe
 ~~7. Dealership data-use consent language (Section 10).~~ **RESOLVED — Founder Decision #7, approved.** A plain-language draft starting point has been produced at `docs/17-dealership-data-use-clause-draft.md`, explicitly marked as not legal advice, for the founder/outside counsel to refine before it appears in any real dealership agreement.
 ~~8. Whether to update `docs/01`–`docs/14` to match this specification, or leave them as historical record with this document as the sole authority going forward.~~ **RESOLVED — Founder Decision #8, approved.** A targeted sync pass was completed on the load-bearing docs (`04`, `07`, `08`, and subsequently `13`) — see `docs/16-founder-approval-checklist.md` §1 and `docs/18-implementation-ready-report.md` §4 (row 8) for the full record.
 
-All items above were resolved in the original approval review. **Work Item #18** subsequently amended live MVP scope (§0) without deleting this historical record. Open product questions raised by that amendment are in **Section 19**. See `docs/18-implementation-ready-report.md` for documentation-phase status.
+All items above were resolved in the original approval review. **Work Item #18** subsequently amended live MVP scope (§0) without deleting this historical record. The five open questions once listed in Section 19 are **resolved by founder confirmation** (recorded in §0 and Section 19 below). See `docs/18-implementation-ready-report.md` for documentation-phase status.
 
-## 19. Open Product Decisions After Work Item #18 (Founder Confirmation)
+## 19. Work Item #18 Founder Confirmations (Resolved)
 
-These are **not** implementation tasks for this docs-only Work Item. They need explicit founder confirmation before a later Work Item changes engineering scope:
+All five questions formerly open after the first #18 docs pass are **resolved**. Live scope is §0; this section is the confirmation record only.
 
-1. **Detailed Inspection in MVP?** Decision #1 kept expandable Detailed Inspection in V1. §0’s MVP workflow lists Quick Appraisal capture-and-review only. Confirm whether Detailed Inspection remains an optional in-MVP path (never on the default timing budget) or moves to Later.
-2. **Which AI providers / on-device vs. cloud for MVP suggestions?** Architecture must stay provider-agnostic (`AIService`); provider selection and online-vs-on-device defaults are not frozen by §0.
-3. **Required photo set and “required details” field list for the under-two-minute path** — §0 requires photos and required details but does not enumerate the exact minimum set.
-4. **Summary artifact format for V2** — image vs. PDF vs. both, and whether generation is on-device, Edge Function, or either with a graceful fallback.
-5. **Inspection list / company admin / discard-draft** — previously in the V1 in-scope list; not named in §0. Confirm still MVP plumbing vs. Later.
+| # | Question | Founder confirmation |
+|---|---|---|
+| 1 | Detailed Inspection in MVP? | **Later.** MVP is Quick Appraisal only. Preserve the shared inspection/checklist data model so Detailed Inspection can be added without an architecture rewrite. |
+| 2 | AI execution / providers? | On-device OCR for serial and hour meter. Optional photo recognition/autofill may use cloud AI when connected, only via backend provider-agnostic `AIService` (Flutter/domain never call a vendor directly). Manual capture always works offline/without AI. Walkaround video is evidence in MVP, **not** AI-analyzed. Vendor selection is a later benchmark Work Item, not hardcoded here. |
+| 3 | Under-two-minute minimum capture set? | Required photos: front-left, rear-right, serial/data plate, hour-meter/dashboard. Also required: continuous guided walkaround video; type/make/model; serial or “not found”; hours or “unknown”; Quick Condition ratings. Optional: year, notes, additional damage/detail photos. Timing: Start Quick Appraisal → confirm complete; excludes login, first-time company onboarding, sync, and sharing; validate on mid-range phone in field conditions; if over two minutes, reduce required work rather than weaken the promise. |
+| 4 | V2 artifact? | First V2 artifact is a **professional PDF**, generated server-side, cached/downloaded locally, attached through a reviewed native email/share draft. Separate summary-image renderer is **Later** unless pilot feedback proves it necessary. |
+| 5 | Required MVP plumbing? | Keep minimal company setup/context, company-scoped inspection list, reopen mutable draft, and discard draft with confirmation — required workflow infrastructure. |
+
+**No open founder decisions remain from the former §19 list.** Follow-on Work Items may still define Quick Condition category names/count, AI vendor benchmarks, and pilot-driven summary-image need — those are implementation/bench items, not unresolved §19 blockers.

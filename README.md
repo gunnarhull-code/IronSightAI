@@ -4,7 +4,7 @@ A mobile-first, AI-ready heavy equipment inspection platform for equipment deale
 
 **Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, local inspection foundation, engineering/CI baseline, and informational Supabase migration checks). Canonical work tracking is **GitHub Issues (Work Items)** — see [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md). Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
 
-**Live MVP direction (Work Item #18):** a capture-and-review Quick Appraisal a sales rep can complete in **under two minutes offline**, producing a trustworthy inspection package (no dollar valuation). Optional advisory AI may assist; humans confirm everything. Shareable summary image/PDF + prefilled email draft are **V2**. See [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) §0.
+**Live MVP direction (Work Item #18):** **Quick Appraisal only** — under two minutes offline (timing and required capture set in [`docs/15`](./docs/15-final-product-specification.md) §0), trustworthy inspection package, no dollar valuation, no Detailed Inspection UI (Later; shared checklist model preserved). On-device OCR for serial/hours; optional cloud photo assist via backend `AIService`; walkaround video is evidence only. **V2:** professional PDF (server-side → local cache → reviewed native share). See §0 / §19.
 
 ## Developer setup and verification
 
@@ -25,9 +25,9 @@ Pull requests targeting `main` run the same format / analyze / test checks via G
 ## Read in This Order
 
 1. **[`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)** — **Document Zero.** The company's founding mission, vision, philosophy, and non-negotiable principles. Read this before anything else, and before making any product or architectural decision, human or AI. This is not a technical document — it is what every technical document answers to. **Approved as the guiding document for the project.**
-2. **[`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)** — The single source of truth for the *product*. **§0 is the live MVP scope** (Work Item #18). Older sections remain historical/engineering reference where they conflict with §0.
-3. **[`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md)** — Historical record of the first 8 founder decisions; open questions after #18 are in `docs/15` §19.
-4. **[`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md)** — Documentation-phase status, including the #18 MVP alignment amendment.
+2. **[`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)** — The single source of truth for the *product*. **§0 is the live MVP scope** (Work Item #18 + founder confirmations). Older sections remain historical/engineering reference where they conflict with §0. §19 records resolved confirmations.
+3. **[`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md)** — Historical record of the first 8 founder decisions.
+4. **[`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md)** — Documentation-phase status, including the #18 MVP alignment and founder confirmations.
 5. **[`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md)** — Local engineering setup, verification, and PR workflow baseline.
 
 Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, diagrams) but defer to `15` wherever they conflict, and everything defers to `00` on questions of philosophy, priority, or principle. `docs/04`, `07`, and `08` were fully synced with the pre-#18 `docs/15`; see `docs/18` §5 for consistency status after #18.
@@ -73,17 +73,18 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 
 ## Key Decisions (Locked for MVP)
 
-- **Core promise**: a rep completes a useful Quick Appraisal in **under two minutes**, offline, producing a trustworthy inspection package — not a dollar valuation.
-- **MVP workflow**: equipment → required photos → guided walkaround video → serial/hours/condition/notes → optional AI suggestions → human review/confirm → offline complete; manual path always available.
-- **AI**: optional and advisory; never silently overwrites data; never final authority; humans confirm; outages never block inspections; provider-agnostic `AIService` architecture.
-- **V2**: clean shareable summary image/PDF (not a screenshot), prefilled email draft, review before send, native device sharing.
-- **Later**: portal, collaboration/chat, manager approval, automated email, historical equipment info, recon costs, pricing/valuation recommendations.
+- **Core promise**: Quick Appraisal in **under two minutes** offline (Start → confirm; excludes login/onboarding/sync/share) — trustworthy package, not a dollar valuation.
+- **MVP = Quick Appraisal only**: required photos (front-left, rear-right, serial plate, hour meter), walkaround evidence video (not AI-analyzed), type/make/model, serial or “not found”, hours or “unknown”, Quick Condition ratings; optional year/notes/extra photos. Detailed Inspection UI is **Later** (shared checklist model preserved).
+- **Plumbing**: minimal company setup/context, company-scoped inspection list, reopen mutable draft, discard draft with confirmation.
+- **AI**: on-device OCR for serial/hours; optional cloud photo assist via backend provider-agnostic `AIService` when connected; Flutter/domain never call a vendor directly; humans confirm; manual path always available; vendor selection is a later benchmark Work Item.
+- **V2**: professional PDF (server-side → local cache → reviewed native email/share draft). Summary-image renderer is Later.
+- **Later**: Detailed Inspection, summary image, portal, collaboration/chat, manager approval, automated email, historical equipment info, recon costs, pricing/valuation, AI vendor benchmarks.
 - **Mobile app**: Flutter — single codebase, strong camera/video/OCR capability, works fully offline.
-- **Backend**: Supabase (Postgres + Auth + Storage + Edge Functions) — minimal ops for a solo founder, with a documented migration path to AWS if/when needed.
-- **Offline strategy**: Local-first. The device's local SQLite database is the source of truth during an inspection; a background sync engine reconciles with Supabase whenever connectivity is available. Completing the MVP inspection package must not require a network connection.
-- **Team model**: One founder/product owner, AI-assisted development, no dedicated engineering team — every architectural choice optimizes for simplicity, maintainability, and low operating cost over theoretical scale.
-- **Multi-tenant from day one**: even though MVP serves a handful of pilot dealerships, tenancy (company-scoped data + Postgres Row Level Security) is built in now rather than retrofitted later.
-- **MVP is an inspection package platform, not a valuation platform.** No pricing or dollar recommendations ship in MVP.
+- **Backend**: Supabase (Postgres + Auth + Storage + Edge Functions).
+- **Offline strategy**: Local-first; completing the MVP inspection package must not require a network connection.
+- **Team model**: One founder/product owner, AI-assisted development, no dedicated engineering team.
+- **Multi-tenant from day one** via company-scoped data + Postgres Row Level Security.
+- **MVP is an inspection package platform, not a valuation platform.**
 
 ## Documentation Index
 
@@ -105,7 +106,7 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 | 13 | [`docs/13-roadmap.md`](./docs/13-roadmap.md) | Live MVP / V2 / Later sequencing + historical week plan |
 | 14 | [`docs/14-pre-development-review.md`](./docs/14-pre-development-review.md) | CTO pre-development review — conflicts, gaps, risks, and required fixes before Week 1 |
 | 15 | [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) | **Single source of truth.** **§0 = live MVP scope** |
-| 16 | [`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md) | Historical founder decisions; see `docs/15` §19 for post-#18 open questions |
+| 16 | [`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md) | Historical founder decisions; #18 confirmations recorded in `docs/15` §19 |
 | 17 | [`docs/17-dealership-data-use-clause-draft.md`](./docs/17-dealership-data-use-clause-draft.md) | Draft dealership data-use consent language for future AI training — **not legal advice**, requires attorney review |
 | 18 | [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md) | Documentation-phase status including #18 amendment |
 | — | [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) | **Engineering workflow source of truth** — local setup, verification, Draft PRs, migration safety |
@@ -114,7 +115,7 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 
 ## Non-Goals for MVP (Read Before Proposing Features)
 
-No pricing/valuation dollar output; no company/manager portal; no live collaboration/chat; no manager approval workflow; no automated email workflows; no historical equipment information product; no recon costs/additions; no customer-facing portal; no billing/payments; no web inspection experience; no DMS/CRM integration; no true push notifications. **V2** owns shareable summary image/PDF and prefilled email draft (native share, review before send). Optional advisory AI **is** allowed in MVP under the AI Rules in `docs/15` §0. See [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) Section 0 and Section 4 for the authoritative lists — they supersede older non-goals lists where documents differ.
+No Detailed Inspection UI; no pricing/valuation dollar output; no company/manager portal; no live collaboration/chat; no manager approval workflow; no automated email workflows; no historical equipment information product; no recon costs/additions; no customer-facing portal; no billing/payments; no web inspection experience; no DMS/CRM integration; no true push notifications; no walkaround video AI analysis; no hardcoded cloud AI vendor. **V2** owns professional PDF + reviewed native share. Summary-image renderer is Later. On-device OCR and optional cloud photo assist **are** allowed in MVP under `docs/15` §0. See [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) §0 and §4 for the authoritative lists.
 
 ## Next Step
 
