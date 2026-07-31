@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- allowBackup=false: flutter_secure_storage 10.x guidance. Auto Backup can
+         restore Keystore-wrapped keys onto a different device key and throw
+         InvalidKeyException on unwrap. Prefer no backup over partial exclude
+         rules that could restore the encrypted DB without a usable key. -->
     <application
         android:label="ironsight_ai"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false">
         <activity
             android:name=".MainActivity"
             android:exported="true"
