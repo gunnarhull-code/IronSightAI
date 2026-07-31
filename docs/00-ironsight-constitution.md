@@ -24,9 +24,11 @@ We are not building a feature. We are building an industry standard.
 
 ## 3. Our Core Product Promise
 
-> **IronSight AI enables salespeople to complete a professional trade appraisal in just a few minutes using only their phone — while supporting more detailed inspections when greater documentation is required.**
+> **IronSight AI enables a sales rep to complete a useful Quick Appraisal in under two minutes using only their phone—even without internet—producing a trustworthy inspection package that makes human trade valuation and pricing easier and faster.**
 
-This is not a marketing tagline. It is the design constraint every other decision is measured against. The default experience — the **Quick Appraisal** — must stay fast enough that a rep reaches for it every single time, on every machine, without hesitation or dread. Depth is always *available*, never *forced*: a rep who needs more documentation on a specific machine goes deeper, one category at a time, using the exact same inspection engine — not a second, slower product bolted onto the first. If a proposed feature, screen, or workflow step threatens the speed of the default path, the burden of proof is on the feature — not on the promise. We would rather ship less in the default path and keep it fast than let "just a few minutes" quietly become "whatever it takes."
+This is not a marketing tagline. It is the design constraint every other decision is measured against. The default experience — the **Quick Appraisal** — must stay fast enough that a rep reaches for it every single time, on every machine, without hesitation or dread. The MVP does **not** calculate or recommend a dollar value; it produces confirmed inspection evidence humans use for trade decisions. Depth beyond the Quick Appraisal path, when offered, is always *available*, never *forced*, and must never quietly push the default path over two minutes. If a proposed feature, screen, or workflow step threatens that speed, the burden of proof is on the feature — not on the promise. We would rather ship less in the default path and keep it fast than let “under two minutes” quietly become “whatever it takes.”
+
+**Historical note:** an earlier approved wording used “just a few minutes” while retaining optional Detailed Inspection depth (Founder Decision #1). Work Item #18 restores the under-two-minute Quick Appraisal measuring stick as live scope — see `docs/15-final-product-specification.md` §0.
 
 ## 4. Product Philosophy
 
@@ -106,12 +108,16 @@ Every principle in this constitution — field-first design, simplicity, the cor
 
 ## 9. AI Philosophy
 
-AI is central to our long-term vision and absent from our current product, and both halves of that sentence are deliberate.
+AI is central to our long-term vision and may assist the MVP capture-and-review workflow as an **optional, advisory** aid — both halves of that sentence are deliberate.
 
-- **AI assists people. AI never silently replaces professional judgment.** A rep's read on a machine, a manager's experience with a certain make, a dealership's institutional knowledge of their local market — these are not obstacles for AI to route around. They are exactly what AI should augment. Any future AI feature that surfaces a suggestion, a flagged concern, or an estimate must always be presented as a suggestion a human confirms, never as a silent, unreviewable fact.
-- **We do not build AI before we have earned the right to.** AI models are only as good as the data underneath them. Building AI features on top of a small, inconsistent, low-quality data corpus produces untrustworthy AI — which damages the exact trust the flywheel depends on. Version 1 builds zero AI features specifically so that the data foundation is worth building AI on top of later.
-- **Confirm, don't assume — always.** Wherever the product uses automation to make a rep's job faster (today: on-device OCR reading a serial number; tomorrow: AI flagging likely damage in a photo), the automation's output is always presented to a human for confirmation before it becomes part of the permanent record. Speed comes from reducing effort, never from removing human accountability.
+- **AI assists people. AI never silently replaces professional judgment.** A rep's read on a machine, a manager's experience with a certain make, a dealership's institutional knowledge of their local market — these are not obstacles for AI to route around. They are exactly what AI should augment. Any AI feature that surfaces a suggestion, a flagged concern, or an estimate must always be presented as a suggestion a human confirms, never as a silent, unreviewable fact.
+- **AI is optional in the MVP and never blocks the inspection.** If AI or a provider is unavailable, the rep continues manually. Connectivity outages never prevent completing an offline inspection package.
+- **AI never silently overwrites data and is never final authority.** Humans review, correct, and explicitly confirm final information before it becomes part of the permanent record.
+- **Confirm, don't assume — always.** Wherever the product uses automation to make a rep's job faster (OCR reading a serial number; AI suggesting condition, components, field values, or missing information), the automation's output is always presented to a human for confirmation before it becomes part of the permanent record. Speed comes from reducing effort, never from removing human accountability.
+- **Preserve a provider-agnostic `AIService` architecture.** Domain and UI layers depend on an abstraction, not a hard-wired vendor, so providers can change without rewriting the product.
 - **AI is a means to better data and better decisions — never an excuse to lower our standards for accuracy or trust.** A dealership will forgive a slow feature. They will not forgive being told an incorrect condition or value with false confidence.
+
+**Historical note:** an earlier version of this section stated AI was “absent from our current product” and that Version 1 built zero AI features. Work Item #18 supersedes that for live MVP scope while retaining the assistive, human-confirmed principles above — see `docs/15-final-product-specification.md` §0 / §10.
 
 ## 10. Engineering Principles
 
@@ -136,7 +142,7 @@ Speed is a feature, not an implementation detail, and it is measured from the re
 
 - Local actions (tapping a rating, saving a note, moving to the next screen) must feel instant — because they are local, and nothing about our architecture should make a local action feel like it's waiting on a network.
 - The network is never a hard dependency for any step of the core inspection flow. If a spinner appears during inspection capture, that is a defect to fix, not a normal loading state to accept.
-- We hold ourselves to "just a few minutes" for the default Quick Appraisal as a real, testable target, not an aspirational slogan — and we test it on real, unremarkable mid-range phones in real field conditions, not flagship devices on a desk with perfect Wi-Fi. The Detailed Inspection path is not held to this target — it is opt-in, and a rep who chooses more depth is knowingly trading speed for documentation on that specific machine.
+- We hold ourselves to **under two minutes** for the default Quick Appraisal as a real, testable target, not an aspirational slogan — and we test it on real, unremarkable mid-range phones in real field conditions, not flagship devices on a desk with perfect Wi-Fi. Any deeper optional documentation path is not held to this target — it is opt-in, and a rep who chooses more depth is knowingly trading speed for documentation on that specific machine.
 
 ## 13. Security & Trust
 
@@ -174,12 +180,13 @@ The test for any decision is not "is this simple" or "is this future-proof" in i
 
 ## 15. Future Product Vision
 
-Our roadmap is not a list of features — it is a sequence of trust-building milestones, each one only justified once the one before it has proven itself with real customers and real data.
+Our roadmap is not a list of features — it is a sequence of trust-building milestones, each one only justified once the one before it has proven itself with real customers and real data. Live product sequencing is **MVP → V2 → Later** per `docs/15-final-product-specification.md` §0 / §16:
 
-- **Inspection (V1)**: earn the right to be in a rep's pocket every day, by being faster and more reliable than the alternative.
-- **AI-Assisted Inspection (V2)**: once we have a large, consistent, well-labeled corpus of real inspection data, use AI to make the inspection itself smarter — flagging likely damage for human confirmation, suggesting checklist answers, reducing typing further. AI here makes the existing promise better, it does not change what the product fundamentally is.
-- **Valuation (V3)**: once inspection data is deep and trustworthy, and once we have begun correlating it with real transaction outcomes, offer condition-adjusted value estimates. This is the point where "What's It Worth" starts literally answering its own name — deliberately built last among the near-term versions, because a valuation is only as credible as everything that had to be true before it.
-- **Market Intelligence (V4)**: once valuation is proven across many dealerships, aggregate anonymized, consented data into market trends, benchmarking, and insights no single dealership could produce on its own — becoming infrastructure for the entire industry, not just a tool for a single customer.
+- **MVP (capture-and-review inspection):** earn the right to be in a rep's pocket every day by enabling a useful Quick Appraisal in under two minutes offline, with optional advisory AI that humans always confirm. No dollar valuation in MVP.
+- **V2 (shareable package):** generate a clean summary image or PDF (not a screenshot), a prefilled email draft, require review before sending, and use native device sharing.
+- **Later:** company/manager portal; live collaboration or chat; manager review and approval; automated email workflows; historical equipment information; recon costs and additions; actual pricing/valuation recommendations — and only then broader market-intelligence ambitions.
+
+**Historical labels (V1 zero-AI inspection → V2 AI assistance → V3 valuation → V4 market intelligence)** remain in older docs as record; they must not override the live MVP / V2 / Later sequencing above.
 
 ## 16. Future AI Valuation Philosophy
 
@@ -216,10 +223,10 @@ These describe how the founder operates, and what every collaborator — human o
 
 When facing any non-trivial product, design, or technical decision, run it through these questions, in order. If a decision fails an earlier question, it doesn't matter how well it answers a later one.
 
-1. **Does this serve the core promise?** (Section 3) — Does it keep the default Quick Appraisal fast, or does it cost time in the default path without a proportional gain in trust or data quality? A feature that only adds time to the *optional* Detailed Inspection path is judged on its own merits, not against the speed bar of the default path.
+1. **Does this serve the core promise?** (Section 3) — Does it keep the default Quick Appraisal under two minutes offline, or does it cost time in the default path without a proportional gain in trust or data quality? A feature that only adds time to an *optional* deeper path is judged on its own merits, not against the speed bar of the default path.
 2. **Does this serve the rep, in the field, today** — not a hypothetical future user, not an internal stakeholder, not a competitor's feature list?
 3. **Does this compromise trust or security** in any way — tenant isolation, data ownership, honesty about system state, or the line between AI assistance and human judgment?
-4. **Does this needlessly foreclose a named future capability** (V2 AI assistance, V3 valuation, V4 market intelligence) for no benefit to today's customer — or, conversely, does it over-build for a future need that isn't real yet?
+4. **Does this needlessly foreclose a named future capability** (V2 shareable package; Later portal/collaboration/valuation) for no benefit to today's customer — or, conversely, does it over-build for a future need that isn't real yet?
 5. **Is this the simplest solution that fully answers questions 1–4?** If a simpler version exists that still passes, it is the correct version.
 
 If a decision cannot clearly pass questions 1 through 3, it does not ship, regardless of how it scores on 4 or 5. Questions 4 and 5 exist to keep us honest about the balance in Section 14 — they do not override the customer, the promise, or trust.
