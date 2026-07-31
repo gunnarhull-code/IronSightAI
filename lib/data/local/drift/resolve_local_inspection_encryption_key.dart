@@ -16,6 +16,10 @@ const String kLegacyLocalInspectionEncryptionKeyFileName =
 /// Never writes the key beside the database. Secure-storage failures surface
 /// as [StateError] and do not fall back to plaintext persistence.
 ///
+/// Non-empty legacy plaintext files must be deleted after the key is in secure
+/// storage before this function returns successfully. Empty legacy files may
+/// be deleted best-effort because they contain no key material.
+///
 /// [deleteLegacyFile] is injectable for tests that simulate deletion failures.
 Future<String> resolveLocalInspectionEncryptionKey({
   required LocalInspectionEncryptionKeyStore keyStore,
@@ -50,12 +54,12 @@ Future<String> resolveLocalInspectionEncryptionKey({
   if (await legacyFile.exists()) {
     final legacy = (await legacyFile.readAsString()).trim();
     if (legacy.isNotEmpty) {
-      // Persist to secure storage first; only then attempt plaintext deletion.
+      // Persist to secure storage first; only then require plaintext deletion.
       await keyStore.writeKey(legacy);
-      await _deleteLegacyBestEffort(legacyFile, deleteFile);
+      await _deleteNonEmptyLegacyOrFail(legacyFile, deleteFile);
       return legacy;
     }
-    await _deleteLegacyBestEffort(legacyFile, deleteFile);
+    await _deleteEmptyLegacyBestEffort(legacyFile, deleteFile);
   }
 
   final generated = (generateKey ?? generateLocalInspectionEncryptionKey)()
@@ -94,13 +98,14 @@ Future<void> _reconcileLegacyKeyFile({
 
   final legacy = (await legacyFile.readAsString()).trim();
   if (legacy.isEmpty) {
-    await _deleteLegacyBestEffort(legacyFile, deleteFile);
+    await _deleteEmptyLegacyBestEffort(legacyFile, deleteFile);
     return;
   }
 
   if (legacy == secureKey) {
-    // Matching leftover from a prior interrupted cleanup — retry deletion.
-    await _deleteLegacyBestEffort(legacyFile, deleteFile);
+    // Matching leftover from a prior interrupted cleanup — must delete before
+    // returning so the plaintext key is not left beside the database.
+    await _deleteNonEmptyLegacyOrFail(legacyFile, deleteFile);
     return;
   }
 
@@ -111,9 +116,39 @@ Future<void> _reconcileLegacyKeyFile({
   );
 }
 
-/// Deletes the legacy file when possible. Deletion failures are swallowed so
-/// the secure key remains usable and cleanup can retry on the next open.
-Future<void> _deleteLegacyBestEffort(
+/// Deletes a non-empty legacy key file. Failure preserves the file and throws
+/// so callers do not open the database while plaintext key material remains.
+Future<void> _deleteNonEmptyLegacyOrFail(
+  File legacyFile,
+  Future<void> Function(File file) deleteFile,
+) async {
+  try {
+    if (await legacyFile.exists()) {
+      await deleteFile(legacyFile);
+    }
+    if (await legacyFile.exists()) {
+      throw StateError(
+        'Failed to delete the legacy plaintext inspection encryption key '
+        'file after it was stored in OS secure storage. The legacy file was '
+        'preserved for recovery; the encrypted database will not open until '
+        'the plaintext key file is removed.',
+      );
+    }
+  } on StateError {
+    rethrow;
+  } on Object catch (error) {
+    throw StateError(
+      'Failed to delete the legacy plaintext inspection encryption key file '
+      'after it was stored in OS secure storage. The legacy file was preserved '
+      'for recovery; the encrypted database will not open until the plaintext '
+      'key file is removed. ($error)',
+    );
+  }
+}
+
+/// Empty legacy files contain no key material; deletion failures are ignored
+/// so cleanup can retry on a later open.
+Future<void> _deleteEmptyLegacyBestEffort(
   File legacyFile,
   Future<void> Function(File file) deleteFile,
 ) async {
@@ -122,6 +157,6 @@ Future<void> _deleteLegacyBestEffort(
       await deleteFile(legacyFile);
     }
   } on Object {
-    // Leave the file in place for the next invocation.
+    // Leave the empty file in place for the next invocation.
   }
 }

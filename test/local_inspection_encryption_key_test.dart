@@ -178,7 +178,7 @@ void main() {
     });
 
     test(
-      'successful secure write followed by a retry can complete cleanup',
+      'migration delete failure throws after secure write and retries cleanup',
       () async {
         final store = FakeLocalInspectionEncryptionKeyStore();
         await legacyKeyFile().writeAsString(
@@ -187,21 +187,33 @@ void main() {
         );
         var deleteAttempts = 0;
 
-        final first = await resolveLocalInspectionEncryptionKey(
-          keyStore: store,
-          documentsDirectory: documentsDirectory,
-          deleteLegacyFile: (file) async {
-            deleteAttempts += 1;
-            if (deleteAttempts == 1) {
-              throw const FileSystemException('simulated delete failure');
-            }
-            await file.delete();
-          },
+        await expectLater(
+          resolveLocalInspectionEncryptionKey(
+            keyStore: store,
+            documentsDirectory: documentsDirectory,
+            deleteLegacyFile: (file) async {
+              deleteAttempts += 1;
+              if (deleteAttempts == 1) {
+                throw const FileSystemException('simulated delete failure');
+              }
+              await file.delete();
+            },
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              contains('Failed to delete the legacy plaintext'),
+            ),
+          ),
         );
-
-        expect(first, 'legacy-plaintext-key');
         expect(store.writeCount, 1);
+        expect(store.writtenKeys, ['legacy-plaintext-key']);
         expect(await legacyKeyFile().exists(), isTrue);
+        expect(
+          (await legacyKeyFile().readAsString()).trim(),
+          'legacy-plaintext-key',
+        );
 
         final second = await resolveLocalInspectionEncryptionKey(
           keyStore: store,
@@ -216,6 +228,36 @@ void main() {
         expect(store.writeCount, 1);
         expect(await legacyKeyFile().exists(), isFalse);
         expect(deleteAttempts, 2);
+      },
+    );
+
+    test(
+      'existing secure key with matching legacy file delete failure throws',
+      () async {
+        final store = FakeLocalInspectionEncryptionKeyStore(
+          initialKey: 'secure-key',
+        );
+        await legacyKeyFile().writeAsString('secure-key', flush: true);
+
+        await expectLater(
+          resolveLocalInspectionEncryptionKey(
+            keyStore: store,
+            documentsDirectory: documentsDirectory,
+            deleteLegacyFile: (_) async {
+              throw const FileSystemException('simulated delete failure');
+            },
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              contains('Failed to delete the legacy plaintext'),
+            ),
+          ),
+        );
+        expect(store.writeCount, 0);
+        expect(await legacyKeyFile().exists(), isTrue);
+        expect((await legacyKeyFile().readAsString()).trim(), 'secure-key');
       },
     );
 
