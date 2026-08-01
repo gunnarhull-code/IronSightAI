@@ -61,7 +61,6 @@ From the repo root:
 ```bash
 flutter pub get
 dart format --output=none --set-exit-if-changed .
-dart run tool/verify_sprint_registry.dart
 flutter analyze
 flutter test
 ```
@@ -77,58 +76,49 @@ On Windows, run this helper through Git Bash or WSL. It is not a native PowerShe
 Expected outcomes:
 
 - Formatting: no files need changes (command exits 0).
-- Sprint registry: `management/sprint_registry.json` validates (command exits 0).
 - Analyze: no issues (or only an explicitly understood missing-`.env` asset warning if `.env` was not created).
 - Tests: all tests pass.
 
-GitHub Actions runs these same checks on pull requests targeting `main`. CI creates `.env` from `.env.example` only — it never uses production secrets, never deploys, and never applies migrations.
+GitHub Actions runs these same checks on pull requests targeting `main`. CI creates `.env` from `.env.example` only — it never uses production secrets, never deploys, and never applies migrations. The informational Supabase migration review workflow remains separate (see `.github/workflows/pr-migration-check.yml`).
 
 **Live PR and CI status belongs to GitHub.** Repository docs may link to PRs/Actions but must not pretend to be a live unchecked task list for open PR merge state.
 
 ---
 
-## Sprint registry (canonical numbers & lifecycle)
+## Work Items (GitHub Issues)
 
-Canonical file: [`management/sprint_registry.json`](../management/sprint_registry.json).
+Canonical work tracking is **GitHub Issues**. Each assignable unit of work is a Work Item backed by one Issue.
 
-Schema (parsed with Dart `dart:convert` only):
-
-| Field | Meaning |
+| Concept | Source of truth |
 |---|---|
-| `schemaVersion` | Integer schema version (currently `1`) |
-| `nextSprintNumber` | Next unused sprint number; must be greater than every recorded sprint number |
-| `sprints` | Array of sprint records |
+| Work Item identity / assignment / frozen scope / status | GitHub Issue (complete assignment source) |
+| Live PR / CI state | GitHub Pull Requests and Actions |
+| AFK / Cloud Agent permanent policy | [`management/AFK_AGENTS.md`](../management/AFK_AGENTS.md) (never per-Work-Item updates) |
+| Historical numbered sprints | [`management/LEGACY_SPRINT_HISTORY.md`](../management/LEGACY_SPRINT_HISTORY.md) |
 
-Each sprint record supports: `number`, `title`, `status`, `pullRequests`, `mergeCommit` (when verified), `notes`, and `replacesOrResumes` when applicable.
+Rules:
 
-Allowed `status` values: `planned`, `active`, `blocked`, `deferred`, `completed`, `cancelled`.
-
-Completed sprints require verified completion evidence: one or more `pullRequests` and/or a `mergeCommit`. A completed sprint may use its merged PR number alone as completion evidence when the merge commit SHA was not known while preparing the PR (`mergeCommit` may be omitted).
-
-Validate any time (read-only; never rewrites the file):
-
-```bash
-dart run tool/verify_sprint_registry.dart
-```
-
-Multiple sprints may be `active` at once when numbers are unique and scopes do not overlap. Deferred/blocked numbers cannot be reused. Historical identities for Sprint 003 (deferred), Sprint 009 (Engineering Reliability/CI), and Sprint 010 (Node.js 24 checkout compatibility) are enforced by the validator.
+- Do not invent Work Items or expand Issue scope without founder approval.
+- Multiple Work Items may be active when scopes do not overlap.
+- Draft PRs must reference the GitHub Issue they implement.
+- Agents open **Draft** PRs and **never merge** to `main`. The founder merges.
+- Numbered sprints and `management/sprint_registry.json` are retired. Do not recreate the registry.
+- Do **not** update `management/AFK_AGENTS.md` for individual assignments.
 
 ---
 
-## Pre-Sprint Status Gate (mandatory before assigning a new sprint)
+## Pre-Work-Item Status Gate (mandatory before starting a new Work Item)
 
-Before a new sprint number is assigned:
+Before a new Work Item is started or assigned to an agent:
 
 1. Local `main` must be clean (`git status` shows nothing to commit).
-2. Local `main` must match `origin/main` (`git pull origin main` / up to date).
-3. `management/sprint_registry.json` must validate via `dart run tool/verify_sprint_registry.dart`.
-4. The proposed sprint number must equal `nextSprintNumber`.
-5. Deferred/blocked numbers cannot be reused (including Sprint 003).
-6. Existing active sprint scopes must be checked for file/scope overlap.
-7. The registry must be updated in the new sprint’s Draft PR (add/update the sprint record, advance `nextSprintNumber`). Prefer preparing the registry’s **final post-merge state** in that same PR when practical (for example mark the sprint `completed` with its PR number as completion evidence when the merge commit is not yet known), so an immediate follow-up reconciliation PR is unnecessary.
-8. If verified history or numbering is contradictory or ambiguous, **stop** — do not guess.
+2. Local `main` must match `origin/main` (`git pull --ff-only origin main` / up to date).
+3. A GitHub Issue must exist with clear, immutable scope — read the Issue as the complete assignment source.
+4. Existing active Work Item scopes must be checked for file/scope overlap.
+5. Land doc updates through a Draft PR; never push documentation commits directly to `main`.
+6. If the Issue scope is ambiguous or contradictory, **stop** — do not guess.
 
-Agents never merge to `main`. The founder performs every merge. Never push documentation commits directly to `main`; land registry/doc updates through a Draft PR.
+Agents never merge to `main`. The founder performs every merge. Never update `management/AFK_AGENTS.md` per Work Item.
 
 ---
 
@@ -162,23 +152,22 @@ Notes:
 ## Draft PR preparation
 
 1. Create a feature branch from latest `main`.
-2. Keep the sprint scope immutable — do not expand into unrelated work.
+2. Keep the Work Item / Issue scope immutable — do not expand into unrelated work.
 3. Run the standard verification commands and paste results into the PR.
-4. Use the repository pull-request template (requires sprint number, immutable scope, files changed, tests, analyze/test results, manual verification, architecture/UX review, assumptions, follow-ups, migration summary, production dry-run when applicable).
+4. Use the repository pull-request template (requires Issue/Work Item link, immutable scope, files changed, tests, analyze/test results, manual verification, architecture/UX review, assumptions, follow-ups, migration summary, production dry-run when applicable).
 5. Attach screenshots only when they clarify UI behavior. Do not attach videos.
-6. Open as a **Draft** PR targeting `main`. Do not merge your own sprint PR unless explicitly instructed.
+6. Open as a **Draft** PR targeting `main`. Agents never merge.
 
 ---
 
 ## Post-merge synchronization
 
-After every successful merge (founder merges on GitHub), sync local `main` and validate the registry before assigning another sprint:
+After every successful merge (founder merges on GitHub), sync local `main` before assigning another Work Item:
 
 ```bash
 git checkout main
-git pull origin main
+git pull --ff-only origin main
 git status
-dart run tool/verify_sprint_registry.dart
 ```
 
 Expected `git status` result:
@@ -189,7 +178,7 @@ Your branch is up to date with 'origin/main'.
 nothing to commit, working tree clean
 ```
 
-If the merged sprint’s Draft PR already recorded final registry state (`completed` with PR completion evidence, `nextSprintNumber` advanced correctly), **no immediate follow-up reconciliation PR is required**. Open a follow-up Draft PR only when the registry still contradicts verified history after merge. Never push documentation commits directly to `main`.
+Never push documentation commits directly to `main`. Open a follow-up Draft PR only when docs still contradict verified history after merge.
 
 If your working tree is dirty, stop and review git status. Preserve all work. Commit intended changes or use git stash when appropriate. Never discard changes unless you have deliberately confirmed they are unnecessary.
 
@@ -229,7 +218,11 @@ If your working tree is dirty, stop and review git status. Preserve all work. Co
 ## Related documents
 
 - Product / architecture authority: `docs/00-ironsight-constitution.md`, `docs/15-final-product-specification.md`
-- Day-to-day operational status: `management/DASHBOARD.md`
-- Canonical sprint numbers / lifecycle: `management/sprint_registry.json`
-- Active AFK sprint scope notes: `management/AFK_SPRINTS.md`
+- Day-to-day founder operational summary: `management/DASHBOARD.md` (occasional; not live Work Item status)
+- Permanent AFK / Cloud Agent policy: `management/AFK_AGENTS.md` (not an assignment board)
+- Historical numbered sprints: `management/LEGACY_SPRINT_HISTORY.md`
 - Agent safety rules: `AGENTS.md`
+- Agent playbooks: `.cursor/skills/` — `ironsight-work-item`, `ironsight-draft-pr`, `ironsight-verify`, `ironsight-migration-safety`
+- Agent slash commands: `.cursor/commands/` — `testpr`, `sync-main`, `project-status`, `start-work-item`, `run-local`
+
+Prefer updating **this document** when procedures change, then keep matching `.cursor/skills/*/SKILL.md` and `.cursor/commands/*.md` in sync. Skills/commands must not invent alternate workflows.

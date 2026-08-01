@@ -2108,6 +2108,1290 @@ class InspectionDetailedResponsesCompanion
   }
 }
 
+class $LocalTenantContextsTable extends LocalTenantContexts
+    with TableInfo<$LocalTenantContextsTable, LocalTenantContextRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalTenantContextsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _activatedAtMeta = const VerificationMeta(
+    'activatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> activatedAt = GeneratedColumn<DateTime>(
+    'activated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, companyId, userId, activatedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_tenant_contexts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalTenantContextRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('activated_at')) {
+      context.handle(
+        _activatedAtMeta,
+        activatedAt.isAcceptableOrUnknown(
+          data['activated_at']!,
+          _activatedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalTenantContextRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalTenantContextRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      )!,
+      activatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}activated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalTenantContextsTable createAlias(String alias) {
+    return $LocalTenantContextsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalTenantContextRow extends DataClass
+    implements Insertable<LocalTenantContextRow> {
+  final String id;
+  final String companyId;
+  final String userId;
+  final DateTime activatedAt;
+  const LocalTenantContextRow({
+    required this.id,
+    required this.companyId,
+    required this.userId,
+    required this.activatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['company_id'] = Variable<String>(companyId);
+    map['user_id'] = Variable<String>(userId);
+    map['activated_at'] = Variable<DateTime>(activatedAt);
+    return map;
+  }
+
+  LocalTenantContextsCompanion toCompanion(bool nullToAbsent) {
+    return LocalTenantContextsCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      userId: Value(userId),
+      activatedAt: Value(activatedAt),
+    );
+  }
+
+  factory LocalTenantContextRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalTenantContextRow(
+      id: serializer.fromJson<String>(json['id']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      userId: serializer.fromJson<String>(json['userId']),
+      activatedAt: serializer.fromJson<DateTime>(json['activatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'companyId': serializer.toJson<String>(companyId),
+      'userId': serializer.toJson<String>(userId),
+      'activatedAt': serializer.toJson<DateTime>(activatedAt),
+    };
+  }
+
+  LocalTenantContextRow copyWith({
+    String? id,
+    String? companyId,
+    String? userId,
+    DateTime? activatedAt,
+  }) => LocalTenantContextRow(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    userId: userId ?? this.userId,
+    activatedAt: activatedAt ?? this.activatedAt,
+  );
+  LocalTenantContextRow copyWithCompanion(LocalTenantContextsCompanion data) {
+    return LocalTenantContextRow(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      activatedAt: data.activatedAt.present
+          ? data.activatedAt.value
+          : this.activatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalTenantContextRow(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('userId: $userId, ')
+          ..write('activatedAt: $activatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, companyId, userId, activatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalTenantContextRow &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.userId == this.userId &&
+          other.activatedAt == this.activatedAt);
+}
+
+class LocalTenantContextsCompanion
+    extends UpdateCompanion<LocalTenantContextRow> {
+  final Value<String> id;
+  final Value<String> companyId;
+  final Value<String> userId;
+  final Value<DateTime> activatedAt;
+  final Value<int> rowid;
+  const LocalTenantContextsCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.activatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalTenantContextsCompanion.insert({
+    required String id,
+    required String companyId,
+    required String userId,
+    required DateTime activatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       companyId = Value(companyId),
+       userId = Value(userId),
+       activatedAt = Value(activatedAt);
+  static Insertable<LocalTenantContextRow> custom({
+    Expression<String>? id,
+    Expression<String>? companyId,
+    Expression<String>? userId,
+    Expression<DateTime>? activatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (userId != null) 'user_id': userId,
+      if (activatedAt != null) 'activated_at': activatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalTenantContextsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? companyId,
+    Value<String>? userId,
+    Value<DateTime>? activatedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalTenantContextsCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      userId: userId ?? this.userId,
+      activatedAt: activatedAt ?? this.activatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (activatedAt.present) {
+      map['activated_at'] = Variable<DateTime>(activatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalTenantContextsCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('userId: $userId, ')
+          ..write('activatedAt: $activatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LocalEquipmentCacheTable extends LocalEquipmentCache
+    with TableInfo<$LocalEquipmentCacheTable, LocalEquipmentCacheRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LocalEquipmentCacheTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assetNameMeta = const VerificationMeta(
+    'assetName',
+  );
+  @override
+  late final GeneratedColumn<String> assetName = GeneratedColumn<String>(
+    'asset_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manufacturerMeta = const VerificationMeta(
+    'manufacturer',
+  );
+  @override
+  late final GeneratedColumn<String> manufacturer = GeneratedColumn<String>(
+    'manufacturer',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _serialNumberMeta = const VerificationMeta(
+    'serialNumber',
+  );
+  @override
+  late final GeneratedColumn<String> serialNumber = GeneratedColumn<String>(
+    'serial_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _yearMeta = const VerificationMeta('year');
+  @override
+  late final GeneratedColumn<int> year = GeneratedColumn<int>(
+    'year',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hoursMeta = const VerificationMeta('hours');
+  @override
+  late final GeneratedColumn<double> hours = GeneratedColumn<double>(
+    'hours',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _locationMeta = const VerificationMeta(
+    'location',
+  );
+  @override
+  late final GeneratedColumn<String> location = GeneratedColumn<String>(
+    'location',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _notesMeta = const VerificationMeta('notes');
+  @override
+  late final GeneratedColumn<String> notes = GeneratedColumn<String>(
+    'notes',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByMeta = const VerificationMeta(
+    'createdBy',
+  );
+  @override
+  late final GeneratedColumn<String> createdBy = GeneratedColumn<String>(
+    'created_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdByNameMeta = const VerificationMeta(
+    'createdByName',
+  );
+  @override
+  late final GeneratedColumn<String> createdByName = GeneratedColumn<String>(
+    'created_by_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByMeta = const VerificationMeta(
+    'updatedBy',
+  );
+  @override
+  late final GeneratedColumn<String> updatedBy = GeneratedColumn<String>(
+    'updated_by',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedByNameMeta = const VerificationMeta(
+    'updatedByName',
+  );
+  @override
+  late final GeneratedColumn<String> updatedByName = GeneratedColumn<String>(
+    'updated_by_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta(
+    'cachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    assetName,
+    manufacturer,
+    model,
+    serialNumber,
+    year,
+    hours,
+    location,
+    notes,
+    createdBy,
+    createdByName,
+    updatedBy,
+    updatedByName,
+    createdAt,
+    updatedAt,
+    cachedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'local_equipment_cache';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalEquipmentCacheRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('asset_name')) {
+      context.handle(
+        _assetNameMeta,
+        assetName.isAcceptableOrUnknown(data['asset_name']!, _assetNameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_assetNameMeta);
+    }
+    if (data.containsKey('manufacturer')) {
+      context.handle(
+        _manufacturerMeta,
+        manufacturer.isAcceptableOrUnknown(
+          data['manufacturer']!,
+          _manufacturerMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_manufacturerMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelMeta);
+    }
+    if (data.containsKey('serial_number')) {
+      context.handle(
+        _serialNumberMeta,
+        serialNumber.isAcceptableOrUnknown(
+          data['serial_number']!,
+          _serialNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('year')) {
+      context.handle(
+        _yearMeta,
+        year.isAcceptableOrUnknown(data['year']!, _yearMeta),
+      );
+    }
+    if (data.containsKey('hours')) {
+      context.handle(
+        _hoursMeta,
+        hours.isAcceptableOrUnknown(data['hours']!, _hoursMeta),
+      );
+    }
+    if (data.containsKey('location')) {
+      context.handle(
+        _locationMeta,
+        location.isAcceptableOrUnknown(data['location']!, _locationMeta),
+      );
+    }
+    if (data.containsKey('notes')) {
+      context.handle(
+        _notesMeta,
+        notes.isAcceptableOrUnknown(data['notes']!, _notesMeta),
+      );
+    }
+    if (data.containsKey('created_by')) {
+      context.handle(
+        _createdByMeta,
+        createdBy.isAcceptableOrUnknown(data['created_by']!, _createdByMeta),
+      );
+    }
+    if (data.containsKey('created_by_name')) {
+      context.handle(
+        _createdByNameMeta,
+        createdByName.isAcceptableOrUnknown(
+          data['created_by_name']!,
+          _createdByNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_by')) {
+      context.handle(
+        _updatedByMeta,
+        updatedBy.isAcceptableOrUnknown(data['updated_by']!, _updatedByMeta),
+      );
+    }
+    if (data.containsKey('updated_by_name')) {
+      context.handle(
+        _updatedByNameMeta,
+        updatedByName.isAcceptableOrUnknown(
+          data['updated_by_name']!,
+          _updatedByNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cachedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalEquipmentCacheRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalEquipmentCacheRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      assetName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}asset_name'],
+      )!,
+      manufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manufacturer'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      serialNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serial_number'],
+      ),
+      year: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}year'],
+      ),
+      hours: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}hours'],
+      ),
+      location: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}location'],
+      ),
+      notes: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}notes'],
+      ),
+      createdBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by'],
+      ),
+      createdByName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}created_by_name'],
+      ),
+      updatedBy: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by'],
+      ),
+      updatedByName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}updated_by_name'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LocalEquipmentCacheTable createAlias(String alias) {
+    return $LocalEquipmentCacheTable(attachedDatabase, alias);
+  }
+}
+
+class LocalEquipmentCacheRow extends DataClass
+    implements Insertable<LocalEquipmentCacheRow> {
+  final String id;
+  final String companyId;
+  final String assetName;
+  final String manufacturer;
+  final String model;
+  final String? serialNumber;
+  final int? year;
+  final double? hours;
+  final String? location;
+  final String? notes;
+  final String? createdBy;
+  final String? createdByName;
+  final String? updatedBy;
+  final String? updatedByName;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime cachedAt;
+  const LocalEquipmentCacheRow({
+    required this.id,
+    required this.companyId,
+    required this.assetName,
+    required this.manufacturer,
+    required this.model,
+    this.serialNumber,
+    this.year,
+    this.hours,
+    this.location,
+    this.notes,
+    this.createdBy,
+    this.createdByName,
+    this.updatedBy,
+    this.updatedByName,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.cachedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['company_id'] = Variable<String>(companyId);
+    map['asset_name'] = Variable<String>(assetName);
+    map['manufacturer'] = Variable<String>(manufacturer);
+    map['model'] = Variable<String>(model);
+    if (!nullToAbsent || serialNumber != null) {
+      map['serial_number'] = Variable<String>(serialNumber);
+    }
+    if (!nullToAbsent || year != null) {
+      map['year'] = Variable<int>(year);
+    }
+    if (!nullToAbsent || hours != null) {
+      map['hours'] = Variable<double>(hours);
+    }
+    if (!nullToAbsent || location != null) {
+      map['location'] = Variable<String>(location);
+    }
+    if (!nullToAbsent || notes != null) {
+      map['notes'] = Variable<String>(notes);
+    }
+    if (!nullToAbsent || createdBy != null) {
+      map['created_by'] = Variable<String>(createdBy);
+    }
+    if (!nullToAbsent || createdByName != null) {
+      map['created_by_name'] = Variable<String>(createdByName);
+    }
+    if (!nullToAbsent || updatedBy != null) {
+      map['updated_by'] = Variable<String>(updatedBy);
+    }
+    if (!nullToAbsent || updatedByName != null) {
+      map['updated_by_name'] = Variable<String>(updatedByName);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['cached_at'] = Variable<DateTime>(cachedAt);
+    return map;
+  }
+
+  LocalEquipmentCacheCompanion toCompanion(bool nullToAbsent) {
+    return LocalEquipmentCacheCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      assetName: Value(assetName),
+      manufacturer: Value(manufacturer),
+      model: Value(model),
+      serialNumber: serialNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serialNumber),
+      year: year == null && nullToAbsent ? const Value.absent() : Value(year),
+      hours: hours == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hours),
+      location: location == null && nullToAbsent
+          ? const Value.absent()
+          : Value(location),
+      notes: notes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(notes),
+      createdBy: createdBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdBy),
+      createdByName: createdByName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(createdByName),
+      updatedBy: updatedBy == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedBy),
+      updatedByName: updatedByName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(updatedByName),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      cachedAt: Value(cachedAt),
+    );
+  }
+
+  factory LocalEquipmentCacheRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalEquipmentCacheRow(
+      id: serializer.fromJson<String>(json['id']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      assetName: serializer.fromJson<String>(json['assetName']),
+      manufacturer: serializer.fromJson<String>(json['manufacturer']),
+      model: serializer.fromJson<String>(json['model']),
+      serialNumber: serializer.fromJson<String?>(json['serialNumber']),
+      year: serializer.fromJson<int?>(json['year']),
+      hours: serializer.fromJson<double?>(json['hours']),
+      location: serializer.fromJson<String?>(json['location']),
+      notes: serializer.fromJson<String?>(json['notes']),
+      createdBy: serializer.fromJson<String?>(json['createdBy']),
+      createdByName: serializer.fromJson<String?>(json['createdByName']),
+      updatedBy: serializer.fromJson<String?>(json['updatedBy']),
+      updatedByName: serializer.fromJson<String?>(json['updatedByName']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'companyId': serializer.toJson<String>(companyId),
+      'assetName': serializer.toJson<String>(assetName),
+      'manufacturer': serializer.toJson<String>(manufacturer),
+      'model': serializer.toJson<String>(model),
+      'serialNumber': serializer.toJson<String?>(serialNumber),
+      'year': serializer.toJson<int?>(year),
+      'hours': serializer.toJson<double?>(hours),
+      'location': serializer.toJson<String?>(location),
+      'notes': serializer.toJson<String?>(notes),
+      'createdBy': serializer.toJson<String?>(createdBy),
+      'createdByName': serializer.toJson<String?>(createdByName),
+      'updatedBy': serializer.toJson<String?>(updatedBy),
+      'updatedByName': serializer.toJson<String?>(updatedByName),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'cachedAt': serializer.toJson<DateTime>(cachedAt),
+    };
+  }
+
+  LocalEquipmentCacheRow copyWith({
+    String? id,
+    String? companyId,
+    String? assetName,
+    String? manufacturer,
+    String? model,
+    Value<String?> serialNumber = const Value.absent(),
+    Value<int?> year = const Value.absent(),
+    Value<double?> hours = const Value.absent(),
+    Value<String?> location = const Value.absent(),
+    Value<String?> notes = const Value.absent(),
+    Value<String?> createdBy = const Value.absent(),
+    Value<String?> createdByName = const Value.absent(),
+    Value<String?> updatedBy = const Value.absent(),
+    Value<String?> updatedByName = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    DateTime? cachedAt,
+  }) => LocalEquipmentCacheRow(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    assetName: assetName ?? this.assetName,
+    manufacturer: manufacturer ?? this.manufacturer,
+    model: model ?? this.model,
+    serialNumber: serialNumber.present ? serialNumber.value : this.serialNumber,
+    year: year.present ? year.value : this.year,
+    hours: hours.present ? hours.value : this.hours,
+    location: location.present ? location.value : this.location,
+    notes: notes.present ? notes.value : this.notes,
+    createdBy: createdBy.present ? createdBy.value : this.createdBy,
+    createdByName: createdByName.present
+        ? createdByName.value
+        : this.createdByName,
+    updatedBy: updatedBy.present ? updatedBy.value : this.updatedBy,
+    updatedByName: updatedByName.present
+        ? updatedByName.value
+        : this.updatedByName,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    cachedAt: cachedAt ?? this.cachedAt,
+  );
+  LocalEquipmentCacheRow copyWithCompanion(LocalEquipmentCacheCompanion data) {
+    return LocalEquipmentCacheRow(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      assetName: data.assetName.present ? data.assetName.value : this.assetName,
+      manufacturer: data.manufacturer.present
+          ? data.manufacturer.value
+          : this.manufacturer,
+      model: data.model.present ? data.model.value : this.model,
+      serialNumber: data.serialNumber.present
+          ? data.serialNumber.value
+          : this.serialNumber,
+      year: data.year.present ? data.year.value : this.year,
+      hours: data.hours.present ? data.hours.value : this.hours,
+      location: data.location.present ? data.location.value : this.location,
+      notes: data.notes.present ? data.notes.value : this.notes,
+      createdBy: data.createdBy.present ? data.createdBy.value : this.createdBy,
+      createdByName: data.createdByName.present
+          ? data.createdByName.value
+          : this.createdByName,
+      updatedBy: data.updatedBy.present ? data.updatedBy.value : this.updatedBy,
+      updatedByName: data.updatedByName.present
+          ? data.updatedByName.value
+          : this.updatedByName,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalEquipmentCacheRow(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('assetName: $assetName, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('model: $model, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('year: $year, ')
+          ..write('hours: $hours, ')
+          ..write('location: $location, ')
+          ..write('notes: $notes, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('updatedBy: $updatedBy, ')
+          ..write('updatedByName: $updatedByName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('cachedAt: $cachedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    assetName,
+    manufacturer,
+    model,
+    serialNumber,
+    year,
+    hours,
+    location,
+    notes,
+    createdBy,
+    createdByName,
+    updatedBy,
+    updatedByName,
+    createdAt,
+    updatedAt,
+    cachedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalEquipmentCacheRow &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.assetName == this.assetName &&
+          other.manufacturer == this.manufacturer &&
+          other.model == this.model &&
+          other.serialNumber == this.serialNumber &&
+          other.year == this.year &&
+          other.hours == this.hours &&
+          other.location == this.location &&
+          other.notes == this.notes &&
+          other.createdBy == this.createdBy &&
+          other.createdByName == this.createdByName &&
+          other.updatedBy == this.updatedBy &&
+          other.updatedByName == this.updatedByName &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.cachedAt == this.cachedAt);
+}
+
+class LocalEquipmentCacheCompanion
+    extends UpdateCompanion<LocalEquipmentCacheRow> {
+  final Value<String> id;
+  final Value<String> companyId;
+  final Value<String> assetName;
+  final Value<String> manufacturer;
+  final Value<String> model;
+  final Value<String?> serialNumber;
+  final Value<int?> year;
+  final Value<double?> hours;
+  final Value<String?> location;
+  final Value<String?> notes;
+  final Value<String?> createdBy;
+  final Value<String?> createdByName;
+  final Value<String?> updatedBy;
+  final Value<String?> updatedByName;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime> cachedAt;
+  final Value<int> rowid;
+  const LocalEquipmentCacheCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.assetName = const Value.absent(),
+    this.manufacturer = const Value.absent(),
+    this.model = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.year = const Value.absent(),
+    this.hours = const Value.absent(),
+    this.location = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.updatedBy = const Value.absent(),
+    this.updatedByName = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.cachedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LocalEquipmentCacheCompanion.insert({
+    required String id,
+    required String companyId,
+    required String assetName,
+    required String manufacturer,
+    required String model,
+    this.serialNumber = const Value.absent(),
+    this.year = const Value.absent(),
+    this.hours = const Value.absent(),
+    this.location = const Value.absent(),
+    this.notes = const Value.absent(),
+    this.createdBy = const Value.absent(),
+    this.createdByName = const Value.absent(),
+    this.updatedBy = const Value.absent(),
+    this.updatedByName = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    required DateTime cachedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       companyId = Value(companyId),
+       assetName = Value(assetName),
+       manufacturer = Value(manufacturer),
+       model = Value(model),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt),
+       cachedAt = Value(cachedAt);
+  static Insertable<LocalEquipmentCacheRow> custom({
+    Expression<String>? id,
+    Expression<String>? companyId,
+    Expression<String>? assetName,
+    Expression<String>? manufacturer,
+    Expression<String>? model,
+    Expression<String>? serialNumber,
+    Expression<int>? year,
+    Expression<double>? hours,
+    Expression<String>? location,
+    Expression<String>? notes,
+    Expression<String>? createdBy,
+    Expression<String>? createdByName,
+    Expression<String>? updatedBy,
+    Expression<String>? updatedByName,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? cachedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (assetName != null) 'asset_name': assetName,
+      if (manufacturer != null) 'manufacturer': manufacturer,
+      if (model != null) 'model': model,
+      if (serialNumber != null) 'serial_number': serialNumber,
+      if (year != null) 'year': year,
+      if (hours != null) 'hours': hours,
+      if (location != null) 'location': location,
+      if (notes != null) 'notes': notes,
+      if (createdBy != null) 'created_by': createdBy,
+      if (createdByName != null) 'created_by_name': createdByName,
+      if (updatedBy != null) 'updated_by': updatedBy,
+      if (updatedByName != null) 'updated_by_name': updatedByName,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (cachedAt != null) 'cached_at': cachedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LocalEquipmentCacheCompanion copyWith({
+    Value<String>? id,
+    Value<String>? companyId,
+    Value<String>? assetName,
+    Value<String>? manufacturer,
+    Value<String>? model,
+    Value<String?>? serialNumber,
+    Value<int?>? year,
+    Value<double?>? hours,
+    Value<String?>? location,
+    Value<String?>? notes,
+    Value<String?>? createdBy,
+    Value<String?>? createdByName,
+    Value<String?>? updatedBy,
+    Value<String?>? updatedByName,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime>? cachedAt,
+    Value<int>? rowid,
+  }) {
+    return LocalEquipmentCacheCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      assetName: assetName ?? this.assetName,
+      manufacturer: manufacturer ?? this.manufacturer,
+      model: model ?? this.model,
+      serialNumber: serialNumber ?? this.serialNumber,
+      year: year ?? this.year,
+      hours: hours ?? this.hours,
+      location: location ?? this.location,
+      notes: notes ?? this.notes,
+      createdBy: createdBy ?? this.createdBy,
+      createdByName: createdByName ?? this.createdByName,
+      updatedBy: updatedBy ?? this.updatedBy,
+      updatedByName: updatedByName ?? this.updatedByName,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      cachedAt: cachedAt ?? this.cachedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (assetName.present) {
+      map['asset_name'] = Variable<String>(assetName.value);
+    }
+    if (manufacturer.present) {
+      map['manufacturer'] = Variable<String>(manufacturer.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (serialNumber.present) {
+      map['serial_number'] = Variable<String>(serialNumber.value);
+    }
+    if (year.present) {
+      map['year'] = Variable<int>(year.value);
+    }
+    if (hours.present) {
+      map['hours'] = Variable<double>(hours.value);
+    }
+    if (location.present) {
+      map['location'] = Variable<String>(location.value);
+    }
+    if (notes.present) {
+      map['notes'] = Variable<String>(notes.value);
+    }
+    if (createdBy.present) {
+      map['created_by'] = Variable<String>(createdBy.value);
+    }
+    if (createdByName.present) {
+      map['created_by_name'] = Variable<String>(createdByName.value);
+    }
+    if (updatedBy.present) {
+      map['updated_by'] = Variable<String>(updatedBy.value);
+    }
+    if (updatedByName.present) {
+      map['updated_by_name'] = Variable<String>(updatedByName.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalEquipmentCacheCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('assetName: $assetName, ')
+          ..write('manufacturer: $manufacturer, ')
+          ..write('model: $model, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('year: $year, ')
+          ..write('hours: $hours, ')
+          ..write('location: $location, ')
+          ..write('notes: $notes, ')
+          ..write('createdBy: $createdBy, ')
+          ..write('createdByName: $createdByName, ')
+          ..write('updatedBy: $updatedBy, ')
+          ..write('updatedByName: $updatedByName, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2116,6 +3400,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $InspectionCategoryRatingsTable(this);
   late final $InspectionDetailedResponsesTable inspectionDetailedResponses =
       $InspectionDetailedResponsesTable(this);
+  late final $LocalTenantContextsTable localTenantContexts =
+      $LocalTenantContextsTable(this);
+  late final $LocalEquipmentCacheTable localEquipmentCache =
+      $LocalEquipmentCacheTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2124,6 +3412,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     inspections,
     inspectionCategoryRatings,
     inspectionDetailedResponses,
+    localTenantContexts,
+    localEquipmentCache,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -3654,6 +4944,657 @@ typedef $$InspectionDetailedResponsesTableProcessedTableManager =
       LocalDetailedResponseRow,
       PrefetchHooks Function({bool inspectionId})
     >;
+typedef $$LocalTenantContextsTableCreateCompanionBuilder =
+    LocalTenantContextsCompanion Function({
+      required String id,
+      required String companyId,
+      required String userId,
+      required DateTime activatedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalTenantContextsTableUpdateCompanionBuilder =
+    LocalTenantContextsCompanion Function({
+      Value<String> id,
+      Value<String> companyId,
+      Value<String> userId,
+      Value<DateTime> activatedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalTenantContextsTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalTenantContextsTable> {
+  $$LocalTenantContextsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get activatedAt => $composableBuilder(
+    column: $table.activatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalTenantContextsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalTenantContextsTable> {
+  $$LocalTenantContextsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get activatedAt => $composableBuilder(
+    column: $table.activatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalTenantContextsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalTenantContextsTable> {
+  $$LocalTenantContextsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get activatedAt => $composableBuilder(
+    column: $table.activatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$LocalTenantContextsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalTenantContextsTable,
+          LocalTenantContextRow,
+          $$LocalTenantContextsTableFilterComposer,
+          $$LocalTenantContextsTableOrderingComposer,
+          $$LocalTenantContextsTableAnnotationComposer,
+          $$LocalTenantContextsTableCreateCompanionBuilder,
+          $$LocalTenantContextsTableUpdateCompanionBuilder,
+          (
+            LocalTenantContextRow,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalTenantContextsTable,
+              LocalTenantContextRow
+            >,
+          ),
+          LocalTenantContextRow,
+          PrefetchHooks Function()
+        > {
+  $$LocalTenantContextsTableTableManager(
+    _$AppDatabase db,
+    $LocalTenantContextsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalTenantContextsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalTenantContextsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalTenantContextsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<String> userId = const Value.absent(),
+                Value<DateTime> activatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalTenantContextsCompanion(
+                id: id,
+                companyId: companyId,
+                userId: userId,
+                activatedAt: activatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String companyId,
+                required String userId,
+                required DateTime activatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalTenantContextsCompanion.insert(
+                id: id,
+                companyId: companyId,
+                userId: userId,
+                activatedAt: activatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalTenantContextsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalTenantContextsTable,
+      LocalTenantContextRow,
+      $$LocalTenantContextsTableFilterComposer,
+      $$LocalTenantContextsTableOrderingComposer,
+      $$LocalTenantContextsTableAnnotationComposer,
+      $$LocalTenantContextsTableCreateCompanionBuilder,
+      $$LocalTenantContextsTableUpdateCompanionBuilder,
+      (
+        LocalTenantContextRow,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalTenantContextsTable,
+          LocalTenantContextRow
+        >,
+      ),
+      LocalTenantContextRow,
+      PrefetchHooks Function()
+    >;
+typedef $$LocalEquipmentCacheTableCreateCompanionBuilder =
+    LocalEquipmentCacheCompanion Function({
+      required String id,
+      required String companyId,
+      required String assetName,
+      required String manufacturer,
+      required String model,
+      Value<String?> serialNumber,
+      Value<int?> year,
+      Value<double?> hours,
+      Value<String?> location,
+      Value<String?> notes,
+      Value<String?> createdBy,
+      Value<String?> createdByName,
+      Value<String?> updatedBy,
+      Value<String?> updatedByName,
+      required DateTime createdAt,
+      required DateTime updatedAt,
+      required DateTime cachedAt,
+      Value<int> rowid,
+    });
+typedef $$LocalEquipmentCacheTableUpdateCompanionBuilder =
+    LocalEquipmentCacheCompanion Function({
+      Value<String> id,
+      Value<String> companyId,
+      Value<String> assetName,
+      Value<String> manufacturer,
+      Value<String> model,
+      Value<String?> serialNumber,
+      Value<int?> year,
+      Value<double?> hours,
+      Value<String?> location,
+      Value<String?> notes,
+      Value<String?> createdBy,
+      Value<String?> createdByName,
+      Value<String?> updatedBy,
+      Value<String?> updatedByName,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime> cachedAt,
+      Value<int> rowid,
+    });
+
+class $$LocalEquipmentCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $LocalEquipmentCacheTable> {
+  $$LocalEquipmentCacheTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get assetName => $composableBuilder(
+    column: $table.assetName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get hours => $composableBuilder(
+    column: $table.hours,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get createdByName => $composableBuilder(
+    column: $table.createdByName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedBy => $composableBuilder(
+    column: $table.updatedBy,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LocalEquipmentCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $LocalEquipmentCacheTable> {
+  $$LocalEquipmentCacheTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assetName => $composableBuilder(
+    column: $table.assetName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get year => $composableBuilder(
+    column: $table.year,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get hours => $composableBuilder(
+    column: $table.hours,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get location => $composableBuilder(
+    column: $table.location,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get notes => $composableBuilder(
+    column: $table.notes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdBy => $composableBuilder(
+    column: $table.createdBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get createdByName => $composableBuilder(
+    column: $table.createdByName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedBy => $composableBuilder(
+    column: $table.updatedBy,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LocalEquipmentCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LocalEquipmentCacheTable> {
+  $$LocalEquipmentCacheTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get assetName =>
+      $composableBuilder(column: $table.assetName, builder: (column) => column);
+
+  GeneratedColumn<String> get manufacturer => $composableBuilder(
+    column: $table.manufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get year =>
+      $composableBuilder(column: $table.year, builder: (column) => column);
+
+  GeneratedColumn<double> get hours =>
+      $composableBuilder(column: $table.hours, builder: (column) => column);
+
+  GeneratedColumn<String> get location =>
+      $composableBuilder(column: $table.location, builder: (column) => column);
+
+  GeneratedColumn<String> get notes =>
+      $composableBuilder(column: $table.notes, builder: (column) => column);
+
+  GeneratedColumn<String> get createdBy =>
+      $composableBuilder(column: $table.createdBy, builder: (column) => column);
+
+  GeneratedColumn<String> get createdByName => $composableBuilder(
+    column: $table.createdByName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get updatedBy =>
+      $composableBuilder(column: $table.updatedBy, builder: (column) => column);
+
+  GeneratedColumn<String> get updatedByName => $composableBuilder(
+    column: $table.updatedByName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+}
+
+class $$LocalEquipmentCacheTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LocalEquipmentCacheTable,
+          LocalEquipmentCacheRow,
+          $$LocalEquipmentCacheTableFilterComposer,
+          $$LocalEquipmentCacheTableOrderingComposer,
+          $$LocalEquipmentCacheTableAnnotationComposer,
+          $$LocalEquipmentCacheTableCreateCompanionBuilder,
+          $$LocalEquipmentCacheTableUpdateCompanionBuilder,
+          (
+            LocalEquipmentCacheRow,
+            BaseReferences<
+              _$AppDatabase,
+              $LocalEquipmentCacheTable,
+              LocalEquipmentCacheRow
+            >,
+          ),
+          LocalEquipmentCacheRow,
+          PrefetchHooks Function()
+        > {
+  $$LocalEquipmentCacheTableTableManager(
+    _$AppDatabase db,
+    $LocalEquipmentCacheTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LocalEquipmentCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LocalEquipmentCacheTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LocalEquipmentCacheTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<String> assetName = const Value.absent(),
+                Value<String> manufacturer = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String?> serialNumber = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<double?> hours = const Value.absent(),
+                Value<String?> location = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<String?> createdByName = const Value.absent(),
+                Value<String?> updatedBy = const Value.absent(),
+                Value<String?> updatedByName = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime> cachedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LocalEquipmentCacheCompanion(
+                id: id,
+                companyId: companyId,
+                assetName: assetName,
+                manufacturer: manufacturer,
+                model: model,
+                serialNumber: serialNumber,
+                year: year,
+                hours: hours,
+                location: location,
+                notes: notes,
+                createdBy: createdBy,
+                createdByName: createdByName,
+                updatedBy: updatedBy,
+                updatedByName: updatedByName,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String companyId,
+                required String assetName,
+                required String manufacturer,
+                required String model,
+                Value<String?> serialNumber = const Value.absent(),
+                Value<int?> year = const Value.absent(),
+                Value<double?> hours = const Value.absent(),
+                Value<String?> location = const Value.absent(),
+                Value<String?> notes = const Value.absent(),
+                Value<String?> createdBy = const Value.absent(),
+                Value<String?> createdByName = const Value.absent(),
+                Value<String?> updatedBy = const Value.absent(),
+                Value<String?> updatedByName = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                required DateTime cachedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LocalEquipmentCacheCompanion.insert(
+                id: id,
+                companyId: companyId,
+                assetName: assetName,
+                manufacturer: manufacturer,
+                model: model,
+                serialNumber: serialNumber,
+                year: year,
+                hours: hours,
+                location: location,
+                notes: notes,
+                createdBy: createdBy,
+                createdByName: createdByName,
+                updatedBy: updatedBy,
+                updatedByName: updatedByName,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LocalEquipmentCacheTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LocalEquipmentCacheTable,
+      LocalEquipmentCacheRow,
+      $$LocalEquipmentCacheTableFilterComposer,
+      $$LocalEquipmentCacheTableOrderingComposer,
+      $$LocalEquipmentCacheTableAnnotationComposer,
+      $$LocalEquipmentCacheTableCreateCompanionBuilder,
+      $$LocalEquipmentCacheTableUpdateCompanionBuilder,
+      (
+        LocalEquipmentCacheRow,
+        BaseReferences<
+          _$AppDatabase,
+          $LocalEquipmentCacheTable,
+          LocalEquipmentCacheRow
+        >,
+      ),
+      LocalEquipmentCacheRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3671,4 +5612,8 @@ class $AppDatabaseManager {
         _db,
         _db.inspectionDetailedResponses,
       );
+  $$LocalTenantContextsTableTableManager get localTenantContexts =>
+      $$LocalTenantContextsTableTableManager(_db, _db.localTenantContexts);
+  $$LocalEquipmentCacheTableTableManager get localEquipmentCache =>
+      $$LocalEquipmentCacheTableTableManager(_db, _db.localEquipmentCache);
 }

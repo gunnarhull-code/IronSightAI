@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../app/inspection_session.dart';
+import '../../../data/local/offline_inspection_workspace.dart';
 import '../../../domain/entities/company.dart';
+import '../../../domain/repositories/auth_session_reader.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/use_cases/create_company_for_current_user.dart';
 import '../../../domain/use_cases/get_current_user_company.dart';
@@ -12,9 +15,18 @@ import 'company_onboarding_screen.dart';
 ///
 /// Keeps tenancy navigation centralized (mirrors [AuthGate] for sessions).
 class CompanyGate extends StatefulWidget {
-  const CompanyGate({super.key, required this.repository});
+  const CompanyGate({
+    super.key,
+    required this.repository,
+    this.workspace,
+    this.authSession,
+    this.onInspectionSessionChanged,
+  });
 
   final CompanyRepository repository;
+  final OfflineInspectionWorkspace? workspace;
+  final AuthSessionReader? authSession;
+  final ValueChanged<InspectionSession?>? onInspectionSessionChanged;
 
   @override
   State<CompanyGate> createState() => _CompanyGateState();
@@ -23,20 +35,40 @@ class CompanyGate extends StatefulWidget {
 class _CompanyGateState extends State<CompanyGate> {
   late final GetCurrentUserCompany _getCurrentUserCompany;
   late final CreateCompanyForCurrentUser _createCompany;
-  late Future<Company?> _companyFuture;
+  late Future<_CompanyGateResult> _bootstrapFuture;
 
   @override
   void initState() {
     super.initState();
     _getCurrentUserCompany = GetCurrentUserCompany(widget.repository);
     _createCompany = CreateCompanyForCurrentUser(widget.repository);
-    _companyFuture = _loadCompany();
+    _bootstrapFuture = _bootstrap();
   }
 
-  Future<Company?> _loadCompany() async {
+  Future<_CompanyGateResult> _bootstrap() async {
     debugPrint('CompanyGate: company lookup starts');
     try {
-      return await _getCurrentUserCompany();
+      final company = await _getCurrentUserCompany();
+      if (company == null) {
+        widget.onInspectionSessionChanged?.call(null);
+        return const _CompanyGateResult.onboarding();
+      }
+
+      final workspace = widget.workspace;
+      final userId = widget.authSession?.currentUserId;
+      InspectionSession? session;
+      if (workspace != null && userId != null && userId.isNotEmpty) {
+        await workspace.prepareTenant(companyId: company.id, userId: userId);
+        session = InspectionSession(
+          companyId: company.id,
+          userId: userId,
+          workspace: workspace,
+        );
+        widget.onInspectionSessionChanged?.call(session);
+      } else {
+        widget.onInspectionSessionChanged?.call(null);
+      }
+      return _CompanyGateResult.dashboard(company: company, session: session);
     } catch (error, stackTrace) {
       debugPrint('CompanyGate: company lookup failed: $error');
       debugPrintStack(stackTrace: stackTrace);
@@ -45,23 +77,22 @@ class _CompanyGateState extends State<CompanyGate> {
   }
 
   void _onCompanyCreated() {
-    // Reload so the gate advances from the repository source of truth.
     setState(() {
-      _companyFuture = _loadCompany();
+      _bootstrapFuture = _bootstrap();
     });
   }
 
   void _retryCompanyLookup() {
     debugPrint('CompanyGate: Retry pressed');
     setState(() {
-      _companyFuture = _loadCompany();
+      _bootstrapFuture = _bootstrap();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Company?>(
-      future: _companyFuture,
+    return FutureBuilder<_CompanyGateResult>(
+      future: _bootstrapFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
@@ -94,16 +125,35 @@ class _CompanyGateState extends State<CompanyGate> {
           );
         }
 
-        final company = snapshot.data;
-        if (company == null) {
+        final result = snapshot.data!;
+        if (result.needsOnboarding) {
           return CompanyOnboardingScreen(
             createCompany: _createCompany,
             onCompleted: _onCompanyCreated,
           );
         }
 
-        return const DashboardScreen();
+        return DashboardScreen(inspectionSession: result.session);
       },
     );
   }
+}
+
+class _CompanyGateResult {
+  const _CompanyGateResult._({
+    required this.needsOnboarding,
+    this.company,
+    this.session,
+  });
+
+  const _CompanyGateResult.onboarding() : this._(needsOnboarding: true);
+
+  const _CompanyGateResult.dashboard({
+    required Company company,
+    InspectionSession? session,
+  }) : this._(needsOnboarding: false, company: company, session: session);
+
+  final bool needsOnboarding;
+  final Company? company;
+  final InspectionSession? session;
 }

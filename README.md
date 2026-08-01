@@ -2,7 +2,9 @@
 
 A mobile-first, AI-ready heavy equipment inspection platform for equipment dealerships, used equipment managers, and sales representatives.
 
-**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, Sprint 008 local inspection foundation, Sprint 009 engineering/CI baseline, Sprint 010 Node.js 24 checkout compatibility, Sprint 011 sprint registry guardrails through PR #13). Canonical sprint numbers/lifecycle: [`management/sprint_registry.json`](./management/sprint_registry.json) (`nextSprintNumber` = 12). **All founder product decisions for the documentation phase are resolved** — see [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md).
+**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, local inspection foundation, engineering/CI baseline, and informational Supabase migration checks). Canonical work tracking is **GitHub Issues (Work Items)** — see [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md). Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
+
+**Live MVP direction (Work Item #18):** **Quick Appraisal only** — under two minutes offline (timing and required capture set in [`docs/15`](./docs/15-final-product-specification.md) §0), trustworthy inspection package, no dollar valuation, no Detailed Inspection UI (Later; shared checklist model preserved). On-device OCR for serial/hours; optional cloud photo assist via backend `AIService`; walkaround video is evidence only. **V2:** professional PDF (server-side → local cache → reviewed native share). See §0 / §19.
 
 ## Developer setup and verification
 
@@ -23,61 +25,66 @@ Pull requests targeting `main` run the same format / analyze / test checks via G
 ## Read in This Order
 
 1. **[`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)** — **Document Zero.** The company's founding mission, vision, philosophy, and non-negotiable principles. Read this before anything else, and before making any product or architectural decision, human or AI. This is not a technical document — it is what every technical document answers to. **Approved as the guiding document for the project.**
-2. **[`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)** — The single source of truth for the *product*. Consolidates and resolves every contradiction found across the supporting documents (`01`–`14`) and is built around the core product promise: *"IronSight AI enables salespeople to complete a professional trade appraisal in just a few minutes using only their phone — while supporting more detailed inspections when greater documentation is required."*
-3. **[`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md)** — All 8 founder decisions and their final rulings; retained as the live tracker for any future decision.
-4. **[`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md)** — Formal confirmation that documentation is complete and development may begin.
+2. **[`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)** — The single source of truth for the *product*. **§0 is the live MVP scope** (Work Item #18 + founder confirmations). Older sections remain historical/engineering reference where they conflict with §0. §19 records resolved confirmations.
+3. **[`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md)** — Historical record of the first 8 founder decisions.
+4. **[`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md)** — Documentation-phase status, including the #18 MVP alignment and founder confirmations.
 5. **[`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md)** — Local engineering setup, verification, and PR workflow baseline.
 
-Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, diagrams) but defer to `15` wherever they conflict, and everything defers to `00` on questions of philosophy, priority, or principle. `docs/04`, `07`, and `08` have been fully synced with `15`; see `docs/18` §5 for the complete consistency status.
+Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, diagrams) but defer to `15` wherever they conflict, and everything defers to `00` on questions of philosophy, priority, or principle. `docs/04`, `07`, and `08` were fully synced with the pre-#18 `docs/15`; see `docs/18` §5 for consistency status after #18.
 
 ## Daily Development Workflow
 
-The [`management/`](./management/) folder is the operational system of IronSight AI — it answers "what should we be working on today?" and preserves company context independently of any one person's memory. **Every development session, human or AI, should begin by:**
+The [`management/`](./management/) folder preserves company context independently of any one person's memory. **GitHub Issues, Pull Requests, and Actions** are the live sources for Work Item, PR, and CI status. `management/DASHBOARD.md` is a founder-maintained occasional summary — agents must not routinely edit it for individual Work Items.
 
-1. Read [`management/DASHBOARD.md`](./management/DASHBOARD.md)
-2. Read [`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)
-3. Read [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md)
-4. Read [`docs/13-roadmap.md`](./docs/13-roadmap.md)
-5. Read [`management/DECISIONS.md`](./management/DECISIONS.md)
-6. Read [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
-7. Summarize the current project state.
+At the start of a development session, read as needed:
+
+1. [`management/DASHBOARD.md`](./management/DASHBOARD.md) (occasional summary)
+2. [`docs/00-ironsight-constitution.md`](./docs/00-ironsight-constitution.md)
+3. [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) (**§0 first**)
+4. [`docs/13-roadmap.md`](./docs/13-roadmap.md)
+5. [`management/DECISIONS.md`](./management/DECISIONS.md)
+6. [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
+7. The assigned **GitHub Issue** (complete Work Item source when one is assigned)
 8. Begin implementation.
 
-**Operating principle**: these management documents are maintained throughout the life of the company, not just during the initial documentation phase. Before every future coding session ends, update [`DASHBOARD.md`](./management/DASHBOARD.md), [`DECISIONS.md`](./management/DECISIONS.md) (if a new decision was made), and [`CHANGELOG.md`](./management/CHANGELOG.md) to reflect the current state of the project. The goal: if development stops for six months, any developer or AI assistant can immediately understand where the project stands and continue without losing context.
+**Operating principle**: management docs are maintained for the life of the company. The founder occasionally updates `DASHBOARD.md` and related summaries when phase or priorities change. Agents do **not** update shared status files at the end of every session. Record decisions in `DECISIONS.md` and changelog entries only when the founder (or an explicit Work Item) requires it — never as routine per-Work-Item status sync. Live work state stays on GitHub.
 
 ## Documentation Philosophy: `docs/` vs `management/`
 
 There must never be duplicate sources of truth. Each of the following lives in exactly one place:
 
 - **`docs/`** — long-lived documentation: the Constitution, technical architecture, the product specification, the **strategic roadmap** (`docs/13-roadmap.md`), and the **developer workflow** (`docs/DEVELOPER_WORKFLOW.md`).
-- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, AFK sprint notes, and the canonical sprint registry.
+- **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, permanent AFK/Cloud Agent policy, and legacy sprint history.
 
-The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Sprint numbers and lifecycle state exist **only** in `management/sprint_registry.json` (docs may summarize; they must not invent alternate numbering). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
+The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Active work tracking exists **only** as GitHub Issues (Work Items). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
 
 ## Management Folder
 
 | File | Purpose |
 |---|---|
-| [`management/DASHBOARD.md`](./management/DASHBOARD.md) | Operational command center — what to work on today; references `docs/13-roadmap.md` for the strategic roadmap |
-| [`management/sprint_registry.json`](./management/sprint_registry.json) | **Canonical** machine-readable sprint numbers and lifecycle state |
+| [`management/DASHBOARD.md`](./management/DASHBOARD.md) | Founder-maintained occasional operational summary (not a live Work Item board) |
 | [`management/DECISIONS.md`](./management/DECISIONS.md) | Permanent architectural decision log (ADRs) |
 | [`management/CHANGELOG.md`](./management/CHANGELOG.md) | Chronological project history |
 | [`management/BACKLOG.md`](./management/BACKLOG.md) | Ideas intentionally deferred from the MVP, by priority |
 | [`management/FOUNDER_LOG.md`](./management/FOUNDER_LOG.md) | Founder journal — customer conversations, ideas, lessons learned |
 | [`management/WINS.md`](./management/WINS.md) | Milestone journal |
-| [`management/AFK_SPRINTS.md`](./management/AFK_SPRINTS.md) | Approved AFK/Cloud Agent sprint scope notes (registry is canonical for numbers/status) |
+| [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md) | Permanent AFK/Cloud Agent policy (GitHub Issues are the only assignment source) |
+| [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md) | Archived numbered-sprint history (sprint registry retired) |
 
-## Key Decisions (Locked for V1)
+## Key Decisions (Locked for MVP)
 
-- **Core promise**: a rep completes a professional trade appraisal in just a few minutes, using only their phone — with the option to go deeper on any category when a machine warrants more documentation.
-- **One inspection engine, two depths**: a fast default Quick Appraisal and an optional, per-category expandable Detailed Inspection, built on the same data model — never two separate systems.
+- **Core promise**: Quick Appraisal in **under two minutes** offline (Start → confirm; excludes login/onboarding/sync/share) — trustworthy package, not a dollar valuation.
+- **MVP = Quick Appraisal only**: required photos (front-left, rear-right, serial plate, hour meter), walkaround evidence video (not AI-analyzed), type/make/model, serial or “not found”, hours or “unknown”, Quick Condition ratings; optional year/notes/extra photos. Detailed Inspection UI is **Later** (shared checklist model preserved).
+- **Plumbing**: minimal company setup/context, company-scoped inspection list, reopen mutable draft, discard draft with confirmation.
+- **AI**: on-device OCR for serial/hours; optional cloud photo assist via backend provider-agnostic `AIService` when connected; Flutter/domain never call a vendor directly; humans confirm; manual path always available; vendor selection is a later benchmark Work Item.
+- **V2**: professional PDF (server-side → local cache → reviewed native email/share draft). Summary-image renderer is Later.
+- **Later**: Detailed Inspection, summary image, portal, collaboration/chat, manager approval, automated email, historical equipment info, recon costs, pricing/valuation, AI vendor benchmarks.
 - **Mobile app**: Flutter — single codebase, strong camera/video/OCR capability, works fully offline.
-- **Backend**: Supabase (Postgres + Auth + Storage + Edge Functions) — minimal ops for a solo founder, with a documented migration path to AWS if/when needed.
-- **Offline strategy**: Local-first. The device's local SQLite database is the source of truth during an inspection; a background sync engine reconciles with Supabase whenever connectivity is available. No step in the inspection workflow may require a network connection.
-- **Team model**: One founder/product owner, AI-assisted development, no dedicated engineering team — every architectural choice optimizes for simplicity, maintainability, and low operating cost over theoretical scale.
-- **Timeline**: 8–12 week MVP scoped tightly to the core inspection workflow.
-- **Multi-tenant from day one**: even though V1 serves a handful of pilot dealerships, tenancy (company-scoped data + Postgres Row Level Security) is built in now rather than retrofitted later.
-- **V1 is an inspection platform, not a valuation platform.** No pricing, valuation, or AI damage detection ships in V1.
+- **Backend**: Supabase (Postgres + Auth + Storage + Edge Functions).
+- **Offline strategy**: Local-first; completing the MVP inspection package must not require a network connection.
+- **Team model**: One founder/product owner, AI-assisted development, no dedicated engineering team.
+- **Multi-tenant from day one** via company-scoped data + Postgres Row Level Security.
+- **MVP is an inspection package platform, not a valuation platform.**
 
 ## Documentation Index
 
@@ -87,29 +94,29 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 | 01 | [`docs/01-executive-summary.md`](./docs/01-executive-summary.md) | Product vision, problem/solution, guiding principles, roadmap at a glance |
 | 02 | [`docs/02-product-requirements.md`](./docs/02-product-requirements.md) | V1 PRD — personas, functional requirements, scope boundaries, success metrics |
 | 03 | [`docs/03-technical-architecture.md`](./docs/03-technical-architecture.md) | System architecture, offline-first sync design, AI-ready data pipeline |
-| 04 | [`docs/04-data-model.md`](./docs/04-data-model.md) | Postgres schema, ER diagram, multi-tenant design — **synced with `15`** |
+| 04 | [`docs/04-data-model.md`](./docs/04-data-model.md) | Postgres schema, ER diagram, multi-tenant design — **synced with pre-#18 `15`** |
 | 05 | [`docs/05-api-design.md`](./docs/05-api-design.md) | Client/backend contract (Supabase tables + Edge Functions) |
 | 06 | [`docs/06-mobile-app-spec.md`](./docs/06-mobile-app-spec.md) | Flutter app structure, camera/video/OCR modules, sync engine |
-| 07 | [`docs/07-inspection-workflow.md`](./docs/07-inspection-workflow.md) | Screen-by-screen guided inspection UX — **rewritten to match `15` §5** (progressive Quick Appraisal / Detailed Inspection model) |
-| 08 | [`docs/08-security-compliance.md`](./docs/08-security-compliance.md) | Auth, RLS tenant isolation, encryption, data ownership — **synced with `15`** (encryption adopted from V1, explicit Storage policy SQL) |
+| 07 | [`docs/07-inspection-workflow.md`](./docs/07-inspection-workflow.md) | Screen-by-screen guided inspection UX — **rewritten to match pre-#18 `15` §5** |
+| 08 | [`docs/08-security-compliance.md`](./docs/08-security-compliance.md) | Auth, RLS tenant isolation, encryption, data ownership — **synced with `15`** |
 | 09 | [`docs/09-multi-tenant-saas-strategy.md`](./docs/09-multi-tenant-saas-strategy.md) | Tenancy model, roles, billing-readiness |
 | 10 | [`docs/10-tech-stack.md`](./docs/10-tech-stack.md) | Concrete stack decisions + justification + migration triggers |
 | 11 | [`docs/11-non-functional-requirements.md`](./docs/11-non-functional-requirements.md) | Performance, reliability, cost, device support targets |
 | 12 | [`docs/12-equipment-taxonomy.md`](./docs/12-equipment-taxonomy.md) | Make/model/category data model, extensibility rules |
-| 13 | [`docs/13-roadmap.md`](./docs/13-roadmap.md) | Week-by-week V1 plan + V2-V4 vision (superseded in part by `15` §16) |
+| 13 | [`docs/13-roadmap.md`](./docs/13-roadmap.md) | Live MVP / V2 / Later sequencing + historical week plan |
 | 14 | [`docs/14-pre-development-review.md`](./docs/14-pre-development-review.md) | CTO pre-development review — conflicts, gaps, risks, and required fixes before Week 1 |
-| 15 | [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) | **Single source of truth.** Consolidated, contradiction-resolved final spec |
-| 16 | [`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md) | Approved decisions, open founder decisions, and deferred future decisions |
+| 15 | [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) | **Single source of truth.** **§0 = live MVP scope** |
+| 16 | [`docs/16-founder-approval-checklist.md`](./docs/16-founder-approval-checklist.md) | Historical founder decisions; #18 confirmations recorded in `docs/15` §19 |
 | 17 | [`docs/17-dealership-data-use-clause-draft.md`](./docs/17-dealership-data-use-clause-draft.md) | Draft dealership data-use consent language for future AI training — **not legal advice**, requires attorney review |
-| 18 | [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md) | **Formal sign-off** — documentation complete, all founder decisions resolved, development may begin |
+| 18 | [`docs/18-implementation-ready-report.md`](./docs/18-implementation-ready-report.md) | Documentation-phase status including #18 amendment |
 | — | [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) | **Engineering workflow source of truth** — local setup, verification, Draft PRs, migration safety |
 
 > **Numbering note**: `docs/00-ironsight-constitution.md` is "Document Zero" — the company's foundational document, read before the numbered product/technical sequence begins. Documents `01`–`18` are numbered sequentially in intended reading order. If a new document is added later, it should be appended at the end of the sequence rather than inserted mid-sequence, to avoid another renumbering pass. Unnumbered operational engineering docs (such as `DEVELOPER_WORKFLOW.md`) may sit alongside without renumbering the product set.
 
-## Non-Goals for V1 (Read Before Proposing Features)
+## Non-Goals for MVP (Read Before Proposing Features)
 
-No pricing/valuation output, no AI damage detection, no customer-facing portal, no billing/payments, no web inspection experience, no DMS/CRM integration, no true push notifications. (Note: the granular, per-item Detailed Inspection is **in scope for V1** as an optional, per-category expansion of the Quick Appraisal — see Founder Decision #1 in `docs/16`.) See [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md#4-explicitly-excluded-features) Section 4 for the authoritative, current list — it supersedes the non-goals list in `docs/02-product-requirements.md` where the two documents differ.
+No Detailed Inspection UI; no pricing/valuation dollar output; no company/manager portal; no live collaboration/chat; no manager approval workflow; no automated email workflows; no historical equipment information product; no recon costs/additions; no customer-facing portal; no billing/payments; no web inspection experience; no DMS/CRM integration; no true push notifications; no walkaround video AI analysis; no hardcoded cloud AI vendor. **V2** owns professional PDF + reviewed native share. Summary-image renderer is Later. On-device OCR and optional cloud photo assist **are** allowed in MVP under `docs/15` §0. See [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) §0 and §4 for the authoritative lists.
 
 ## Next Step
 
-Continue implementation from [`management/DASHBOARD.md`](./management/DASHBOARD.md) and the active sprint in [`management/AFK_SPRINTS.md`](./management/AFK_SPRINTS.md). Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md).
+Continue implementation from assigned Work Items on **GitHub Issues**. Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) **§0**. Do not expand frozen Draft PR scopes (#14, #15) from this documentation Work Item.

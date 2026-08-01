@@ -63,6 +63,7 @@ void main() {
     expect(find.text('IronSight AI'), findsOneWidget);
     expect(find.text('Heavy Equipment Inspections'), findsOneWidget);
     expect(find.text('Start Quick Appraisal'), findsOneWidget);
+    expect(find.text('Local inspection workspace unavailable'), findsOneWidget);
   });
 
   testWidgets('CompanyGate shows onboarding when user has no company', (

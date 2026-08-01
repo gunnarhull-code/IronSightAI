@@ -1,6 +1,6 @@
 # Equipment Identification Capture — Platform Support
 
-Sprint 013 delivers a reusable offline capture module for equipment serial
+This Work Item delivers a reusable offline capture module for equipment serial
 numbers and hour-meter readings.
 
 ## Supported platforms (camera + on-device OCR)
@@ -38,7 +38,6 @@ numbers and hour-meter readings.
 
 ## Integration note
 
-This module is intentionally **not** wired into Sprint 012 inspection screens.
-Future workflows (inspection and equipment) should construct
-`EquipmentIdCaptureController` with platform bindings and embed
-`EquipmentIdCapturePanel`.
+This module is intentionally **not** wired into inspection or equipment screens
+in this PR. Future workflows should construct `EquipmentIdCaptureController`
+with platform bindings and embed `EquipmentIdCapturePanel`.
