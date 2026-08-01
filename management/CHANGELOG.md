@@ -2,16 +2,17 @@
 
 **Purpose**: the official, chronological history of the project — every meaningful event, from the first documentation draft through every future release. Unlike [`DECISIONS.md`](./DECISIONS.md) (which records *why* a decision was made), this file records *what happened and when*, in the order it happened.
 
-**Maintenance rule**: add a new dated entry when meaningful progress is recorded by the founder (or by an explicit Work Item that includes changelog updates). Newest entries at the top, under an `## [Unreleased]` heading for work in progress. Once a version is actually released (e.g., V1 ships to the first pilot dealership), move its entries under a versioned heading (e.g., `## [1.0.0] - 2026-XX-XX`), following the spirit of [Keep a Changelog](https://keepachangelog.com/), adapted for a pre-launch product+documentation history. Agents must **not** routinely edit this file for individual Work Item status — live status belongs to GitHub Issues, PRs, and Actions.
+**Maintenance rule**: add a new dated entry when meaningful progress is recorded by the founder (or by an explicit Work Item that includes changelog updates). Newest entries at the top, under an `## [Unreleased]` heading for work in progress. Once a version is actually released (e.g., V1 ships to the first pilot dealership), move its entries under a versioned heading (e.g., `## [1.0.0] - 2026-XX-XX`), following the spirit of [Keep a Changelog](https://keepachangelog.com/), adapted for a pre-launch product+documentation history. Agents must **not** routinely edit this file for individual Work Item status — live status belongs to Draft PRs and Actions.
 
 ---
 
 ## [Unreleased]
 
-Application foundation exists on `main` (Flutter + local Supabase: auth, company, equipment, local inspection foundation). Historical Sprints 009–011 are merged. Numbered sprints and `management/sprint_registry.json` are retired in favor of GitHub Issue Work Items.
+Application foundation exists on `main` (Flutter + local Supabase: auth, company, equipment, local inspection foundation). Historical Sprints 009–011 are merged. Numbered sprints and `management/sprint_registry.json` are retired. Live work tracking is Draft PRs frozen by founder-approved Cloud Agent prompts.
 
 ### Added
-- **2026-07-29**: Work Items workflow — GitHub Issues replace numbered sprints; `management/AFK_AGENTS.md` replaces `AFK_SPRINTS.md`; `management/LEGACY_SPRINT_HISTORY.md` archives former registry identities; Cursor skills updated for Draft-PR-only delivery. No feature migrations. No product features.
+- **2026-08-01**: Draft-PR work records — founder-approved Cloud Agent prompts freeze Work Item scope; descriptive branches `cursor/<work-slug>`; one Draft PR per Work Item is the unique live work record; GitHub Issues and `Closes #<number>` are no longer required. No feature migrations. No product features.
+- **2026-07-29**: Work Items workflow — GitHub Issues replace numbered sprints; `management/AFK_AGENTS.md` replaces `AFK_SPRINTS.md`; `management/LEGACY_SPRINT_HISTORY.md` archives former registry identities; Cursor skills updated for Draft-PR-only delivery. No feature migrations. No product features. *(Later superseded for assignment identity by Draft-PR work records.)*
 - **2026-07-27**: Sprint 011 — sprint registry and status-consistency guardrails: `management/sprint_registry.json` (canonical sprint numbers/lifecycle), `tool/sprint_registry_validation.dart` + `tool/verify_sprint_registry.dart` (read-only validator), focused tests, CI step, Pre-Sprint Status Gate documentation, and PR-template registry checklist. No feature migrations. No product features. **Completed through PR #13** (final registry state prepared in that PR; no immediate reconciliation PR required). *(Later retired by the Work Items workflow.)*
 - **2026-07-26**: Sprint 009 — engineering reliability baseline: `docs/DEVELOPER_WORKFLOW.md` (setup/verification source of truth), `.github/workflows/ci.yml` (format/analyze/test on PRs to `main`), `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/verify.sh`, and `test/env_example_test.dart` for safe `.env.example` bootstrap coverage. No feature migrations. **Merged through PR #7.**
 - **2026-07-23**: `management/sprints/SPRINT-1.md` — detailed Sprint 1 (Foundation) implementation plan: sprint goal, deliverables, in/out of scope, a 20-task dependency-ordered breakdown (purpose, dependencies, complexity, expected outcome per task), recommended build order, git milestones, a per-deliverable testing plan, a measurable Definition of Done, Sprint-1-specific risks with mitigations, and a Sprint 2 preview. Maps directly to `docs/13-roadmap.md`'s "Weeks 1–2: Foundation" section without duplicating it — this is the execution-level detail one layer below the strategic roadmap. Housed in a new `management/sprints/` subfolder so the top-level `management/` structure stays fixed at six files. `management/DASHBOARD.md`'s "Current Sprint," "Current Objective," "Current Tasks," and "Next Recommended Action" populated from this plan.
@@ -25,7 +26,7 @@ Application foundation exists on `main` (Flutter + local Supabase: auth, company
 - **2026-07-23 (earlier)**: `management/ROADMAP.md` restructured from 8 phases to 7 (superseded later the same day by the removal above). The standalone "Version 2 (Kickoff & Planning)" phase was removed and merged into a single "AI Assistance" phase that covers both planning and delivery as one business stage.
 
 ### Planned Next
-- Assign the next founder-approved GitHub Issue Work Item via the Pre-Work-Item Status Gate. Do not invent product scope in changelog prose. See [`docs/13-roadmap.md`](../docs/13-roadmap.md).
+- Assign the next founder-approved Work Item via a Cloud Agent prompt and Pre-Work-Item Status Gate; open one Draft PR on `cursor/<work-slug>`. Do not invent product scope in changelog prose. See [`docs/13-roadmap.md`](../docs/13-roadmap.md).
 
 ---
 

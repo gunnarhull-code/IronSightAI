@@ -22,6 +22,7 @@
 - ✅ **Node.js 24 / actions/checkout compatibility (Sprint 010)** — 2026-07-27. CI checkout upgraded to `actions/checkout@v6` with `persist-credentials: false`. Merged through PR #12.
 - ✅ **Sprint registry and status-consistency guardrails (Sprint 011)** — 2026-07-27. Canonical `management/sprint_registry.json`, read-only Dart validator + CI gate, and Pre-Sprint Status Gate docs. Completed through PR #13 (PR number used as completion evidence; no immediate reconciliation PR required).
 - ✅ **Work Items workflow (GitHub Issues)** — 2026-07-29. Retired numbered sprint registry in favor of Issue-backed Work Items, `AFK_AGENTS.md`, legacy sprint history archive, and Draft-PR-only agent delivery.
+- ✅ **Draft PR work records** — 2026-08-01. Founder-approved Cloud Agent prompts freeze scope; descriptive `cursor/<work-slug>` branches; one Draft PR per Work Item is the unique live work record; GitHub Issues are no longer required for assignment.
 ## Upcoming (Placeholders — Fill In When Achieved)
 
 - ⬜ **First working login** — the first time a real user signs into the real app against the real Supabase backend.

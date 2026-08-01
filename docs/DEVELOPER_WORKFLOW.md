@@ -85,23 +85,26 @@ GitHub Actions runs these same checks on pull requests targeting `main`. CI crea
 
 ---
 
-## Work Items (GitHub Issues)
+## Work Items (Draft PRs)
 
-Canonical work tracking is **GitHub Issues**. Each assignable unit of work is a Work Item backed by one Issue.
+Canonical work tracking is **Draft Pull Requests**. Each assignable unit of work is a Work Item whose frozen scope comes from a founder-approved Cloud Agent prompt (or equivalent task description). The Draft PR is the unique live work record. GitHub Issues are not required.
 
 | Concept | Source of truth |
 |---|---|
-| Work Item identity / assignment / frozen scope / status | GitHub Issue (complete assignment source) |
+| Work Item identity / frozen scope | Founder-approved Cloud Agent prompt (or equivalent task description) |
+| Live work record / status | Draft PR body (scope, exclusions, acceptance criteria, verification, assumptions, migrations) |
 | Live PR / CI state | GitHub Pull Requests and Actions |
 | AFK / Cloud Agent permanent policy | [`management/AFK_AGENTS.md`](../management/AFK_AGENTS.md) (never per-Work-Item updates) |
 | Historical numbered sprints | [`management/LEGACY_SPRINT_HISTORY.md`](../management/LEGACY_SPRINT_HISTORY.md) |
 
 Rules:
 
-- Do not invent Work Items or expand Issue scope without founder approval.
+- Do not invent Work Items or expand frozen prompt scope without founder approval.
 - Multiple Work Items may be active when scopes do not overlap.
-- Draft PRs must reference the GitHub Issue they implement.
-- Agents open **Draft** PRs and **never merge** to `main`. The founder merges.
+- Use a descriptive branch: `cursor/<work-slug>`. Open **one separate Draft PR** per Work Item.
+- Repeat the frozen scope, exclusions, acceptance criteria, verification results, assumptions, and migration status in the Draft PR body.
+- Do not require a GitHub Issue or `Closes #<number>` unless the founder explicitly requests an Issue link.
+- Agents open **Draft** PRs and **never merge** or **push** to `main`. Gunnar merges manually.
 - Numbered sprints and `management/sprint_registry.json` are retired. Do not recreate the registry.
 - Do **not** update `management/AFK_AGENTS.md` for individual assignments.
 
@@ -113,12 +116,12 @@ Before a new Work Item is started or assigned to an agent:
 
 1. Local `main` must be clean (`git status` shows nothing to commit).
 2. Local `main` must match `origin/main` (`git pull --ff-only origin main` / up to date).
-3. A GitHub Issue must exist with clear, immutable scope — read the Issue as the complete assignment source.
-4. Existing active Work Item scopes must be checked for file/scope overlap.
-5. Land doc updates through a Draft PR; never push documentation commits directly to `main`.
-6. If the Issue scope is ambiguous or contradictory, **stop** — do not guess.
+3. A founder-approved Cloud Agent prompt (or equivalent task description) must exist with clear, immutable scope — treat it as the complete frozen assignment. A GitHub Issue is not required.
+4. Existing active Draft PR / Work Item scopes must be checked for file/scope overlap.
+5. Land doc updates through a Draft PR on `cursor/<work-slug>`; never push documentation commits directly to `main`.
+6. If the frozen scope is ambiguous or contradictory, **stop** — do not guess.
 
-Agents never merge to `main`. The founder performs every merge. Never update `management/AFK_AGENTS.md` per Work Item.
+Agents never merge or push to `main`. Gunnar performs every merge. Never update `management/AFK_AGENTS.md` per Work Item.
 
 ---
 
@@ -145,12 +148,12 @@ Notes:
 
 ## Draft PR preparation
 
-1. Create a feature branch from latest `main`.
-2. Keep the Work Item / Issue scope immutable — do not expand into unrelated work.
+1. Create a feature branch from latest `main` named `cursor/<work-slug>`.
+2. Keep the founder-approved prompt / Work Item scope immutable — do not expand into unrelated work.
 3. Run the standard verification commands and paste results into the PR.
-4. Use the repository pull-request template (requires Issue/Work Item link, immutable scope, files changed, tests, analyze/test results, manual verification, architecture/UX review, assumptions, follow-ups, migration summary, production dry-run when applicable).
+4. Use the repository pull-request template (requires frozen scope, exclusions, acceptance criteria, files changed, tests, analyze/test results, manual verification, architecture/UX review, assumptions, follow-ups, migration summary, production dry-run when applicable). Do not require a GitHub Issue or `Closes #<number>`.
 5. Attach screenshots only when they clarify UI behavior. Do not attach videos.
-6. Open as a **Draft** PR targeting `main`. Agents never merge.
+6. Open **one separate Draft PR** targeting `main` for this Work Item. Agents never merge or push to `main`. Gunnar merges manually.
 
 ---
 
