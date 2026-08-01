@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/app_database.dart';
+import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_inspection_repository.dart';
 import 'package:ironsight_ai/domain/entities/condition_rating.dart';
 import 'package:ironsight_ai/domain/entities/detailed_category_response.dart';
@@ -34,7 +35,7 @@ void main() {
   setUp(() {
     clockTick = 0;
     idTick = 0;
-    database = AppDatabase.memory();
+    database = openMemoryAppDatabase();
     repository = DriftLocalInspectionRepository(
       database,
       clock: nextClock,
@@ -435,7 +436,7 @@ void main() {
         });
 
         const encryptionKey = 'test-inspection-key';
-        final firstDb = AppDatabase.file(
+        final firstDb = openFileAppDatabase(
           file,
           encryptionKey: encryptionKey,
           requireCipher: false,
@@ -474,7 +475,7 @@ void main() {
         );
         await firstDb.close();
 
-        final secondDb = AppDatabase.file(
+        final secondDb = openFileAppDatabase(
           file,
           encryptionKey: encryptionKey,
           requireCipher: false,

@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../app/inspection_session.dart';
 import '../../../app/router.dart';
 
-/// The application's landing screen for Sprint 1.
+/// The application's landing screen for authenticated company members.
 ///
-/// This is an initial shell only: it displays no live data and the primary
-/// action button is intentionally disabled. Real inspection capture, sync,
-/// and reporting are built in later sprints (docs/13-roadmap.md).
+/// Inspection navigation is enabled when an [InspectionSession] is supplied by
+/// the composition root. Reports remain a later-sprint placeholder.
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key, this.signOut});
+  const DashboardScreen({super.key, this.signOut, this.inspectionSession});
 
   /// Optional override for tests. Production uses Supabase Auth directly.
   final Future<void> Function()? signOut;
+
+  /// When non-null, inspection actions navigate using local repositories.
+  final InspectionSession? inspectionSession;
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -20,6 +23,13 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isSigningOut = false;
+
+  bool get _inspectionsEnabled {
+    final session = widget.inspectionSession;
+    return session != null &&
+        session.companyId.isNotEmpty &&
+        session.userId.isNotEmpty;
+  }
 
   Future<void> _signOut() async {
     setState(() => _isSigningOut = true);
@@ -90,18 +100,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  const FilledButton(
-                    // Intentionally disabled: inspection capture is not
-                    // implemented yet (docs/13-roadmap.md, Weeks 3-5).
-                    onPressed: null,
-                    child: Padding(
+                  FilledButton(
+                    onPressed: _inspectionsEnabled
+                        ? () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.inspectionNew)
+                        : null,
+                    child: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 4),
                       child: Text('Start Quick Appraisal'),
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Coming soon',
+                    _inspectionsEnabled
+                        ? 'Starts from equipment cached on this device'
+                        : 'Local inspection workspace unavailable',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.outline,
@@ -113,17 +127,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       context,
                     ).pushNamed(AppRoutes.equipmentList),
                   ),
-                  const _PlaceholderSectionCard(
-                    icon: Icons.history,
-                    title: 'Recent Inspections',
+                  _NavigationSectionCard(
+                    icon: Icons.fact_check_outlined,
+                    title: 'Inspections',
+                    subtitle: _inspectionsEnabled
+                        ? 'Local drafts and completed inspections'
+                        : 'Not yet available',
+                    onTap: _inspectionsEnabled
+                        ? () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.inspections)
+                        : null,
                   ),
-                  const _PlaceholderSectionCard(
+                  _NavigationSectionCard(
                     icon: Icons.edit_note_outlined,
                     title: 'Draft Inspections',
+                    subtitle: _inspectionsEnabled
+                        ? 'Open the inspection list to resume drafts'
+                        : 'Not yet available',
+                    onTap: _inspectionsEnabled
+                        ? () => Navigator.of(
+                            context,
+                          ).pushNamed(AppRoutes.inspections)
+                        : null,
                   ),
-                  const _PlaceholderSectionCard(
+                  const _NavigationSectionCard(
                     icon: Icons.description_outlined,
                     title: 'Reports',
+                    subtitle: 'Not yet available',
                   ),
                 ],
               ),
@@ -161,13 +192,18 @@ class _EquipmentSectionCard extends StatelessWidget {
   }
 }
 
-/// A placeholder card for a dashboard section whose real content and
-/// navigation are not implemented yet.
-class _PlaceholderSectionCard extends StatelessWidget {
-  const _PlaceholderSectionCard({required this.icon, required this.title});
+class _NavigationSectionCard extends StatelessWidget {
+  const _NavigationSectionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.onTap,
+  });
 
   final IconData icon;
   final String title;
+  final String subtitle;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -175,9 +211,12 @@ class _PlaceholderSectionCard extends StatelessWidget {
 
     return Card(
       child: ListTile(
+        onTap: onTap,
+        enabled: onTap != null,
         leading: Icon(icon, color: theme.colorScheme.primary),
         title: Text(title, style: theme.textTheme.titleMedium),
-        subtitle: const Text('Not yet available'),
+        subtitle: Text(subtitle),
+        trailing: onTap == null ? null : const Icon(Icons.chevron_right),
       ),
     );
   }
