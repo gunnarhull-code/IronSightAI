@@ -12,17 +12,36 @@ import 'package:ironsight_ai/domain/entities/inspection.dart';
 import 'package:ironsight_ai/domain/entities/inspection_depth.dart';
 import 'package:ironsight_ai/domain/entities/inspection_status.dart';
 import 'package:ironsight_ai/domain/entities/scorecard_category.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/confirmed_equipment_id_value.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_controller.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_kind.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_method.dart';
 import 'package:ironsight_ai/domain/exceptions/invalid_inspection_lifecycle_exception.dart';
 import 'package:ironsight_ai/domain/inspection_review_summary.dart';
 import 'package:ironsight_ai/domain/repositories/local_inspection_repository.dart';
 import 'package:ironsight_ai/domain/use_cases/find_active_drafts_for_equipment.dart';
+import 'package:ironsight_ai/features/equipment_id_capture/presentation/equipment_id_capture_labels.dart';
 import 'package:ironsight_ai/features/inspection/presentation/inspection_list_screen.dart';
 import 'package:ironsight_ai/features/inspection/presentation/inspection_review_screen.dart';
 import 'package:ironsight_ai/features/inspection/presentation/inspection_workspace_screen.dart';
 import 'package:ironsight_ai/features/inspection/presentation/widgets/condition_rating_controls.dart';
 
 import 'support/fake_auth_session_reader.dart';
+import 'support/fake_equipment_id_capture.dart';
 import 'support/fake_equipment_repository.dart';
+
+EquipmentIdCaptureController _manualCaptureController({
+  required EquipmentIdCaptureKind kind,
+  ConfirmedEquipmentIdValue? initialConfirmed,
+}) {
+  return EquipmentIdCaptureController(
+    kind: kind,
+    imageCapture: FakeImageCapture(isSupported: false),
+    textRecognition: FakeTextRecognition(isSupported: false),
+    cameraPermission: FakeCameraPermission(),
+    initialConfirmed: initialConfirmed,
+  );
+}
 
 Equipment _equipment({
   required String id,
@@ -487,15 +506,25 @@ void main() {
             inspectionId: draft.id,
             inspections: workspace.inspections,
             equipmentCatalog: workspace.equipmentCatalog,
+            captureControllerFactory: _manualCaptureController,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
+      final scrollable = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(
+        find.text('Engine'),
+        200,
+        scrollable: scrollable,
+      );
       expect(find.text('Engine'), findsOneWidget);
       expect(find.byType(ConditionRatingControls), findsWidgets);
 
-      await tester.tap(find.text('Good').first);
+      final engineCard = find.widgetWithText(Card, 'Engine');
+      await tester.tap(
+        find.descendant(of: engineCard, matching: find.text('Good')),
+      );
       await tester.pumpAndSettle();
 
       final saved = await workspace.inspections.getById(
@@ -507,16 +536,23 @@ void main() {
       await tester.scrollUntilVisible(
         find.text('Cosmetic'),
         200,
-        scrollable: find.byType(Scrollable).first,
+        scrollable: scrollable,
       );
       expect(find.text('Cosmetic'), findsOneWidget);
 
       await tester.scrollUntilVisible(
-        find.byType(TextField),
+        find.text('Save notes'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      await tester.enterText(find.byType(TextField), 'Walkaround notes');
+      final notesField = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration is InputDecoration &&
+            (widget.decoration as InputDecoration).hintText ==
+                'Optional notes (saved on this device)',
+      );
+      await tester.enterText(notesField, 'Walkaround notes');
       await tester.tap(find.text('Save notes'));
       await tester.pumpAndSettle();
 
@@ -527,6 +563,201 @@ void main() {
       expect(withNotes!.overallNotes, 'Walkaround notes');
     });
 
+    testWidgets('manual serial and hours confirm persist on the local draft', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await workspace.equipmentCatalog.replaceCompanyCatalog(
+        companyId: 'company-a',
+        equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+      );
+      final draft = await workspace.inspections.createDraft(
+        companyId: 'company-a',
+        equipmentId: 'eq-1',
+        createdByUserId: 'user-1',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: InspectionWorkspaceScreen(
+            companyId: 'company-a',
+            userId: 'user-1',
+            inspectionId: draft.id,
+            inspections: workspace.inspections,
+            equipmentCatalog: workspace.equipmentCatalog,
+            captureControllerFactory: _manualCaptureController,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Equipment identification'), findsOneWidget);
+
+      final serialField = find.bySemanticsLabel(
+        EquipmentIdCaptureLabels.serialManualField,
+      );
+      await tester.ensureVisible(serialField);
+      await tester.enterText(serialField, 'sn-abc-99');
+      await tester.pumpAndSettle();
+      final serialConfirm = find.descendant(
+        of: find.byKey(const ValueKey('qa-serial-capture')),
+        matching: find.text('Confirm'),
+      );
+      await tester.ensureVisible(serialConfirm);
+      await tester.tap(serialConfirm);
+      await tester.pumpAndSettle();
+
+      final hoursField = find.bySemanticsLabel(
+        EquipmentIdCaptureLabels.hourManualField,
+      );
+      await tester.ensureVisible(hoursField);
+      await tester.enterText(hoursField, '1234.5');
+      await tester.pumpAndSettle();
+      final hoursConfirm = find.descendant(
+        of: find.byKey(const ValueKey('qa-hours-capture')),
+        matching: find.text('Confirm'),
+      );
+      await tester.ensureVisible(hoursConfirm);
+      await tester.tap(hoursConfirm);
+      await tester.pumpAndSettle();
+
+      final saved = await workspace.inspections.getById(
+        companyId: 'company-a',
+        inspectionId: draft.id,
+      );
+      expect(saved!.serialNumber, isNotNull);
+      expect(saved.serialCaptureMethod, EquipmentIdCaptureMethod.manual);
+      expect(saved.hourMeterReading, 1234.5);
+      expect(saved.hourMeterCaptureMethod, EquipmentIdCaptureMethod.manual);
+    });
+
+    testWidgets('reopening workspace restores confirmed equipment ID values', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      await workspace.equipmentCatalog.replaceCompanyCatalog(
+        companyId: 'company-a',
+        equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+      );
+      final draft = await workspace.inspections.createDraft(
+        companyId: 'company-a',
+        equipmentId: 'eq-1',
+        createdByUserId: 'user-1',
+      );
+      await workspace.inspections.saveConfirmedEquipmentId(
+        companyId: 'company-a',
+        inspectionId: draft.id,
+        confirmedValue: const ConfirmedEquipmentIdValue(
+          kind: EquipmentIdCaptureKind.serialNumber,
+          value: 'CAT320GX',
+          method: EquipmentIdCaptureMethod.manual,
+        ),
+        updatedByUserId: 'user-1',
+      );
+      await workspace.inspections.saveConfirmedEquipmentId(
+        companyId: 'company-a',
+        inspectionId: draft.id,
+        confirmedValue: const ConfirmedEquipmentIdValue(
+          kind: EquipmentIdCaptureKind.hourMeter,
+          value: '2500',
+          method: EquipmentIdCaptureMethod.ocrConfirmed,
+          hours: 2500,
+        ),
+        updatedByUserId: 'user-1',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: InspectionWorkspaceScreen(
+            companyId: 'company-a',
+            userId: 'user-1',
+            inspectionId: draft.id,
+            inspections: workspace.inspections,
+            equipmentCatalog: workspace.equipmentCatalog,
+            captureControllerFactory: _manualCaptureController,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Confirmed: CAT320GX'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.textContaining('Confirmed: 2500'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.textContaining('Confirmed: 2500'), findsOneWidget);
+      expect(find.text('Edit confirmed value'), findsNWidgets(2));
+    });
+
+    testWidgets(
+      'workspace keeps scroll position after equipment ID confirm save',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(390, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await workspace.equipmentCatalog.replaceCompanyCatalog(
+          companyId: 'company-a',
+          equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+        );
+        final draft = await workspace.inspections.createDraft(
+          companyId: 'company-a',
+          equipmentId: 'eq-1',
+          createdByUserId: 'user-1',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: InspectionWorkspaceScreen(
+              companyId: 'company-a',
+              userId: 'user-1',
+              inspectionId: draft.id,
+              inspections: workspace.inspections,
+              equipmentCatalog: workspace.equipmentCatalog,
+              captureControllerFactory: _manualCaptureController,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final scrollable = find.byType(Scrollable).first;
+        await tester.scrollUntilVisible(
+          find.text('Cosmetic'),
+          200,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+
+        double scrollPixels() =>
+            tester.state<ScrollableState>(scrollable).position.pixels;
+        final before = scrollPixels();
+
+        final cosmeticCard = find.widgetWithText(Card, 'Cosmetic');
+        await tester.tap(
+          find.descendant(of: cosmeticCard, matching: find.text('Fair')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          scrollPixels(),
+          closeTo(before, 1.0),
+          reason: 'in-place save must not jump Quick Appraisal scroll',
+        );
+
+        final saved = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
+        expect(
+          saved!.ratingFor(ScorecardCategory.cosmetic),
+          ConditionRating.fair,
+        );
+      },
+    );
     testWidgets(
       'workspace keeps scroll position after in-place rating and notes save',
       (tester) async {
@@ -551,6 +782,7 @@ void main() {
               inspectionId: draft.id,
               inspections: workspace.inspections,
               equipmentCatalog: workspace.equipmentCatalog,
+              captureControllerFactory: _manualCaptureController,
             ),
           ),
         );
@@ -601,7 +833,14 @@ void main() {
         final afterScrollToNotes = scrollPixels();
         expect(afterScrollToNotes, greaterThan(0));
 
-        await tester.enterText(find.byType(TextField), 'Keep my place');
+        final notesField = find.byWidgetPredicate(
+          (widget) =>
+              widget is TextField &&
+              widget.decoration is InputDecoration &&
+              (widget.decoration as InputDecoration).hintText ==
+                  'Optional notes (saved on this device)',
+        );
+        await tester.enterText(notesField, 'Keep my place');
         await tester.tap(find.text('Save notes'));
         await tester.pumpAndSettle();
 
@@ -695,6 +934,7 @@ void main() {
             inspectionId: draft.id,
             inspections: workspace.inspections,
             equipmentCatalog: workspace.equipmentCatalog,
+            captureControllerFactory: _manualCaptureController,
           ),
         ),
       );
@@ -811,6 +1051,16 @@ class _ThrowingListInspectionRepository implements LocalInspectionRepository {
     bool clearRemoteId = false,
     InspectionSyncStatus? syncStatus,
     InspectionReportStatus? reportStatus,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> saveConfirmedEquipmentId({
+    required String companyId,
+    required String inspectionId,
+    required ConfirmedEquipmentIdValue confirmedValue,
+    String? updatedByUserId,
   }) {
     throw UnimplementedError();
   }

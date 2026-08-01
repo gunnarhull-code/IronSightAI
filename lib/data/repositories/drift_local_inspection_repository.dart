@@ -8,6 +8,9 @@ import '../../domain/entities/inspection.dart';
 import '../../domain/entities/inspection_depth.dart';
 import '../../domain/entities/inspection_status.dart';
 import '../../domain/entities/scorecard_category.dart';
+import '../../domain/equipment_id_capture/confirmed_equipment_id_value.dart';
+import '../../domain/equipment_id_capture/equipment_id_capture_kind.dart';
+import '../../domain/equipment_id_capture/equipment_id_capture_method.dart';
 import '../../domain/inspection_lifecycle.dart';
 import '../../domain/inspection_value_parsing.dart';
 import '../../domain/repositories/local_inspection_repository.dart';
@@ -404,6 +407,60 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     return (await getById(companyId: companyId, inspectionId: inspectionId))!;
   }
 
+  @override
+  Future<Inspection> saveConfirmedEquipmentId({
+    required String companyId,
+    required String inspectionId,
+    required ConfirmedEquipmentIdValue confirmedValue,
+    String? updatedByUserId,
+  }) async {
+    final existing = await _requireActiveMutable(
+      companyId: companyId,
+      inspectionId: inspectionId,
+    );
+    InspectionLifecycle.ensureCanMutate(existing);
+
+    final now = _clock();
+    final companion = switch (confirmedValue.kind) {
+      EquipmentIdCaptureKind.serialNumber => InspectionsCompanion(
+        serialNumber: Value(confirmedValue.value),
+        serialCaptureMethod: Value(confirmedValue.method.storageValue),
+        updatedByUserId: updatedByUserId == null
+            ? const Value.absent()
+            : Value(updatedByUserId),
+        updatedAt: Value(now),
+        localUpdatedAt: Value(now),
+      ),
+      EquipmentIdCaptureKind.hourMeter => () {
+        final hours = confirmedValue.hours;
+        if (hours == null || hours < 0) {
+          throw ArgumentError.value(
+            confirmedValue.hours,
+            'confirmedValue.hours',
+            'hour meter confirmation requires a non-negative hours value',
+          );
+        }
+        return InspectionsCompanion(
+          hourMeterReading: Value(hours),
+          hourMeterCaptureMethod: Value(confirmedValue.method.storageValue),
+          updatedByUserId: updatedByUserId == null
+              ? const Value.absent()
+              : Value(updatedByUserId),
+          updatedAt: Value(now),
+          localUpdatedAt: Value(now),
+        );
+      }(),
+    };
+
+    await (_db.update(_db.inspections)..where(
+          (table) =>
+              table.id.equals(inspectionId) & table.companyId.equals(companyId),
+        ))
+        .write(companion);
+
+    return (await getById(companyId: companyId, inspectionId: inspectionId))!;
+  }
+
   Future<Inspection> _assemble(LocalInspectionRow row) async {
     final ratingRows =
         await (_db.select(_db.inspectionCategoryRatings)..where(
@@ -482,6 +539,14 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
       reportStatus: InspectionReportStatus.fromStorage(row.reportStatus),
       remoteId: row.remoteId,
       overallNotes: row.overallNotes,
+      serialNumber: row.serialNumber,
+      serialCaptureMethod: row.serialCaptureMethod == null
+          ? null
+          : EquipmentIdCaptureMethod.fromStorage(row.serialCaptureMethod!),
+      hourMeterReading: row.hourMeterReading,
+      hourMeterCaptureMethod: row.hourMeterCaptureMethod == null
+          ? null
+          : EquipmentIdCaptureMethod.fromStorage(row.hourMeterCaptureMethod!),
       categoryRatings: orderedRatings,
       detailedResponses: detailed,
       createdAt: row.createdAt.toUtc(),

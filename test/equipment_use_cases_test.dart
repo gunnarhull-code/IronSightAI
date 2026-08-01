@@ -92,6 +92,23 @@ void main() {
       expect(repository.lastCreatedDetails?.location, 'Lot A');
     });
 
+    test(
+      'uppercases model letters while preserving digits and punctuation',
+      () async {
+        final repository = FakeEquipmentRepository();
+        final useCase = CreateEquipment(repository);
+
+        final created = await useCase(
+          assetName: 'Loader',
+          manufacturer: 'Caterpillar',
+          model: 'ab-12.3x',
+        );
+
+        expect(created.model, 'AB-12.3X');
+        expect(repository.lastCreatedDetails?.model, 'AB-12.3X');
+      },
+    );
+
     test('rejects a blank asset name', () async {
       final repository = FakeEquipmentRepository();
       final useCase = CreateEquipment(repository);

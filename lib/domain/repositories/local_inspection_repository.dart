@@ -4,6 +4,7 @@ import '../entities/inspection.dart';
 import '../entities/inspection_depth.dart';
 import '../entities/inspection_status.dart';
 import '../entities/scorecard_category.dart';
+import '../equipment_id_capture/confirmed_equipment_id_value.dart';
 
 /// Local persistence boundary for offline inspections.
 ///
@@ -76,6 +77,16 @@ abstract class LocalInspectionRepository {
   Future<Inspection> complete({
     required String companyId,
     required String inspectionId,
+    String? updatedByUserId,
+  });
+
+  /// Persists an explicitly confirmed serial or hour-meter value on a draft.
+  ///
+  /// OCR output must never reach this method without prior human confirmation.
+  Future<Inspection> saveConfirmedEquipmentId({
+    required String companyId,
+    required String inspectionId,
+    required ConfirmedEquipmentIdValue confirmedValue,
     String? updatedByUserId,
   });
 }

@@ -22,7 +22,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration {
@@ -36,6 +36,18 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(localTenantContexts);
           await migrator.createTable(localEquipmentCache);
           await _createIndexes();
+        }
+        if (from < 3) {
+          await migrator.addColumn(inspections, inspections.serialNumber);
+          await migrator.addColumn(
+            inspections,
+            inspections.serialCaptureMethod,
+          );
+          await migrator.addColumn(inspections, inspections.hourMeterReading);
+          await migrator.addColumn(
+            inspections,
+            inspections.hourMeterCaptureMethod,
+          );
         }
       },
     );

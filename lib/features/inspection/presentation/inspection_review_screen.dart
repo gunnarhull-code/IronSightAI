@@ -191,9 +191,24 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
                           equipment.manufacturer,
                           equipment.model,
                           if (equipment.serialNumber != null)
-                            'S/N ${equipment.serialNumber}',
+                            'Catalog S/N ${equipment.serialNumber}',
                         ].join(' · '),
                       ),
+                    if (inspection.serialNumber != null ||
+                        inspection.hourMeterReading != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'Confirmed for this inspection',
+                        style: theme.textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: 4),
+                      if (inspection.serialNumber != null)
+                        Text('Serial: ${inspection.serialNumber}'),
+                      if (inspection.hourMeterReading != null)
+                        Text(
+                          'Hours: ${inspection.confirmedHourMeter?.value ?? inspection.hourMeterReading}',
+                        ),
+                    ],
                     const SizedBox(height: 20),
                     Text(
                       'Category ratings',

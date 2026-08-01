@@ -10,6 +10,9 @@ import 'package:ironsight_ai/domain/entities/detailed_category_response.dart';
 import 'package:ironsight_ai/domain/entities/inspection_depth.dart';
 import 'package:ironsight_ai/domain/entities/inspection_status.dart';
 import 'package:ironsight_ai/domain/entities/scorecard_category.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/confirmed_equipment_id_value.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_kind.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_method.dart';
 import 'package:ironsight_ai/domain/exceptions/invalid_condition_rating_exception.dart';
 import 'package:ironsight_ai/domain/exceptions/invalid_inspection_lifecycle_exception.dart';
 import 'package:ironsight_ai/domain/exceptions/invalid_scorecard_category_exception.dart';
@@ -417,6 +420,78 @@ void main() {
     });
   });
 
+  group('saveConfirmedEquipmentId', () {
+    test('persists confirmed serial and hours with capture methods', () async {
+      final id = await createDraft();
+      final withSerial = await repository.saveConfirmedEquipmentId(
+        companyId: 'company-a',
+        inspectionId: id,
+        confirmedValue: const ConfirmedEquipmentIdValue(
+          kind: EquipmentIdCaptureKind.serialNumber,
+          value: 'ABC123',
+          method: EquipmentIdCaptureMethod.ocrConfirmed,
+        ),
+        updatedByUserId: 'user-1',
+      );
+      expect(withSerial.serialNumber, 'ABC123');
+      expect(
+        withSerial.serialCaptureMethod,
+        EquipmentIdCaptureMethod.ocrConfirmed,
+      );
+
+      final withHours = await repository.saveConfirmedEquipmentId(
+        companyId: 'company-a',
+        inspectionId: id,
+        confirmedValue: const ConfirmedEquipmentIdValue(
+          kind: EquipmentIdCaptureKind.hourMeter,
+          value: '9876.5',
+          method: EquipmentIdCaptureMethod.manual,
+          hours: 9876.5,
+        ),
+        updatedByUserId: 'user-1',
+      );
+      expect(withHours.hourMeterReading, 9876.5);
+      expect(withHours.hourMeterCaptureMethod, EquipmentIdCaptureMethod.manual);
+      expect(withHours.serialNumber, 'ABC123');
+    });
+
+    test('rejects wrong-company confirmation writes', () async {
+      final id = await createDraft(companyId: 'company-a');
+      expect(
+        () => repository.saveConfirmedEquipmentId(
+          companyId: 'company-b',
+          inspectionId: id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.serialNumber,
+            value: 'X',
+            method: EquipmentIdCaptureMethod.manual,
+          ),
+        ),
+        throwsA(isA<StateError>()),
+      );
+    });
+
+    test('rejects confirmation on discarded drafts', () async {
+      final id = await createDraft();
+      await repository.discardIncomplete(
+        companyId: 'company-a',
+        inspectionId: id,
+      );
+      expect(
+        () => repository.saveConfirmedEquipmentId(
+          companyId: 'company-a',
+          inspectionId: id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.serialNumber,
+            value: 'X',
+            method: EquipmentIdCaptureMethod.manual,
+          ),
+        ),
+        throwsA(isA<InvalidInspectionLifecycleException>()),
+      );
+    });
+  });
+
   group('persistence across reconnect', () {
     test(
       'preserves inspection data after recreating repository/database connection',
@@ -473,6 +548,25 @@ void main() {
             ],
           ),
         );
+        await firstRepo.saveConfirmedEquipmentId(
+          companyId: 'company-a',
+          inspectionId: created.id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.serialNumber,
+            value: 'REOPEN1',
+            method: EquipmentIdCaptureMethod.manual,
+          ),
+        );
+        await firstRepo.saveConfirmedEquipmentId(
+          companyId: 'company-a',
+          inspectionId: created.id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.hourMeter,
+            value: '100',
+            method: EquipmentIdCaptureMethod.ocrConfirmed,
+            hours: 100,
+          ),
+        );
         await firstDb.close();
 
         final secondDb = openFileAppDatabase(
@@ -501,6 +595,8 @@ void main() {
               .itemKey,
           'frame_cracks',
         );
+        expect(restored.serialNumber, 'REOPEN1');
+        expect(restored.hourMeterReading, 100);
         expect(await secondRepo.listForCompany('company-a'), hasLength(1));
       },
     );

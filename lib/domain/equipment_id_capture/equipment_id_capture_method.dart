@@ -7,5 +7,18 @@ enum EquipmentIdCaptureMethod {
   ocrConfirmed,
 
   /// User typed or edited the value and explicitly confirmed it.
-  manual,
+  manual;
+
+  String get storageValue => switch (this) {
+    EquipmentIdCaptureMethod.ocrConfirmed => 'ocr',
+    EquipmentIdCaptureMethod.manual => 'manual',
+  };
+
+  static EquipmentIdCaptureMethod fromStorage(String value) {
+    return switch (value) {
+      'ocr' => EquipmentIdCaptureMethod.ocrConfirmed,
+      'manual' => EquipmentIdCaptureMethod.manual,
+      _ => throw FormatException('Unknown equipment ID capture method: $value'),
+    };
+  }
 }

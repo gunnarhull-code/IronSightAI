@@ -473,9 +473,10 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
                       controller: _modelController,
                       focusNode: _modelFocus,
                       enabled: !_isSaving,
-                      textCapitalization: TextCapitalization.words,
+                      textCapitalization: TextCapitalization.characters,
                       textInputAction: TextInputAction.next,
                       autofillHints: null,
+                      inputFormatters: const [_UpperCaseTextFormatter()],
                       decoration: const InputDecoration(labelText: 'Model'),
                       validator: (value) =>
                           (value == null || value.trim().isEmpty)
@@ -774,6 +775,23 @@ class _RetryState extends StatelessWidget {
           FilledButton(onPressed: onRetry, child: const Text('Retry')),
         ],
       ),
+    );
+  }
+}
+
+/// Uppercases letters while preserving digits, spaces, hyphens, and punctuation.
+class _UpperCaseTextFormatter extends TextInputFormatter {
+  const _UpperCaseTextFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
+      composing: TextRange.empty,
     );
   }
 }
