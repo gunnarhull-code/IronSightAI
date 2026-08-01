@@ -11,7 +11,7 @@ import 'equipment_id_capture_labels.dart';
 /// Camera-first, typing-last, with always-visible manual entry. Does not import
 /// camera or OCR packages — only the injected [EquipmentIdCaptureController].
 ///
-/// Not wired into Sprint 012 inspection screens.
+/// Not wired into inspection or equipment screens in this PR.
 class EquipmentIdCapturePanel extends StatefulWidget {
   const EquipmentIdCapturePanel({
     super.key,
