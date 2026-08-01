@@ -527,6 +527,102 @@ void main() {
       expect(withNotes!.overallNotes, 'Walkaround notes');
     });
 
+    testWidgets(
+      'workspace keeps scroll position after in-place rating and notes save',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(390, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await workspace.equipmentCatalog.replaceCompanyCatalog(
+          companyId: 'company-a',
+          equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+        );
+        final draft = await workspace.inspections.createDraft(
+          companyId: 'company-a',
+          equipmentId: 'eq-1',
+          createdByUserId: 'user-1',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: InspectionWorkspaceScreen(
+              companyId: 'company-a',
+              userId: 'user-1',
+              inspectionId: draft.id,
+              inspections: workspace.inspections,
+              equipmentCatalog: workspace.equipmentCatalog,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final scrollable = find.byType(Scrollable).first;
+        await tester.scrollUntilVisible(
+          find.text('Cosmetic'),
+          200,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+
+        double scrollPixels() =>
+            tester.state<ScrollableState>(scrollable).position.pixels;
+
+        final afterScrollToCosmetic = scrollPixels();
+        expect(afterScrollToCosmetic, greaterThan(0));
+
+        final cosmeticCard = find.widgetWithText(Card, 'Cosmetic');
+        await tester.tap(
+          find.descendant(of: cosmeticCard, matching: find.text('Fair')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          scrollPixels(),
+          closeTo(afterScrollToCosmetic, 1.0),
+          reason: 'rating save reload must not jump the Quick Appraisal list',
+        );
+        expect(find.byType(CircularProgressIndicator), findsNothing);
+
+        final afterRating = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
+        expect(
+          afterRating!.ratingFor(ScorecardCategory.cosmetic),
+          ConditionRating.fair,
+        );
+
+        await tester.scrollUntilVisible(
+          find.text('Save notes'),
+          200,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+        final afterScrollToNotes = scrollPixels();
+        expect(afterScrollToNotes, greaterThan(0));
+
+        await tester.enterText(find.byType(TextField), 'Keep my place');
+        await tester.tap(find.text('Save notes'));
+        await tester.pumpAndSettle();
+
+        expect(
+          scrollPixels(),
+          closeTo(afterScrollToNotes, 1.0),
+          reason: 'notes save reload must not jump the Quick Appraisal list',
+        );
+
+        final afterNotes = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
+        expect(afterNotes!.overallNotes, 'Keep my place');
+        expect(
+          afterNotes.ratingFor(ScorecardCategory.cosmetic),
+          ConditionRating.fair,
+        );
+      },
+    );
+
     testWidgets('review shows incomplete categories and completes locally', (
       tester,
     ) async {

@@ -37,6 +37,7 @@ class InspectionWorkspaceScreen extends StatefulWidget {
 
 class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
   late Future<_WorkspaceData> _future;
+  final ScrollController _scrollController = ScrollController();
   final Set<ScorecardCategory> _expanded = {};
   final TextEditingController _notesController = TextEditingController();
   bool _savingNotes = false;
@@ -50,6 +51,7 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -294,29 +296,32 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
       body: FutureBuilder<_WorkspaceData>(
         future: _future,
         builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'Could not open this local inspection.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: _reload,
-                      child: const Text('Retry'),
-                    ),
-                  ],
+          // Keep the last successful workspace mounted while a local save
+          // reloads. Replacing the ListView with a spinner was resetting
+          // scroll offset after every in-place rating/notes interaction.
+          if (!snapshot.hasData) {
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Could not open this local inspection.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        onPressed: _reload,
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
+              );
+            }
+            return const Center(child: CircularProgressIndicator());
           }
 
           final data = snapshot.data!;
@@ -328,6 +333,10 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
               LocalOnlyStatusBanner(syncStatus: inspection.syncStatus),
               Expanded(
                 child: ListView(
+                  key: PageStorageKey<String>(
+                    'quick-appraisal-scroll-${widget.inspectionId}',
+                  ),
+                  controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
                     Text(
