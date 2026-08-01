@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
+import '../../../../data/equipment_id_capture/create_platform_bindings.dart';
 import '../../../../domain/detailed_checklist_templates.dart';
 import '../../../../domain/entities/condition_rating.dart';
 import '../../../../domain/entities/detailed_category_response.dart';
 import '../../../../domain/entities/equipment.dart';
 import '../../../../domain/entities/inspection.dart';
 import '../../../../domain/entities/scorecard_category.dart';
+import '../../../../domain/equipment_id_capture/confirmed_equipment_id_value.dart';
+import '../../../../domain/equipment_id_capture/equipment_id_capture_controller.dart';
+import '../../../../domain/equipment_id_capture/equipment_id_capture_kind.dart';
 import '../../../../domain/exceptions/invalid_inspection_lifecycle_exception.dart';
 import '../../../../domain/repositories/local_equipment_catalog_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
+import '../../equipment_id_capture/presentation/equipment_id_capture_panel.dart';
 import 'widgets/condition_rating_controls.dart';
 import 'widgets/local_only_status_banner.dart';
+
+/// Builds capture controllers for serial / hour panels in Quick Appraisal.
+typedef EquipmentIdCaptureControllerFactory =
+    EquipmentIdCaptureController Function({
+      required EquipmentIdCaptureKind kind,
+      ConfirmedEquipmentIdValue? initialConfirmed,
+    });
 
 /// Quick Appraisal workspace with optional per-category Detailed Inspection.
 class InspectionWorkspaceScreen extends StatefulWidget {
@@ -22,6 +34,8 @@ class InspectionWorkspaceScreen extends StatefulWidget {
     required this.inspectionId,
     required this.inspections,
     required this.equipmentCatalog,
+    this.navigatorKey,
+    this.captureControllerFactory,
   });
 
   final String companyId;
@@ -29,6 +43,12 @@ class InspectionWorkspaceScreen extends StatefulWidget {
   final String inspectionId;
   final LocalInspectionRepository inspections;
   final LocalEquipmentCatalogRepository equipmentCatalog;
+
+  /// Root navigator used by camera capture routes on supported platforms.
+  final GlobalKey<NavigatorState>? navigatorKey;
+
+  /// Optional override for tests (manual-only fakes, etc.).
+  final EquipmentIdCaptureControllerFactory? captureControllerFactory;
 
   @override
   State<InspectionWorkspaceScreen> createState() =>
@@ -42,6 +62,10 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
   final TextEditingController _notesController = TextEditingController();
   bool _savingNotes = false;
   bool _mutating = false;
+  bool _savingEquipmentId = false;
+
+  EquipmentIdCaptureController? _serialController;
+  EquipmentIdCaptureController? _hoursController;
 
   @override
   void initState() {
@@ -53,7 +77,41 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
   void dispose() {
     _scrollController.dispose();
     _notesController.dispose();
+    _serialController?.dispose();
+    _hoursController?.dispose();
     super.dispose();
+  }
+
+  EquipmentIdCaptureController _createController({
+    required EquipmentIdCaptureKind kind,
+    ConfirmedEquipmentIdValue? initialConfirmed,
+  }) {
+    final factory = widget.captureControllerFactory;
+    if (factory != null) {
+      return factory(kind: kind, initialConfirmed: initialConfirmed);
+    }
+    // Fresh bindings per controller — dispose closes TextRecognitionPort.
+    final bindings = createPlatformEquipmentIdCaptureBindings(
+      navigatorKey: widget.navigatorKey,
+    );
+    return EquipmentIdCaptureController(
+      kind: kind,
+      imageCapture: bindings.imageCapture,
+      textRecognition: bindings.textRecognition,
+      cameraPermission: bindings.cameraPermission,
+      initialConfirmed: initialConfirmed,
+    );
+  }
+
+  void _ensureCaptureControllers(Inspection inspection) {
+    _serialController ??= _createController(
+      kind: EquipmentIdCaptureKind.serialNumber,
+      initialConfirmed: inspection.confirmedSerialNumber,
+    );
+    _hoursController ??= _createController(
+      kind: EquipmentIdCaptureKind.hourMeter,
+      initialConfirmed: inspection.confirmedHourMeter,
+    );
   }
 
   Future<_WorkspaceData> _load() async {
@@ -71,6 +129,7 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     if (_notesController.text != (inspection.overallNotes ?? '')) {
       _notesController.text = inspection.overallNotes ?? '';
     }
+    _ensureCaptureControllers(inspection);
     return _WorkspaceData(inspection: inspection, equipment: equipment);
   }
 
@@ -78,6 +137,47 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     setState(() {
       _future = _load();
     });
+  }
+
+  Future<void> _onEquipmentIdConfirmed(
+    Inspection inspection,
+    EquipmentIdCaptureState state,
+  ) async {
+    final confirmed = state.confirmed;
+    if (confirmed == null || _savingEquipmentId) return;
+
+    final alreadyPersisted = switch (confirmed.kind) {
+      EquipmentIdCaptureKind.serialNumber =>
+        inspection.serialNumber == confirmed.value &&
+            inspection.serialCaptureMethod == confirmed.method,
+      EquipmentIdCaptureKind.hourMeter =>
+        inspection.hourMeterReading == confirmed.hours &&
+            inspection.hourMeterCaptureMethod == confirmed.method,
+    };
+    if (alreadyPersisted) return;
+
+    setState(() => _savingEquipmentId = true);
+    try {
+      await widget.inspections.saveConfirmedEquipmentId(
+        companyId: widget.companyId,
+        inspectionId: inspection.id,
+        confirmedValue: confirmed,
+        updatedByUserId: widget.userId,
+      );
+      if (mounted) _reload();
+    } on InvalidInspectionLifecycleException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save equipment ID locally.')),
+      );
+    } finally {
+      if (mounted) setState(() => _savingEquipmentId = false);
+    }
   }
 
   Future<void> _saveRating(
@@ -327,6 +427,8 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
           final data = snapshot.data!;
           final inspection = data.inspection;
           final editable = inspection.isIncomplete && !inspection.isDiscarded;
+          final serialController = _serialController;
+          final hoursController = _hoursController;
 
           return Column(
             children: [
@@ -356,6 +458,48 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (serialController != null &&
+                        hoursController != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Equipment identification',
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Scan or type serial number and hours. OCR never saves '
+                        'until you confirm. Works offline.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      IgnorePointer(
+                        ignoring: !editable || _savingEquipmentId,
+                        child: Opacity(
+                          opacity: editable && !_savingEquipmentId ? 1 : 0.6,
+                          child: EquipmentIdCapturePanel(
+                            key: const ValueKey('qa-serial-capture'),
+                            controller: serialController,
+                            onConfirmed: (state) =>
+                                _onEquipmentIdConfirmed(inspection, state),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      IgnorePointer(
+                        ignoring: !editable || _savingEquipmentId,
+                        child: Opacity(
+                          opacity: editable && !_savingEquipmentId ? 1 : 0.6,
+                          child: EquipmentIdCapturePanel(
+                            key: const ValueKey('qa-hours-capture'),
+                            controller: hoursController,
+                            onConfirmed: (state) =>
+                                _onEquipmentIdConfirmed(inspection, state),
+                          ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     for (final category
                         in ScorecardCategory.scorecardOrder) ...[

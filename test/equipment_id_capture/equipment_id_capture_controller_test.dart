@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/confirmed_equipment_id_value.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_controller.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_failure.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_kind.dart';
@@ -208,5 +209,22 @@ void main() {
     expect(controller.state.isConfirmed, isFalse);
     controller.selectCandidate(controller.state.candidates.last.id);
     expect(controller.confirm(), isTrue);
+  });
+
+  test('initialConfirmed seeds a confirmed state without silent OCR', () {
+    final controller = EquipmentIdCaptureController(
+      kind: EquipmentIdCaptureKind.serialNumber,
+      imageCapture: FakeImageCapture(isSupported: false),
+      textRecognition: FakeTextRecognition(isSupported: false),
+      cameraPermission: FakeCameraPermission(),
+      initialConfirmed: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'SAVED1',
+        method: EquipmentIdCaptureMethod.manual,
+      ),
+    );
+    expect(controller.state.isConfirmed, isTrue);
+    expect(controller.state.confirmed!.value, 'SAVED1');
+    expect(controller.state.draftValue, 'SAVED1');
   });
 }

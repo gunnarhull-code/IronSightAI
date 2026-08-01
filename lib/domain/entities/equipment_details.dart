@@ -53,7 +53,8 @@ class EquipmentDetails {
   }) {
     final trimmedAssetName = assetName.trim();
     final trimmedManufacturer = manufacturer.trim();
-    final trimmedModel = model.trim();
+    // Letters uppercase; digits, spaces, hyphens, and punctuation preserved.
+    final trimmedModel = model.trim().toUpperCase();
 
     if (trimmedAssetName.isEmpty) {
       throw ArgumentError('Asset name is required');

@@ -15,6 +15,14 @@ class Inspections extends Table {
   TextColumn get reportStatus => text()();
   TextColumn get remoteId => text().nullable()();
   TextColumn get overallNotes => text().nullable()();
+
+  /// Confirmed serial for this inspection draft (explicit human confirm only).
+  TextColumn get serialNumber => text().nullable()();
+  TextColumn get serialCaptureMethod => text().nullable()();
+
+  /// Confirmed hour-meter reading for this inspection draft.
+  RealColumn get hourMeterReading => real().nullable()();
+  TextColumn get hourMeterCaptureMethod => text().nullable()();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get localUpdatedAt => dateTime()();

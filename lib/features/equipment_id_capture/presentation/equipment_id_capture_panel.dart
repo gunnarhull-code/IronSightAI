@@ -11,7 +11,7 @@ import 'equipment_id_capture_labels.dart';
 /// Camera-first, typing-last, with always-visible manual entry. Does not import
 /// camera or OCR packages — only the injected [EquipmentIdCaptureController].
 ///
-/// Not wired into inspection or equipment screens in this PR.
+/// Embedded in Quick Appraisal for serial number and hour-meter confirmation.
 class EquipmentIdCapturePanel extends StatefulWidget {
   const EquipmentIdCapturePanel({
     super.key,

@@ -80,6 +80,7 @@ Route<dynamic>? buildAppRoute(
   required CompanyRepository companyRepository,
   required EquipmentRepository equipmentRepository,
   InspectionSession? inspectionSession,
+  GlobalKey<NavigatorState>? navigatorKey,
 }) {
   final name = settings.name;
   if (name == null) return null;
@@ -166,6 +167,7 @@ Route<dynamic>? buildAppRoute(
           inspectionId: workspaceId,
           inspections: session.workspace.inspections,
           equipmentCatalog: session.workspace.equipmentCatalog,
+          navigatorKey: navigatorKey,
         ),
       );
     }

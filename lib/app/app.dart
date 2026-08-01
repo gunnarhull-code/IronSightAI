@@ -42,6 +42,7 @@ class IronSightApp extends StatefulWidget {
 }
 
 class _IronSightAppState extends State<IronSightApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   OfflineInspectionWorkspace? _workspace;
   Object? _workspaceError;
   bool _openingWorkspace = false;
@@ -124,6 +125,7 @@ class _IronSightAppState extends State<IronSightApp> {
       title: 'IronSight AI',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
+      navigatorKey: _navigatorKey,
       home: widget.authGate ?? _buildHome(),
       routes: appRoutes,
       onGenerateRoute:
@@ -134,6 +136,7 @@ class _IronSightAppState extends State<IronSightApp> {
               companyRepository: _companyRepository!,
               equipmentRepository: _equipmentRepository!,
               inspectionSession: _inspectionSession,
+              navigatorKey: _navigatorKey,
             ),
     );
   }

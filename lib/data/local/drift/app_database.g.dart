@@ -137,6 +137,50 @@ class $InspectionsTable extends Inspections
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _serialNumberMeta = const VerificationMeta(
+    'serialNumber',
+  );
+  @override
+  late final GeneratedColumn<String> serialNumber = GeneratedColumn<String>(
+    'serial_number',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serialCaptureMethodMeta =
+      const VerificationMeta('serialCaptureMethod');
+  @override
+  late final GeneratedColumn<String> serialCaptureMethod =
+      GeneratedColumn<String>(
+        'serial_capture_method',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _hourMeterReadingMeta = const VerificationMeta(
+    'hourMeterReading',
+  );
+  @override
+  late final GeneratedColumn<double> hourMeterReading = GeneratedColumn<double>(
+    'hour_meter_reading',
+    aliasedName,
+    true,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _hourMeterCaptureMethodMeta =
+      const VerificationMeta('hourMeterCaptureMethod');
+  @override
+  late final GeneratedColumn<String> hourMeterCaptureMethod =
+      GeneratedColumn<String>(
+        'hour_meter_capture_method',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -207,6 +251,10 @@ class $InspectionsTable extends Inspections
     reportStatus,
     remoteId,
     overallNotes,
+    serialNumber,
+    serialCaptureMethod,
+    hourMeterReading,
+    hourMeterCaptureMethod,
     createdAt,
     updatedAt,
     localUpdatedAt,
@@ -333,6 +381,42 @@ class $InspectionsTable extends Inspections
         ),
       );
     }
+    if (data.containsKey('serial_number')) {
+      context.handle(
+        _serialNumberMeta,
+        serialNumber.isAcceptableOrUnknown(
+          data['serial_number']!,
+          _serialNumberMeta,
+        ),
+      );
+    }
+    if (data.containsKey('serial_capture_method')) {
+      context.handle(
+        _serialCaptureMethodMeta,
+        serialCaptureMethod.isAcceptableOrUnknown(
+          data['serial_capture_method']!,
+          _serialCaptureMethodMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hour_meter_reading')) {
+      context.handle(
+        _hourMeterReadingMeta,
+        hourMeterReading.isAcceptableOrUnknown(
+          data['hour_meter_reading']!,
+          _hourMeterReadingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('hour_meter_capture_method')) {
+      context.handle(
+        _hourMeterCaptureMethodMeta,
+        hourMeterCaptureMethod.isAcceptableOrUnknown(
+          data['hour_meter_capture_method']!,
+          _hourMeterCaptureMethodMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -435,6 +519,22 @@ class $InspectionsTable extends Inspections
         DriftSqlType.string,
         data['${effectivePrefix}overall_notes'],
       ),
+      serialNumber: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serial_number'],
+      ),
+      serialCaptureMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}serial_capture_method'],
+      ),
+      hourMeterReading: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}hour_meter_reading'],
+      ),
+      hourMeterCaptureMethod: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hour_meter_capture_method'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -478,6 +578,14 @@ class LocalInspectionRow extends DataClass
   final String reportStatus;
   final String? remoteId;
   final String? overallNotes;
+
+  /// Confirmed serial for this inspection draft (explicit human confirm only).
+  final String? serialNumber;
+  final String? serialCaptureMethod;
+
+  /// Confirmed hour-meter reading for this inspection draft.
+  final double? hourMeterReading;
+  final String? hourMeterCaptureMethod;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime localUpdatedAt;
@@ -496,6 +604,10 @@ class LocalInspectionRow extends DataClass
     required this.reportStatus,
     this.remoteId,
     this.overallNotes,
+    this.serialNumber,
+    this.serialCaptureMethod,
+    this.hourMeterReading,
+    this.hourMeterCaptureMethod,
     required this.createdAt,
     required this.updatedAt,
     required this.localUpdatedAt,
@@ -522,6 +634,20 @@ class LocalInspectionRow extends DataClass
     }
     if (!nullToAbsent || overallNotes != null) {
       map['overall_notes'] = Variable<String>(overallNotes);
+    }
+    if (!nullToAbsent || serialNumber != null) {
+      map['serial_number'] = Variable<String>(serialNumber);
+    }
+    if (!nullToAbsent || serialCaptureMethod != null) {
+      map['serial_capture_method'] = Variable<String>(serialCaptureMethod);
+    }
+    if (!nullToAbsent || hourMeterReading != null) {
+      map['hour_meter_reading'] = Variable<double>(hourMeterReading);
+    }
+    if (!nullToAbsent || hourMeterCaptureMethod != null) {
+      map['hour_meter_capture_method'] = Variable<String>(
+        hourMeterCaptureMethod,
+      );
     }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
@@ -555,6 +681,18 @@ class LocalInspectionRow extends DataClass
       overallNotes: overallNotes == null && nullToAbsent
           ? const Value.absent()
           : Value(overallNotes),
+      serialNumber: serialNumber == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serialNumber),
+      serialCaptureMethod: serialCaptureMethod == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serialCaptureMethod),
+      hourMeterReading: hourMeterReading == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hourMeterReading),
+      hourMeterCaptureMethod: hourMeterCaptureMethod == null && nullToAbsent
+          ? const Value.absent()
+          : Value(hourMeterCaptureMethod),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       localUpdatedAt: Value(localUpdatedAt),
@@ -585,6 +723,14 @@ class LocalInspectionRow extends DataClass
       reportStatus: serializer.fromJson<String>(json['reportStatus']),
       remoteId: serializer.fromJson<String?>(json['remoteId']),
       overallNotes: serializer.fromJson<String?>(json['overallNotes']),
+      serialNumber: serializer.fromJson<String?>(json['serialNumber']),
+      serialCaptureMethod: serializer.fromJson<String?>(
+        json['serialCaptureMethod'],
+      ),
+      hourMeterReading: serializer.fromJson<double?>(json['hourMeterReading']),
+      hourMeterCaptureMethod: serializer.fromJson<String?>(
+        json['hourMeterCaptureMethod'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
@@ -608,6 +754,12 @@ class LocalInspectionRow extends DataClass
       'reportStatus': serializer.toJson<String>(reportStatus),
       'remoteId': serializer.toJson<String?>(remoteId),
       'overallNotes': serializer.toJson<String?>(overallNotes),
+      'serialNumber': serializer.toJson<String?>(serialNumber),
+      'serialCaptureMethod': serializer.toJson<String?>(serialCaptureMethod),
+      'hourMeterReading': serializer.toJson<double?>(hourMeterReading),
+      'hourMeterCaptureMethod': serializer.toJson<String?>(
+        hourMeterCaptureMethod,
+      ),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
@@ -629,6 +781,10 @@ class LocalInspectionRow extends DataClass
     String? reportStatus,
     Value<String?> remoteId = const Value.absent(),
     Value<String?> overallNotes = const Value.absent(),
+    Value<String?> serialNumber = const Value.absent(),
+    Value<String?> serialCaptureMethod = const Value.absent(),
+    Value<double?> hourMeterReading = const Value.absent(),
+    Value<String?> hourMeterCaptureMethod = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? localUpdatedAt,
@@ -649,6 +805,16 @@ class LocalInspectionRow extends DataClass
     reportStatus: reportStatus ?? this.reportStatus,
     remoteId: remoteId.present ? remoteId.value : this.remoteId,
     overallNotes: overallNotes.present ? overallNotes.value : this.overallNotes,
+    serialNumber: serialNumber.present ? serialNumber.value : this.serialNumber,
+    serialCaptureMethod: serialCaptureMethod.present
+        ? serialCaptureMethod.value
+        : this.serialCaptureMethod,
+    hourMeterReading: hourMeterReading.present
+        ? hourMeterReading.value
+        : this.hourMeterReading,
+    hourMeterCaptureMethod: hourMeterCaptureMethod.present
+        ? hourMeterCaptureMethod.value
+        : this.hourMeterCaptureMethod,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
@@ -685,6 +851,18 @@ class LocalInspectionRow extends DataClass
       overallNotes: data.overallNotes.present
           ? data.overallNotes.value
           : this.overallNotes,
+      serialNumber: data.serialNumber.present
+          ? data.serialNumber.value
+          : this.serialNumber,
+      serialCaptureMethod: data.serialCaptureMethod.present
+          ? data.serialCaptureMethod.value
+          : this.serialCaptureMethod,
+      hourMeterReading: data.hourMeterReading.present
+          ? data.hourMeterReading.value
+          : this.hourMeterReading,
+      hourMeterCaptureMethod: data.hourMeterCaptureMethod.present
+          ? data.hourMeterCaptureMethod.value
+          : this.hourMeterCaptureMethod,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       localUpdatedAt: data.localUpdatedAt.present
@@ -714,6 +892,10 @@ class LocalInspectionRow extends DataClass
           ..write('reportStatus: $reportStatus, ')
           ..write('remoteId: $remoteId, ')
           ..write('overallNotes: $overallNotes, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('serialCaptureMethod: $serialCaptureMethod, ')
+          ..write('hourMeterReading: $hourMeterReading, ')
+          ..write('hourMeterCaptureMethod: $hourMeterCaptureMethod, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
@@ -724,7 +906,7 @@ class LocalInspectionRow extends DataClass
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     companyId,
     equipmentId,
@@ -737,12 +919,16 @@ class LocalInspectionRow extends DataClass
     reportStatus,
     remoteId,
     overallNotes,
+    serialNumber,
+    serialCaptureMethod,
+    hourMeterReading,
+    hourMeterCaptureMethod,
     createdAt,
     updatedAt,
     localUpdatedAt,
     completedAt,
     discardedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -759,6 +945,10 @@ class LocalInspectionRow extends DataClass
           other.reportStatus == this.reportStatus &&
           other.remoteId == this.remoteId &&
           other.overallNotes == this.overallNotes &&
+          other.serialNumber == this.serialNumber &&
+          other.serialCaptureMethod == this.serialCaptureMethod &&
+          other.hourMeterReading == this.hourMeterReading &&
+          other.hourMeterCaptureMethod == this.hourMeterCaptureMethod &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.localUpdatedAt == this.localUpdatedAt &&
@@ -779,6 +969,10 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
   final Value<String> reportStatus;
   final Value<String?> remoteId;
   final Value<String?> overallNotes;
+  final Value<String?> serialNumber;
+  final Value<String?> serialCaptureMethod;
+  final Value<double?> hourMeterReading;
+  final Value<String?> hourMeterCaptureMethod;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime> localUpdatedAt;
@@ -798,6 +992,10 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     this.reportStatus = const Value.absent(),
     this.remoteId = const Value.absent(),
     this.overallNotes = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.serialCaptureMethod = const Value.absent(),
+    this.hourMeterReading = const Value.absent(),
+    this.hourMeterCaptureMethod = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
@@ -818,6 +1016,10 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     required String reportStatus,
     this.remoteId = const Value.absent(),
     this.overallNotes = const Value.absent(),
+    this.serialNumber = const Value.absent(),
+    this.serialCaptureMethod = const Value.absent(),
+    this.hourMeterReading = const Value.absent(),
+    this.hourMeterCaptureMethod = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     required DateTime localUpdatedAt,
@@ -849,6 +1051,10 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     Expression<String>? reportStatus,
     Expression<String>? remoteId,
     Expression<String>? overallNotes,
+    Expression<String>? serialNumber,
+    Expression<String>? serialCaptureMethod,
+    Expression<double>? hourMeterReading,
+    Expression<String>? hourMeterCaptureMethod,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? localUpdatedAt,
@@ -869,6 +1075,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
       if (reportStatus != null) 'report_status': reportStatus,
       if (remoteId != null) 'remote_id': remoteId,
       if (overallNotes != null) 'overall_notes': overallNotes,
+      if (serialNumber != null) 'serial_number': serialNumber,
+      if (serialCaptureMethod != null)
+        'serial_capture_method': serialCaptureMethod,
+      if (hourMeterReading != null) 'hour_meter_reading': hourMeterReading,
+      if (hourMeterCaptureMethod != null)
+        'hour_meter_capture_method': hourMeterCaptureMethod,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
@@ -891,6 +1103,10 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     Value<String>? reportStatus,
     Value<String?>? remoteId,
     Value<String?>? overallNotes,
+    Value<String?>? serialNumber,
+    Value<String?>? serialCaptureMethod,
+    Value<double?>? hourMeterReading,
+    Value<String?>? hourMeterCaptureMethod,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime>? localUpdatedAt,
@@ -911,6 +1127,11 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
       reportStatus: reportStatus ?? this.reportStatus,
       remoteId: remoteId ?? this.remoteId,
       overallNotes: overallNotes ?? this.overallNotes,
+      serialNumber: serialNumber ?? this.serialNumber,
+      serialCaptureMethod: serialCaptureMethod ?? this.serialCaptureMethod,
+      hourMeterReading: hourMeterReading ?? this.hourMeterReading,
+      hourMeterCaptureMethod:
+          hourMeterCaptureMethod ?? this.hourMeterCaptureMethod,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
@@ -959,6 +1180,22 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     if (overallNotes.present) {
       map['overall_notes'] = Variable<String>(overallNotes.value);
     }
+    if (serialNumber.present) {
+      map['serial_number'] = Variable<String>(serialNumber.value);
+    }
+    if (serialCaptureMethod.present) {
+      map['serial_capture_method'] = Variable<String>(
+        serialCaptureMethod.value,
+      );
+    }
+    if (hourMeterReading.present) {
+      map['hour_meter_reading'] = Variable<double>(hourMeterReading.value);
+    }
+    if (hourMeterCaptureMethod.present) {
+      map['hour_meter_capture_method'] = Variable<String>(
+        hourMeterCaptureMethod.value,
+      );
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -995,6 +1232,10 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
           ..write('reportStatus: $reportStatus, ')
           ..write('remoteId: $remoteId, ')
           ..write('overallNotes: $overallNotes, ')
+          ..write('serialNumber: $serialNumber, ')
+          ..write('serialCaptureMethod: $serialCaptureMethod, ')
+          ..write('hourMeterReading: $hourMeterReading, ')
+          ..write('hourMeterCaptureMethod: $hourMeterCaptureMethod, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
@@ -3452,6 +3693,10 @@ typedef $$InspectionsTableCreateCompanionBuilder =
       required String reportStatus,
       Value<String?> remoteId,
       Value<String?> overallNotes,
+      Value<String?> serialNumber,
+      Value<String?> serialCaptureMethod,
+      Value<double?> hourMeterReading,
+      Value<String?> hourMeterCaptureMethod,
       required DateTime createdAt,
       required DateTime updatedAt,
       required DateTime localUpdatedAt,
@@ -3473,6 +3718,10 @@ typedef $$InspectionsTableUpdateCompanionBuilder =
       Value<String> reportStatus,
       Value<String?> remoteId,
       Value<String?> overallNotes,
+      Value<String?> serialNumber,
+      Value<String?> serialCaptureMethod,
+      Value<double?> hourMeterReading,
+      Value<String?> hourMeterCaptureMethod,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime> localUpdatedAt,
@@ -3605,6 +3854,26 @@ class $$InspectionsTableFilterComposer
 
   ColumnFilters<String> get overallNotes => $composableBuilder(
     column: $table.overallNotes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get serialCaptureMethod => $composableBuilder(
+    column: $table.serialCaptureMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get hourMeterReading => $composableBuilder(
+    column: $table.hourMeterReading,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get hourMeterCaptureMethod => $composableBuilder(
+    column: $table.hourMeterCaptureMethod,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3759,6 +4028,26 @@ class $$InspectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get serialCaptureMethod => $composableBuilder(
+    column: $table.serialCaptureMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get hourMeterReading => $composableBuilder(
+    column: $table.hourMeterReading,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get hourMeterCaptureMethod => $composableBuilder(
+    column: $table.hourMeterCaptureMethod,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -3843,6 +4132,26 @@ class $$InspectionsTableAnnotationComposer
 
   GeneratedColumn<String> get overallNotes => $composableBuilder(
     column: $table.overallNotes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get serialNumber => $composableBuilder(
+    column: $table.serialNumber,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get serialCaptureMethod => $composableBuilder(
+    column: $table.serialCaptureMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get hourMeterReading => $composableBuilder(
+    column: $table.hourMeterReading,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get hourMeterCaptureMethod => $composableBuilder(
+    column: $table.hourMeterCaptureMethod,
     builder: (column) => column,
   );
 
@@ -3967,6 +4276,10 @@ class $$InspectionsTableTableManager
                 Value<String> reportStatus = const Value.absent(),
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> overallNotes = const Value.absent(),
+                Value<String?> serialNumber = const Value.absent(),
+                Value<String?> serialCaptureMethod = const Value.absent(),
+                Value<double?> hourMeterReading = const Value.absent(),
+                Value<String?> hourMeterCaptureMethod = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime> localUpdatedAt = const Value.absent(),
@@ -3986,6 +4299,10 @@ class $$InspectionsTableTableManager
                 reportStatus: reportStatus,
                 remoteId: remoteId,
                 overallNotes: overallNotes,
+                serialNumber: serialNumber,
+                serialCaptureMethod: serialCaptureMethod,
+                hourMeterReading: hourMeterReading,
+                hourMeterCaptureMethod: hourMeterCaptureMethod,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 localUpdatedAt: localUpdatedAt,
@@ -4007,6 +4324,10 @@ class $$InspectionsTableTableManager
                 required String reportStatus,
                 Value<String?> remoteId = const Value.absent(),
                 Value<String?> overallNotes = const Value.absent(),
+                Value<String?> serialNumber = const Value.absent(),
+                Value<String?> serialCaptureMethod = const Value.absent(),
+                Value<double?> hourMeterReading = const Value.absent(),
+                Value<String?> hourMeterCaptureMethod = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 required DateTime localUpdatedAt,
@@ -4026,6 +4347,10 @@ class $$InspectionsTableTableManager
                 reportStatus: reportStatus,
                 remoteId: remoteId,
                 overallNotes: overallNotes,
+                serialNumber: serialNumber,
+                serialCaptureMethod: serialCaptureMethod,
+                hourMeterReading: hourMeterReading,
+                hourMeterCaptureMethod: hourMeterCaptureMethod,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 localUpdatedAt: localUpdatedAt,

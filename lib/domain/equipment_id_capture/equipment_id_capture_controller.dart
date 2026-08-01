@@ -103,16 +103,54 @@ class EquipmentIdCaptureController {
     this.serialNormalizer = const SerialNormalizer(),
     this.hourMeterParser = const HourMeterParser(),
     String initialDraftValue = '',
+    ConfirmedEquipmentIdValue? initialConfirmed,
   }) : _imageCapture = imageCapture,
        _textRecognition = textRecognition,
-       _state = EquipmentIdCaptureState(
+       _state = _initialState(
          kind: kind,
-         phase: EquipmentIdCapturePhase.ready,
-         draftValue: initialDraftValue,
-         candidates: const [],
-         cameraOcrSupported:
-             imageCapture.isSupported && textRecognition.isSupported,
+         imageCapture: imageCapture,
+         textRecognition: textRecognition,
+         initialDraftValue: initialDraftValue,
+         initialConfirmed: initialConfirmed,
        );
+
+  static EquipmentIdCaptureState _initialState({
+    required EquipmentIdCaptureKind kind,
+    required ImageCapturePort imageCapture,
+    required TextRecognitionPort textRecognition,
+    required String initialDraftValue,
+    ConfirmedEquipmentIdValue? initialConfirmed,
+  }) {
+    final cameraOcrSupported =
+        imageCapture.isSupported && textRecognition.isSupported;
+    if (initialConfirmed != null) {
+      if (initialConfirmed.kind != kind) {
+        throw ArgumentError.value(
+          initialConfirmed.kind,
+          'initialConfirmed.kind',
+          'must match controller kind $kind',
+        );
+      }
+      return EquipmentIdCaptureState(
+        kind: kind,
+        phase: EquipmentIdCapturePhase.confirmed,
+        draftValue: initialConfirmed.value,
+        candidates: const [],
+        cameraOcrSupported: cameraOcrSupported,
+        confirmed: initialConfirmed,
+        statusMessage: kind == EquipmentIdCaptureKind.serialNumber
+            ? 'Serial number confirmed.'
+            : 'Hour meter reading confirmed.',
+      );
+    }
+    return EquipmentIdCaptureState(
+      kind: kind,
+      phase: EquipmentIdCapturePhase.ready,
+      draftValue: initialDraftValue,
+      candidates: const [],
+      cameraOcrSupported: cameraOcrSupported,
+    );
+  }
 
   final ImageCapturePort _imageCapture;
   final TextRecognitionPort _textRecognition;
