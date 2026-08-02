@@ -22,15 +22,15 @@ IronSight AI — WIW is a Flutter (Dart) mobile-first commercial SaaS app for eq
 
 - Never commit, push, or merge unless the user explicitly instructs you.
 - Never create or update a pull request unless the user explicitly instructs you.
-- When asked to open a PR: create a **Draft** PR targeting `main`. Agents never merge to `main`.
+- When asked to open a PR: create a **Draft** PR targeting `main` on branch `cursor/<work-slug>`. Agents never merge to `main` and never push to `main`. Gunnar merges manually.
 - Never modify GitHub settings or deployment workflows.
 
 ## Scope Control
 
 - Complete only the requested task.
-- When a Work Item is assigned, read the **GitHub Issue as the complete assignment source** (identity, frozen scope, status). Do not use `management/AFK_AGENTS.md` for assignments.
+- When a Work Item is assigned, locate the **complete founder-approved Cloud Agent assignment** in the current prompt/context. It must include scope, exclusions, acceptance criteria, safety boundaries, and required verification. A descriptive slug or ordinary short task description must never substitute for that assignment. Do not use `management/AFK_AGENTS.md` for assignments. GitHub Issues are not required.
 - Do not invent additional backlog items or features.
-- Stop if requirements are ambiguous.
+- Stop if the frozen assignment is missing, incomplete, contradictory, or ambiguous — do not create a branch or modify files.
 - Stop if architecture changes are required.
 - Stop and ask before making major refactors or introducing new dependencies.
 
@@ -83,8 +83,8 @@ Procedures live in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) 
 
 Always-on reminders:
 
-- Canonical work tracking: **GitHub Issues (Work Items)** only. `management/AFK_AGENTS.md` is permanent policy, not an assignment board.
+- Canonical work tracking: **Draft PRs** (one per Work Item). A complete founder-approved Cloud Agent assignment freezes scope; the Draft PR is the unique live work record. Slugs name branches only. `management/AFK_AGENTS.md` is permanent policy, not an assignment board.
 - Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
 - Pre-Work-Item Status Gate is mandatory before starting a new assigned Work Item (see `ironsight-work-item` + DEVELOPER_WORKFLOW).
-- Agents open Draft PRs; agents never merge to `main`; never push documentation commits directly to `main`.
+- Agents open Draft PRs; agents never merge or push to `main`; Gunnar merges manually; never push documentation commits directly to `main`.
 - Cloud summary: Flutter at `~/flutter` (3.44.8); require `.env`; unit tests need `.env` not running Supabase; web-server `0.0.0.0:8080` may be blank 15–30s on first debug load.

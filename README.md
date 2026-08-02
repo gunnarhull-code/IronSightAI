@@ -2,7 +2,7 @@
 
 A mobile-first, AI-ready heavy equipment inspection platform for equipment dealerships, used equipment managers, and sales representatives.
 
-**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, local inspection foundation, engineering/CI baseline, and informational Supabase migration checks). Canonical work tracking is **GitHub Issues (Work Items)** — see [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md). Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
+**Status:** Application foundation is in progress. This repository contains product documentation **and** a Flutter + local Supabase codebase on `main` (auth, company, equipment, local inspection foundation, engineering/CI baseline, and informational Supabase migration checks). Canonical work tracking is **Draft PRs** (frozen by the founder-approved Cloud Agent prompt) — see [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md). Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
 
 **Live MVP direction (Work Item #18):** **Quick Appraisal only** — under two minutes offline (timing and required capture set in [`docs/15`](./docs/15-final-product-specification.md) §0), trustworthy inspection package, no dollar valuation, no Detailed Inspection UI (Later; shared checklist model preserved). On-device OCR for serial/hours; optional cloud photo assist via backend `AIService`; walkaround video is evidence only. **V2:** professional PDF (server-side → local cache → reviewed native share). See §0 / §19.
 
@@ -34,7 +34,7 @@ Docs `01`–`14` remain as detailed supporting reference (rationale, full SQL, d
 
 ## Daily Development Workflow
 
-The [`management/`](./management/) folder preserves company context independently of any one person's memory. **GitHub Issues, Pull Requests, and Actions** are the live sources for Work Item, PR, and CI status. `management/DASHBOARD.md` is a founder-maintained occasional summary — agents must not routinely edit it for individual Work Items.
+The [`management/`](./management/) folder preserves company context independently of any one person's memory. **Draft Pull Requests and Actions** are the live sources for Work Item, PR, and CI status. `management/DASHBOARD.md` is a founder-maintained occasional summary — agents must not routinely edit it for individual Work Items.
 
 At the start of a development session, read as needed:
 
@@ -44,10 +44,10 @@ At the start of a development session, read as needed:
 4. [`docs/13-roadmap.md`](./docs/13-roadmap.md)
 5. [`management/DECISIONS.md`](./management/DECISIONS.md)
 6. [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) when changing setup, CI, or verification steps
-7. The assigned **GitHub Issue** (complete Work Item source when one is assigned)
+7. The founder-approved Cloud Agent prompt / frozen assignment (and its Draft PR when one exists)
 8. Begin implementation.
 
-**Operating principle**: management docs are maintained for the life of the company. The founder occasionally updates `DASHBOARD.md` and related summaries when phase or priorities change. Agents do **not** update shared status files at the end of every session. Record decisions in `DECISIONS.md` and changelog entries only when the founder (or an explicit Work Item) requires it — never as routine per-Work-Item status sync. Live work state stays on GitHub.
+**Operating principle**: management docs are maintained for the life of the company. The founder occasionally updates `DASHBOARD.md` and related summaries when phase or priorities change. Agents do **not** update shared status files at the end of every session. Record decisions in `DECISIONS.md` and changelog entries only when the founder (or an explicit Work Item) requires it — never as routine per-Work-Item status sync. Live work state stays on the Draft PR / GitHub.
 
 ## Documentation Philosophy: `docs/` vs `management/`
 
@@ -56,7 +56,7 @@ There must never be duplicate sources of truth. Each of the following lives in e
 - **`docs/`** — long-lived documentation: the Constitution, technical architecture, the product specification, the **strategic roadmap** (`docs/13-roadmap.md`), and the **developer workflow** (`docs/DEVELOPER_WORKFLOW.md`).
 - **`management/`** — living operational documents that change throughout development: the Dashboard, Decisions, Changelog, Backlog, Founder Log, Wins, permanent AFK/Cloud Agent policy, and legacy sprint history.
 
-The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Active work tracking exists **only** as GitHub Issues (Work Items). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
+The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verification exists **only** in `docs/DEVELOPER_WORKFLOW.md`. Active work tracking exists **only** as Draft PRs (one per Work Item; frozen by the founder-approved prompt). Live PR/CI state belongs to GitHub. Other files reference these sources; they should not restate them at length.
 
 ## Management Folder
 
@@ -68,7 +68,7 @@ The strategic roadmap exists **only** in `docs/13-roadmap.md`. Local setup/verif
 | [`management/BACKLOG.md`](./management/BACKLOG.md) | Ideas intentionally deferred from the MVP, by priority |
 | [`management/FOUNDER_LOG.md`](./management/FOUNDER_LOG.md) | Founder journal — customer conversations, ideas, lessons learned |
 | [`management/WINS.md`](./management/WINS.md) | Milestone journal |
-| [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md) | Permanent AFK/Cloud Agent policy (GitHub Issues are the only assignment source) |
+| [`management/AFK_AGENTS.md`](./management/AFK_AGENTS.md) | Permanent AFK/Cloud Agent policy (founder-approved prompt freezes scope; Draft PR is the work record) |
 | [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md) | Archived numbered-sprint history (sprint registry retired) |
 
 ## Key Decisions (Locked for MVP)
@@ -119,4 +119,4 @@ No Detailed Inspection UI; no pricing/valuation dollar output; no company/manage
 
 ## Next Step
 
-Continue implementation from assigned Work Items on **GitHub Issues**. Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) **§0**. Do not expand frozen Draft PR scopes (#14, #15) from this documentation Work Item.
+Continue implementation from founder-approved Work Items as **Draft PRs** on `cursor/<work-slug>`. Use [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) for setup and verification. Product scope remains governed by [`docs/15-final-product-specification.md`](./docs/15-final-product-specification.md) **§0**. Do not expand historically frozen Draft PR scopes (#14, #15) from unrelated documentation work.

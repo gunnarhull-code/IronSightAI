@@ -1,12 +1,16 @@
 ## Work Item
 
-- GitHub Issue:
+- Branch: `cursor/<work-slug>`
+- Frozen assignment source: complete founder-approved Cloud Agent assignment (slug names branch/PR only)
 - Immutable scope summary:
+- Exclusions:
+- Acceptance criteria:
 - Checklist:
-  - [ ] Draft PR references the GitHub Issue (Work Item)
-  - [ ] Scope matches the Issue; no unrelated work added
-  - [ ] Active parallel Work Items were checked for overlapping files/scope
-  - [ ] Founder merges; agents never merge to `main`
+  - [ ] Draft PR is the unique live work record for this Work Item
+  - [ ] Scope matches the frozen assignment; no unrelated work added
+  - [ ] Active parallel Draft PRs / Work Items were checked for overlapping files/scope
+  - [ ] No GitHub Issue required; no `Closes #<number>` unless the founder explicitly requested an Issue link
+  - [ ] Gunnar merges; agents never merge or push to `main`
   - [ ] Historical numbered sprints were not revived (`management/LEGACY_SPRINT_HISTORY.md` only)
 
 ## Changes

@@ -2,9 +2,9 @@
 
 **This file answers: "What should we be working on today?"** as a founder-maintained, occasional operational summary.
 
-**Maintenance rule**: the **founder** updates this file occasionally when priorities, phase, blockers, or milestones meaningfully change. It is **not** a live Work Item board. **GitHub Issues, Pull Requests, and Actions** are the live sources for Work Item, PR, and CI status. Agents must **not** routinely edit `DASHBOARD.md` for individual Work Items (or every session).
+**Maintenance rule**: the **founder** updates this file occasionally when priorities, phase, blockers, or milestones meaningfully change. It is **not** a live Work Item board. **Draft Pull Requests and Actions** are the live sources for Work Item, PR, and CI status. Agents must **not** routinely edit `DASHBOARD.md` for individual Work Items (or every session).
 
-**Last updated**: 2026-07-29
+**Last updated**: 2026-08-01
 
 ---
 
@@ -20,7 +20,7 @@ This is the company's single, permanent strategic roadmap — covering the Week 
 
 ## Current Work Item
 
-No product Work Item is assigned yet. Canonical work tracking: **GitHub Issues** (identity, assignment, frozen scope, and status). Permanent AFK/Cloud Agent policy: [`management/AFK_AGENTS.md`](./AFK_AGENTS.md) — do not record assignments there. Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
+No product Work Item is assigned yet. Canonical work tracking: **Draft PRs** (founder-approved Cloud Agent prompt freezes scope; the Draft PR is the unique live work record). Permanent AFK/Cloud Agent policy: [`management/AFK_AGENTS.md`](./AFK_AGENTS.md) — do not record assignments there. Developer workflow source of truth: [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
 
 **Live PR and CI status belongs to GitHub** (pull requests and Actions). Do not duplicate open-PR merge checkboxes here as long-lived unchecked repository tasks.
 
@@ -28,7 +28,7 @@ Historical numbered sprints are archived in [`LEGACY_SPRINT_HISTORY.md`](./LEGAC
 
 ## Current Objective
 
-Assign the next founder-approved Work Item as a GitHub Issue via the Pre-Work-Item Status Gate. Do not invent product scope from dashboard prose.
+Assign the next founder-approved Work Item via a Cloud Agent prompt and Pre-Work-Item Status Gate, then open one Draft PR on `cursor/<work-slug>`. Do not invent product scope from dashboard prose.
 
 ## Current Tasks
 
@@ -36,6 +36,7 @@ Assign the next founder-approved Work Item as a GitHub Issue via the Pre-Work-It
 - [x] Retire sprint registry in favor of GitHub Issue Work Items
 - [x] Preserve legacy sprint history
 - [x] Update agent skills / workflow docs for Draft-PR-only delivery
+- [x] Adopt Draft PRs as unique Work Item records (prompt-frozen scope; Issues optional)
 
 ## Completed Milestones
 
@@ -80,7 +81,7 @@ No dedicated risk register file — tracked here directly, kept short and curren
 1. **Silent data loss during offline sync** (High impact) — mitigated by design via the outbox pattern, but not yet validated against a real implementation.
 2. **Scope creep back into a slower, more granular default experience**, eroding the core promise — mitigated by the Constitution's Final Decision Framework, but requires ongoing discipline during implementation.
 3. **Solo-founder bandwidth / bus-factor risk** — mitigated by this management system and emphasis on simple, well-documented architecture.
-4. **Stale operational docs vs. living code** — mitigated by `docs/DEVELOPER_WORKFLOW.md`, GitHub Issues/PRs/Actions as live Work Item and CI sources, and occasional founder updates to this summary; agents must not routinely rewrite shared status files per Work Item.
+4. **Stale operational docs vs. living code** — mitigated by `docs/DEVELOPER_WORKFLOW.md`, Draft PRs/Actions as live Work Item and CI sources, and occasional founder updates to this summary; agents must not routinely rewrite shared status files per Work Item.
 
 ## MVP Definition
 
@@ -98,4 +99,4 @@ Full definition: [`docs/15-final-product-specification.md`](../docs/15-final-pro
 
 ## Next Recommended Action
 
-Sync local `main`, then create/assign the next founder-approved GitHub Issue Work Item via the Pre-Work-Item Status Gate. Do not invent product scope here.
+Sync local `main`, then start the next founder-approved Work Item from a Cloud Agent prompt via the Pre-Work-Item Status Gate and open one Draft PR. Do not invent product scope here.

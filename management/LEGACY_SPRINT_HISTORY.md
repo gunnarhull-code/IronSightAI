@@ -2,7 +2,7 @@
 
 **Status:** Archived. Numbered sprints and `management/sprint_registry.json` are retired.
 
-Canonical work tracking is now **GitHub Issues (Work Items)**. See [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md).
+Canonical work tracking is now **Draft PRs** (frozen by the founder-approved Cloud Agent prompt). See [`docs/DEVELOPER_WORKFLOW.md`](../docs/DEVELOPER_WORKFLOW.md). (Historically, numbered sprints were first replaced by GitHub Issue Work Items; that Issue-backed model was later superseded by Draft-PR work records.)
 
 This file preserves verified historical sprint identities so they are not reinvented or renumbered. Do not reuse these numbers as live Work Item IDs.
 

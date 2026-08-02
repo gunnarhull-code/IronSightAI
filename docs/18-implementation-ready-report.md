@@ -80,4 +80,4 @@ The five former `docs/15` §19 open questions are **resolved**.
 - [x] Work Item #18 docs alignment and founder confirmations are recorded without deleting historical decisions.
 - [x] Governing live-scope documents are consistent on MVP / V2 / Later.
 
-**Documentation remains the authority for product scope. Implementation Work Items proceed from GitHub Issues; PR #14 and PR #15 stay frozen. Agents never merge to `main`.**
+**Documentation remains the authority for product scope. Implementation Work Items proceed from founder-approved prompts as Draft PRs; historically frozen PR #14 and PR #15 stay frozen. Agents never merge to `main`.**
