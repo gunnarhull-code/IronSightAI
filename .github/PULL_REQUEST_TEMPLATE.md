@@ -1,7 +1,7 @@
 ## Work Item
 
 - Branch: `cursor/<work-slug>`
-- Frozen assignment source: founder-approved Cloud Agent prompt (or equivalent task description)
+- Frozen assignment source: complete founder-approved Cloud Agent assignment (slug names branch/PR only)
 - Immutable scope summary:
 - Exclusions:
 - Acceptance criteria:

@@ -13,7 +13,7 @@ Canonical: `docs/DEVELOPER_WORKFLOW.md` → Draft PR preparation. Prefer Draft. 
 The Draft PR is the unique live work record. A GitHub Issue is not required. Do not add `Closes #<number>` unless the founder explicitly requests an Issue link.
 
 1. Feature branch from latest `origin/main`, named `cursor/<work-slug>`.
-2. Keep the founder-approved prompt / Work Item scope immutable.
+2. Keep the complete founder-approved assignment / Work Item scope immutable. A slug is never the assignment.
 3. Run `ironsight-verify`; paste results into the PR body.
 4. Fill `.github/PULL_REQUEST_TEMPLATE.md` (frozen scope, exclusions, acceptance criteria, files, tests, analyze/test, assumptions, migrations).
 5. Screenshots only if meaningful for UI. Never create videos.

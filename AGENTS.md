@@ -28,9 +28,9 @@ IronSight AI — WIW is a Flutter (Dart) mobile-first commercial SaaS app for eq
 ## Scope Control
 
 - Complete only the requested task.
-- When a Work Item is assigned, treat the **founder-approved Cloud Agent prompt** (or equivalent task description) as the complete frozen assignment. Do not use `management/AFK_AGENTS.md` for assignments. GitHub Issues are not required.
+- When a Work Item is assigned, locate the **complete founder-approved Cloud Agent assignment** in the current prompt/context. It must include scope, exclusions, acceptance criteria, safety boundaries, and required verification. A descriptive slug or ordinary short task description must never substitute for that assignment. Do not use `management/AFK_AGENTS.md` for assignments. GitHub Issues are not required.
 - Do not invent additional backlog items or features.
-- Stop if requirements are ambiguous.
+- Stop if the frozen assignment is missing, incomplete, contradictory, or ambiguous — do not create a branch or modify files.
 - Stop if architecture changes are required.
 - Stop and ask before making major refactors or introducing new dependencies.
 
@@ -83,7 +83,7 @@ Procedures live in [`docs/DEVELOPER_WORKFLOW.md`](./docs/DEVELOPER_WORKFLOW.md) 
 
 Always-on reminders:
 
-- Canonical work tracking: **Draft PRs** (one per Work Item). The founder-approved Cloud Agent prompt freezes scope; the Draft PR is the unique live work record. `management/AFK_AGENTS.md` is permanent policy, not an assignment board.
+- Canonical work tracking: **Draft PRs** (one per Work Item). A complete founder-approved Cloud Agent assignment freezes scope; the Draft PR is the unique live work record. Slugs name branches only. `management/AFK_AGENTS.md` is permanent policy, not an assignment board.
 - Historical numbered sprints: [`management/LEGACY_SPRINT_HISTORY.md`](./management/LEGACY_SPRINT_HISTORY.md).
 - Pre-Work-Item Status Gate is mandatory before starting a new assigned Work Item (see `ironsight-work-item` + DEVELOPER_WORKFLOW).
 - Agents open Draft PRs; agents never merge or push to `main`; Gunnar merges manually; never push documentation commits directly to `main`.
