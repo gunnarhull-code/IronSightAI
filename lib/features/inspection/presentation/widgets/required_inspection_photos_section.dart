@@ -5,19 +5,26 @@ import 'package:flutter/material.dart';
 import '../../../../domain/entities/inspection_media.dart';
 import '../../../../domain/entities/inspection_photo_slot.dart';
 
-/// Stable semantics labels for required Quick Appraisal photo slots.
+/// Screen-reader labels for required Quick Appraisal photo slots.
 abstract final class RequiredPhotoLabels {
-  static String slotStatus(InspectionPhotoSlot slot) =>
-      'required-photo-status-${slot.storageValue}';
+  static String slotStatus(
+    InspectionPhotoSlot slot, {
+    required bool completed,
+  }) => '${slot.label} photo ${completed ? 'completed' : 'missing'}';
 
   static String captureButton(InspectionPhotoSlot slot) =>
-      'required-photo-capture-${slot.storageValue}';
+      'Capture ${slot.label} photo';
 
   static String retakeButton(InspectionPhotoSlot slot) =>
-      'required-photo-retake-${slot.storageValue}';
+      'Retake ${slot.label} photo';
 
-  static String preview(InspectionPhotoSlot slot) =>
-      'required-photo-preview-${slot.storageValue}';
+  static String previewButton(InspectionPhotoSlot slot) =>
+      'Preview ${slot.label} photo';
+
+  static String previewThumbnail(InspectionPhotoSlot slot) =>
+      '${slot.label} photo thumbnail';
+
+  static const String unreadablePreview = 'Photo preview unavailable';
 }
 
 /// Four required photo slots with missing/completed state and capture/retake.
@@ -119,8 +126,15 @@ class _RequiredPhotoSlotCard extends StatelessWidget {
                   child: Text(slot.label, style: theme.textTheme.titleSmall),
                 ),
                 Semantics(
-                  label: RequiredPhotoLabels.slotStatus(slot),
+                  container: true,
                   liveRegion: true,
+                  // The icon + text are decorative here; the slot label already
+                  // announces the state, so they must not merge into it.
+                  excludeSemantics: true,
+                  label: RequiredPhotoLabels.slotStatus(
+                    slot,
+                    completed: complete,
+                  ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -145,7 +159,8 @@ class _RequiredPhotoSlotCard extends StatelessWidget {
               const SizedBox(height: 8),
               Semantics(
                 button: true,
-                label: RequiredPhotoLabels.preview(slot),
+                image: true,
+                label: RequiredPhotoLabels.previewThumbnail(slot),
                 child: InkWell(
                   onTap: enabled ? onPreview : null,
                   child: ClipRRect(
@@ -155,6 +170,16 @@ class _RequiredPhotoSlotCard extends StatelessWidget {
                       height: 120,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      // A stored photo that cannot be decoded must not take the
+                      // workspace down; the slot still reads as Completed.
+                      errorBuilder: (context, _, _) => Container(
+                        height: 120,
+                        alignment: Alignment.center,
+                        color: theme.colorScheme.surfaceContainerHigh,
+                        child: const Text(
+                          RequiredPhotoLabels.unreadablePreview,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -183,7 +208,7 @@ class _RequiredPhotoSlotCard extends StatelessWidget {
                   Expanded(
                     child: Semantics(
                       button: true,
-                      label: RequiredPhotoLabels.preview(slot),
+                      label: RequiredPhotoLabels.previewButton(slot),
                       child: OutlinedButton.icon(
                         onPressed: enabled && !busy ? onPreview : null,
                         icon: const Icon(Icons.fullscreen),

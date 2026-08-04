@@ -255,11 +255,19 @@ void main() {
       );
       expect(controller.state.isConfirmed, isFalse);
       expect(controller.state.candidates.first.displayValue, 'SN-REUSE-99');
+      expect(
+        controller.state.canConfirm,
+        isFalse,
+        reason: 'reused-photo OCR must not pre-fill a confirmable value',
+      );
+
+      controller.selectCandidate(controller.state.candidates.first.id);
       expect(controller.confirm(), isTrue);
       expect(
         controller.state.confirmed!.method,
         EquipmentIdCaptureMethod.ocrConfirmed,
       );
+      expect(controller.state.confirmed!.value, 'SN-REUSE-99');
     },
   );
 

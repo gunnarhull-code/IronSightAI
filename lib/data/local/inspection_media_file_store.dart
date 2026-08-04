@@ -23,8 +23,7 @@ class StoredInspectionMediaFile {
 /// Paths are rooted under the application documents directory so media survives
 /// app restart. Relative paths are what Drift persists.
 class InspectionMediaFileStore {
-  InspectionMediaFileStore({Directory? Function()? documentsDirectoryOverride})
-    : documentsDirectoryOverride = documentsDirectoryOverride;
+  InspectionMediaFileStore({this.documentsDirectoryOverride});
 
   /// Test override for the application documents directory.
   final Directory? Function()? documentsDirectoryOverride;
