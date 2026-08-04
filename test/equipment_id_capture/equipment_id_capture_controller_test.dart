@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/captured_image.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/confirmed_equipment_id_value.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_controller.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_failure.dart';
@@ -226,5 +227,64 @@ void main() {
     expect(controller.state.isConfirmed, isTrue);
     expect(controller.state.confirmed!.value, 'SAVED1');
     expect(controller.state.draftValue, 'SAVED1');
+  });
+
+  test(
+    'recognizeExistingImage reuses a required photo without recapture',
+    () async {
+      final capture = FakeImageCapture();
+      final ocr = FakeTextRecognition(
+        blocks: const [RecognizedTextBlock(rawText: 'SN-REUSE-99')],
+      );
+      final controller = EquipmentIdCaptureController(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        imageCapture: capture,
+        textRecognition: ocr,
+        cameraPermission: FakeCameraPermission(),
+      );
+
+      await controller.recognizeExistingImage(
+        const CapturedImage(bytes: [9, 9, 9], path: '/tmp/required.jpg'),
+      );
+
+      expect(capture.captureCallCount, 0);
+      expect(ocr.recognizeCallCount, 1);
+      expect(
+        controller.state.phase,
+        EquipmentIdCapturePhase.awaitingConfirmation,
+      );
+      expect(controller.state.isConfirmed, isFalse);
+      expect(controller.state.candidates.first.displayValue, 'SN-REUSE-99');
+      expect(controller.confirm(), isTrue);
+      expect(
+        controller.state.confirmed!.method,
+        EquipmentIdCaptureMethod.ocrConfirmed,
+      );
+    },
+  );
+
+  test('recognizeExistingImage OCR failure keeps prior confirmation', () async {
+    final controller = EquipmentIdCaptureController(
+      kind: EquipmentIdCaptureKind.serialNumber,
+      imageCapture: FakeImageCapture(isSupported: false),
+      textRecognition: FakeTextRecognition(error: Exception('ocr down')),
+      cameraPermission: FakeCameraPermission(),
+      initialConfirmed: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'KEEPME',
+        method: EquipmentIdCaptureMethod.manual,
+      ),
+    );
+
+    await controller.recognizeExistingImage(
+      const CapturedImage(bytes: [1], path: '/tmp/x.jpg'),
+    );
+
+    expect(controller.state.isConfirmed, isTrue);
+    expect(controller.state.confirmed!.value, 'KEEPME');
+    expect(
+      controller.state.failure!.kind,
+      EquipmentIdCaptureFailureKind.ocrFailure,
+    );
   });
 }

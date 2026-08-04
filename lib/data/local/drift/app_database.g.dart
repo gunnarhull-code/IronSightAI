@@ -2349,6 +2349,638 @@ class InspectionDetailedResponsesCompanion
   }
 }
 
+class $InspectionMediaItemsTable extends InspectionMediaItems
+    with TableInfo<$InspectionMediaItemsTable, LocalInspectionMediaRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $InspectionMediaItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _companyIdMeta = const VerificationMeta(
+    'companyId',
+  );
+  @override
+  late final GeneratedColumn<String> companyId = GeneratedColumn<String>(
+    'company_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _inspectionIdMeta = const VerificationMeta(
+    'inspectionId',
+  );
+  @override
+  late final GeneratedColumn<String> inspectionId = GeneratedColumn<String>(
+    'inspection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _slotMeta = const VerificationMeta('slot');
+  @override
+  late final GeneratedColumn<String> slot = GeneratedColumn<String>(
+    'slot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localRelativePathMeta = const VerificationMeta(
+    'localRelativePath',
+  );
+  @override
+  late final GeneratedColumn<String> localRelativePath =
+      GeneratedColumn<String>(
+        'local_relative_path',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _byteSizeMeta = const VerificationMeta(
+    'byteSize',
+  );
+  @override
+  late final GeneratedColumn<int> byteSize = GeneratedColumn<int>(
+    'byte_size',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _capturedAtMeta = const VerificationMeta(
+    'capturedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> capturedAt = GeneratedColumn<DateTime>(
+    'captured_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localUpdatedAtMeta = const VerificationMeta(
+    'localUpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> localUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'local_updated_at',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    companyId,
+    inspectionId,
+    slot,
+    localRelativePath,
+    mimeType,
+    byteSize,
+    capturedAt,
+    updatedAt,
+    localUpdatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'inspection_media';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LocalInspectionMediaRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('company_id')) {
+      context.handle(
+        _companyIdMeta,
+        companyId.isAcceptableOrUnknown(data['company_id']!, _companyIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_companyIdMeta);
+    }
+    if (data.containsKey('inspection_id')) {
+      context.handle(
+        _inspectionIdMeta,
+        inspectionId.isAcceptableOrUnknown(
+          data['inspection_id']!,
+          _inspectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_inspectionIdMeta);
+    }
+    if (data.containsKey('slot')) {
+      context.handle(
+        _slotMeta,
+        slot.isAcceptableOrUnknown(data['slot']!, _slotMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slotMeta);
+    }
+    if (data.containsKey('local_relative_path')) {
+      context.handle(
+        _localRelativePathMeta,
+        localRelativePath.isAcceptableOrUnknown(
+          data['local_relative_path']!,
+          _localRelativePathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_localRelativePathMeta);
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('byte_size')) {
+      context.handle(
+        _byteSizeMeta,
+        byteSize.isAcceptableOrUnknown(data['byte_size']!, _byteSizeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_byteSizeMeta);
+    }
+    if (data.containsKey('captured_at')) {
+      context.handle(
+        _capturedAtMeta,
+        capturedAt.isAcceptableOrUnknown(data['captured_at']!, _capturedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_capturedAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('local_updated_at')) {
+      context.handle(
+        _localUpdatedAtMeta,
+        localUpdatedAt.isAcceptableOrUnknown(
+          data['local_updated_at']!,
+          _localUpdatedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_localUpdatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LocalInspectionMediaRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LocalInspectionMediaRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      companyId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}company_id'],
+      )!,
+      inspectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}inspection_id'],
+      )!,
+      slot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}slot'],
+      )!,
+      localRelativePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_relative_path'],
+      )!,
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      )!,
+      byteSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}byte_size'],
+      )!,
+      capturedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}captured_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      localUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}local_updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $InspectionMediaItemsTable createAlias(String alias) {
+    return $InspectionMediaItemsTable(attachedDatabase, alias);
+  }
+}
+
+class LocalInspectionMediaRow extends DataClass
+    implements Insertable<LocalInspectionMediaRow> {
+  final String id;
+  final String companyId;
+  final String inspectionId;
+  final String slot;
+  final String localRelativePath;
+  final String mimeType;
+  final int byteSize;
+  final DateTime capturedAt;
+  final DateTime updatedAt;
+  final DateTime localUpdatedAt;
+  const LocalInspectionMediaRow({
+    required this.id,
+    required this.companyId,
+    required this.inspectionId,
+    required this.slot,
+    required this.localRelativePath,
+    required this.mimeType,
+    required this.byteSize,
+    required this.capturedAt,
+    required this.updatedAt,
+    required this.localUpdatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['company_id'] = Variable<String>(companyId);
+    map['inspection_id'] = Variable<String>(inspectionId);
+    map['slot'] = Variable<String>(slot);
+    map['local_relative_path'] = Variable<String>(localRelativePath);
+    map['mime_type'] = Variable<String>(mimeType);
+    map['byte_size'] = Variable<int>(byteSize);
+    map['captured_at'] = Variable<DateTime>(capturedAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
+    return map;
+  }
+
+  InspectionMediaItemsCompanion toCompanion(bool nullToAbsent) {
+    return InspectionMediaItemsCompanion(
+      id: Value(id),
+      companyId: Value(companyId),
+      inspectionId: Value(inspectionId),
+      slot: Value(slot),
+      localRelativePath: Value(localRelativePath),
+      mimeType: Value(mimeType),
+      byteSize: Value(byteSize),
+      capturedAt: Value(capturedAt),
+      updatedAt: Value(updatedAt),
+      localUpdatedAt: Value(localUpdatedAt),
+    );
+  }
+
+  factory LocalInspectionMediaRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LocalInspectionMediaRow(
+      id: serializer.fromJson<String>(json['id']),
+      companyId: serializer.fromJson<String>(json['companyId']),
+      inspectionId: serializer.fromJson<String>(json['inspectionId']),
+      slot: serializer.fromJson<String>(json['slot']),
+      localRelativePath: serializer.fromJson<String>(json['localRelativePath']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      byteSize: serializer.fromJson<int>(json['byteSize']),
+      capturedAt: serializer.fromJson<DateTime>(json['capturedAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'companyId': serializer.toJson<String>(companyId),
+      'inspectionId': serializer.toJson<String>(inspectionId),
+      'slot': serializer.toJson<String>(slot),
+      'localRelativePath': serializer.toJson<String>(localRelativePath),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'byteSize': serializer.toJson<int>(byteSize),
+      'capturedAt': serializer.toJson<DateTime>(capturedAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
+    };
+  }
+
+  LocalInspectionMediaRow copyWith({
+    String? id,
+    String? companyId,
+    String? inspectionId,
+    String? slot,
+    String? localRelativePath,
+    String? mimeType,
+    int? byteSize,
+    DateTime? capturedAt,
+    DateTime? updatedAt,
+    DateTime? localUpdatedAt,
+  }) => LocalInspectionMediaRow(
+    id: id ?? this.id,
+    companyId: companyId ?? this.companyId,
+    inspectionId: inspectionId ?? this.inspectionId,
+    slot: slot ?? this.slot,
+    localRelativePath: localRelativePath ?? this.localRelativePath,
+    mimeType: mimeType ?? this.mimeType,
+    byteSize: byteSize ?? this.byteSize,
+    capturedAt: capturedAt ?? this.capturedAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+  );
+  LocalInspectionMediaRow copyWithCompanion(
+    InspectionMediaItemsCompanion data,
+  ) {
+    return LocalInspectionMediaRow(
+      id: data.id.present ? data.id.value : this.id,
+      companyId: data.companyId.present ? data.companyId.value : this.companyId,
+      inspectionId: data.inspectionId.present
+          ? data.inspectionId.value
+          : this.inspectionId,
+      slot: data.slot.present ? data.slot.value : this.slot,
+      localRelativePath: data.localRelativePath.present
+          ? data.localRelativePath.value
+          : this.localRelativePath,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      byteSize: data.byteSize.present ? data.byteSize.value : this.byteSize,
+      capturedAt: data.capturedAt.present
+          ? data.capturedAt.value
+          : this.capturedAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      localUpdatedAt: data.localUpdatedAt.present
+          ? data.localUpdatedAt.value
+          : this.localUpdatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LocalInspectionMediaRow(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('inspectionId: $inspectionId, ')
+          ..write('slot: $slot, ')
+          ..write('localRelativePath: $localRelativePath, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('byteSize: $byteSize, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('localUpdatedAt: $localUpdatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    companyId,
+    inspectionId,
+    slot,
+    localRelativePath,
+    mimeType,
+    byteSize,
+    capturedAt,
+    updatedAt,
+    localUpdatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LocalInspectionMediaRow &&
+          other.id == this.id &&
+          other.companyId == this.companyId &&
+          other.inspectionId == this.inspectionId &&
+          other.slot == this.slot &&
+          other.localRelativePath == this.localRelativePath &&
+          other.mimeType == this.mimeType &&
+          other.byteSize == this.byteSize &&
+          other.capturedAt == this.capturedAt &&
+          other.updatedAt == this.updatedAt &&
+          other.localUpdatedAt == this.localUpdatedAt);
+}
+
+class InspectionMediaItemsCompanion
+    extends UpdateCompanion<LocalInspectionMediaRow> {
+  final Value<String> id;
+  final Value<String> companyId;
+  final Value<String> inspectionId;
+  final Value<String> slot;
+  final Value<String> localRelativePath;
+  final Value<String> mimeType;
+  final Value<int> byteSize;
+  final Value<DateTime> capturedAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime> localUpdatedAt;
+  final Value<int> rowid;
+  const InspectionMediaItemsCompanion({
+    this.id = const Value.absent(),
+    this.companyId = const Value.absent(),
+    this.inspectionId = const Value.absent(),
+    this.slot = const Value.absent(),
+    this.localRelativePath = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.byteSize = const Value.absent(),
+    this.capturedAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.localUpdatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  InspectionMediaItemsCompanion.insert({
+    required String id,
+    required String companyId,
+    required String inspectionId,
+    required String slot,
+    required String localRelativePath,
+    required String mimeType,
+    required int byteSize,
+    required DateTime capturedAt,
+    required DateTime updatedAt,
+    required DateTime localUpdatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       companyId = Value(companyId),
+       inspectionId = Value(inspectionId),
+       slot = Value(slot),
+       localRelativePath = Value(localRelativePath),
+       mimeType = Value(mimeType),
+       byteSize = Value(byteSize),
+       capturedAt = Value(capturedAt),
+       updatedAt = Value(updatedAt),
+       localUpdatedAt = Value(localUpdatedAt);
+  static Insertable<LocalInspectionMediaRow> custom({
+    Expression<String>? id,
+    Expression<String>? companyId,
+    Expression<String>? inspectionId,
+    Expression<String>? slot,
+    Expression<String>? localRelativePath,
+    Expression<String>? mimeType,
+    Expression<int>? byteSize,
+    Expression<DateTime>? capturedAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? localUpdatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (companyId != null) 'company_id': companyId,
+      if (inspectionId != null) 'inspection_id': inspectionId,
+      if (slot != null) 'slot': slot,
+      if (localRelativePath != null) 'local_relative_path': localRelativePath,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (byteSize != null) 'byte_size': byteSize,
+      if (capturedAt != null) 'captured_at': capturedAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  InspectionMediaItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? companyId,
+    Value<String>? inspectionId,
+    Value<String>? slot,
+    Value<String>? localRelativePath,
+    Value<String>? mimeType,
+    Value<int>? byteSize,
+    Value<DateTime>? capturedAt,
+    Value<DateTime>? updatedAt,
+    Value<DateTime>? localUpdatedAt,
+    Value<int>? rowid,
+  }) {
+    return InspectionMediaItemsCompanion(
+      id: id ?? this.id,
+      companyId: companyId ?? this.companyId,
+      inspectionId: inspectionId ?? this.inspectionId,
+      slot: slot ?? this.slot,
+      localRelativePath: localRelativePath ?? this.localRelativePath,
+      mimeType: mimeType ?? this.mimeType,
+      byteSize: byteSize ?? this.byteSize,
+      capturedAt: capturedAt ?? this.capturedAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (companyId.present) {
+      map['company_id'] = Variable<String>(companyId.value);
+    }
+    if (inspectionId.present) {
+      map['inspection_id'] = Variable<String>(inspectionId.value);
+    }
+    if (slot.present) {
+      map['slot'] = Variable<String>(slot.value);
+    }
+    if (localRelativePath.present) {
+      map['local_relative_path'] = Variable<String>(localRelativePath.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (byteSize.present) {
+      map['byte_size'] = Variable<int>(byteSize.value);
+    }
+    if (capturedAt.present) {
+      map['captured_at'] = Variable<DateTime>(capturedAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (localUpdatedAt.present) {
+      map['local_updated_at'] = Variable<DateTime>(localUpdatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('InspectionMediaItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('companyId: $companyId, ')
+          ..write('inspectionId: $inspectionId, ')
+          ..write('slot: $slot, ')
+          ..write('localRelativePath: $localRelativePath, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('byteSize: $byteSize, ')
+          ..write('capturedAt: $capturedAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('localUpdatedAt: $localUpdatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $LocalTenantContextsTable extends LocalTenantContexts
     with TableInfo<$LocalTenantContextsTable, LocalTenantContextRow> {
   @override
@@ -3641,6 +4273,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $InspectionCategoryRatingsTable(this);
   late final $InspectionDetailedResponsesTable inspectionDetailedResponses =
       $InspectionDetailedResponsesTable(this);
+  late final $InspectionMediaItemsTable inspectionMediaItems =
+      $InspectionMediaItemsTable(this);
   late final $LocalTenantContextsTable localTenantContexts =
       $LocalTenantContextsTable(this);
   late final $LocalEquipmentCacheTable localEquipmentCache =
@@ -3653,6 +4287,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     inspections,
     inspectionCategoryRatings,
     inspectionDetailedResponses,
+    inspectionMediaItems,
     localTenantContexts,
     localEquipmentCache,
   ];
@@ -5269,6 +5904,325 @@ typedef $$InspectionDetailedResponsesTableProcessedTableManager =
       LocalDetailedResponseRow,
       PrefetchHooks Function({bool inspectionId})
     >;
+typedef $$InspectionMediaItemsTableCreateCompanionBuilder =
+    InspectionMediaItemsCompanion Function({
+      required String id,
+      required String companyId,
+      required String inspectionId,
+      required String slot,
+      required String localRelativePath,
+      required String mimeType,
+      required int byteSize,
+      required DateTime capturedAt,
+      required DateTime updatedAt,
+      required DateTime localUpdatedAt,
+      Value<int> rowid,
+    });
+typedef $$InspectionMediaItemsTableUpdateCompanionBuilder =
+    InspectionMediaItemsCompanion Function({
+      Value<String> id,
+      Value<String> companyId,
+      Value<String> inspectionId,
+      Value<String> slot,
+      Value<String> localRelativePath,
+      Value<String> mimeType,
+      Value<int> byteSize,
+      Value<DateTime> capturedAt,
+      Value<DateTime> updatedAt,
+      Value<DateTime> localUpdatedAt,
+      Value<int> rowid,
+    });
+
+class $$InspectionMediaItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $InspectionMediaItemsTable> {
+  $$InspectionMediaItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get inspectionId => $composableBuilder(
+    column: $table.inspectionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get slot => $composableBuilder(
+    column: $table.slot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localRelativePath => $composableBuilder(
+    column: $table.localRelativePath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get byteSize => $composableBuilder(
+    column: $table.byteSize,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$InspectionMediaItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $InspectionMediaItemsTable> {
+  $$InspectionMediaItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get companyId => $composableBuilder(
+    column: $table.companyId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get inspectionId => $composableBuilder(
+    column: $table.inspectionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get slot => $composableBuilder(
+    column: $table.slot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localRelativePath => $composableBuilder(
+    column: $table.localRelativePath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get byteSize => $composableBuilder(
+    column: $table.byteSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$InspectionMediaItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $InspectionMediaItemsTable> {
+  $$InspectionMediaItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get companyId =>
+      $composableBuilder(column: $table.companyId, builder: (column) => column);
+
+  GeneratedColumn<String> get inspectionId => $composableBuilder(
+    column: $table.inspectionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get slot =>
+      $composableBuilder(column: $table.slot, builder: (column) => column);
+
+  GeneratedColumn<String> get localRelativePath => $composableBuilder(
+    column: $table.localRelativePath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<int> get byteSize =>
+      $composableBuilder(column: $table.byteSize, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get capturedAt => $composableBuilder(
+    column: $table.capturedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get localUpdatedAt => $composableBuilder(
+    column: $table.localUpdatedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$InspectionMediaItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $InspectionMediaItemsTable,
+          LocalInspectionMediaRow,
+          $$InspectionMediaItemsTableFilterComposer,
+          $$InspectionMediaItemsTableOrderingComposer,
+          $$InspectionMediaItemsTableAnnotationComposer,
+          $$InspectionMediaItemsTableCreateCompanionBuilder,
+          $$InspectionMediaItemsTableUpdateCompanionBuilder,
+          (
+            LocalInspectionMediaRow,
+            BaseReferences<
+              _$AppDatabase,
+              $InspectionMediaItemsTable,
+              LocalInspectionMediaRow
+            >,
+          ),
+          LocalInspectionMediaRow,
+          PrefetchHooks Function()
+        > {
+  $$InspectionMediaItemsTableTableManager(
+    _$AppDatabase db,
+    $InspectionMediaItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$InspectionMediaItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$InspectionMediaItemsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$InspectionMediaItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> companyId = const Value.absent(),
+                Value<String> inspectionId = const Value.absent(),
+                Value<String> slot = const Value.absent(),
+                Value<String> localRelativePath = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<int> byteSize = const Value.absent(),
+                Value<DateTime> capturedAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<DateTime> localUpdatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => InspectionMediaItemsCompanion(
+                id: id,
+                companyId: companyId,
+                inspectionId: inspectionId,
+                slot: slot,
+                localRelativePath: localRelativePath,
+                mimeType: mimeType,
+                byteSize: byteSize,
+                capturedAt: capturedAt,
+                updatedAt: updatedAt,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String companyId,
+                required String inspectionId,
+                required String slot,
+                required String localRelativePath,
+                required String mimeType,
+                required int byteSize,
+                required DateTime capturedAt,
+                required DateTime updatedAt,
+                required DateTime localUpdatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => InspectionMediaItemsCompanion.insert(
+                id: id,
+                companyId: companyId,
+                inspectionId: inspectionId,
+                slot: slot,
+                localRelativePath: localRelativePath,
+                mimeType: mimeType,
+                byteSize: byteSize,
+                capturedAt: capturedAt,
+                updatedAt: updatedAt,
+                localUpdatedAt: localUpdatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$InspectionMediaItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $InspectionMediaItemsTable,
+      LocalInspectionMediaRow,
+      $$InspectionMediaItemsTableFilterComposer,
+      $$InspectionMediaItemsTableOrderingComposer,
+      $$InspectionMediaItemsTableAnnotationComposer,
+      $$InspectionMediaItemsTableCreateCompanionBuilder,
+      $$InspectionMediaItemsTableUpdateCompanionBuilder,
+      (
+        LocalInspectionMediaRow,
+        BaseReferences<
+          _$AppDatabase,
+          $InspectionMediaItemsTable,
+          LocalInspectionMediaRow
+        >,
+      ),
+      LocalInspectionMediaRow,
+      PrefetchHooks Function()
+    >;
 typedef $$LocalTenantContextsTableCreateCompanionBuilder =
     LocalTenantContextsCompanion Function({
       required String id,
@@ -5937,6 +6891,8 @@ class $AppDatabaseManager {
         _db,
         _db.inspectionDetailedResponses,
       );
+  $$InspectionMediaItemsTableTableManager get inspectionMediaItems =>
+      $$InspectionMediaItemsTableTableManager(_db, _db.inspectionMediaItems);
   $$LocalTenantContextsTableTableManager get localTenantContexts =>
       $$LocalTenantContextsTableTableManager(_db, _db.localTenantContexts);
   $$LocalEquipmentCacheTableTableManager get localEquipmentCache =>
