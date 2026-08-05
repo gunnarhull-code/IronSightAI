@@ -10,11 +10,10 @@ import '../repositories/local_tenant_context_repository.dart';
 /// Cached context never authorizes server access — it only unlocks the local
 /// workspace after auth session restore.
 class ResolveCompanyAccess {
-  const ResolveCompanyAccess({
-    required CompanyRepository companyRepository,
-    required LocalTenantContextRepository tenantContextRepository,
-  }) : _companyRepository = companyRepository,
-       _tenantContextRepository = tenantContextRepository;
+  const ResolveCompanyAccess(
+    this._companyRepository,
+    this._tenantContextRepository,
+  );
 
   final CompanyRepository _companyRepository;
   final LocalTenantContextRepository _tenantContextRepository;

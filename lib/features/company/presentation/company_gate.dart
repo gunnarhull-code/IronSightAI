@@ -62,8 +62,8 @@ class _CompanyGateState extends State<CompanyGate> {
     }
 
     final resolve = ResolveCompanyAccess(
-      companyRepository: widget.repository,
-      tenantContextRepository: workspace.tenantContext,
+      widget.repository,
+      workspace.tenantContext,
     );
     final resolution = await resolve(userId: userId);
 

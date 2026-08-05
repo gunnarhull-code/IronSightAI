@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/app/app.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';

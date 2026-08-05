@@ -33,10 +33,7 @@ void main() {
   });
 
   ResolveCompanyAccess buildResolve() {
-    return ResolveCompanyAccess(
-      companyRepository: companies,
-      tenantContextRepository: workspace.tenantContext,
-    );
+    return ResolveCompanyAccess(companies, workspace.tenantContext);
   }
 
   test(
