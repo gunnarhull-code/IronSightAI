@@ -69,6 +69,8 @@ class _CompanyGateState extends State<CompanyGate> {
 
     switch (resolution.kind) {
       case CompanyAccessKind.onboarding:
+        // Online authority says no membership — drop any stale local context.
+        await workspace.tenantContext.clear();
         widget.onInspectionSessionChanged?.call(null);
         return const _CompanyGateResult.onboarding();
       case CompanyAccessKind.online:
