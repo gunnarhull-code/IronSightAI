@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
 import 'package:ironsight_ai/data/local/offline_inspection_workspace.dart';
+import 'package:ironsight_ai/data/remote/remote_connectivity_failure.dart';
 import 'package:ironsight_ai/domain/entities/company.dart';
+import 'package:ironsight_ai/domain/exceptions/remote_service_unavailable_exception.dart';
 import 'package:ironsight_ai/domain/use_cases/resolve_company_access.dart';
 
 import 'support/fake_auth_session_reader.dart';
@@ -36,6 +40,13 @@ void main() {
     return ResolveCompanyAccess(companies, workspace.tenantContext);
   }
 
+  Future<void> activateMatchingCache() {
+    return workspace.tenantContext.activate(
+      companyId: 'company-a',
+      userId: 'user-1',
+    );
+  }
+
   test(
     'online resolution returns company and leaves cache for refresh',
     () async {
@@ -47,13 +58,12 @@ void main() {
   );
 
   test(
-    'offline cold start restores cached context for matching user',
+    'genuine network unavailability with matching cache restores workspace',
     () async {
-      await workspace.tenantContext.activate(
-        companyId: 'company-a',
-        userId: 'user-1',
+      await activateMatchingCache();
+      companies.getError = const RemoteServiceUnavailableException(
+        'network unavailable',
       );
-      companies.getError = Exception('network unavailable');
 
       final resolution = await buildResolve()(userId: 'user-1');
 
@@ -64,26 +74,54 @@ void main() {
     },
   );
 
-  test('no-cache offline failure is recoverable offlineUnavailable', () async {
-    companies.getError = Exception('network unavailable');
+  test(
+    'mapped TimeoutException connectivity failure restores matching cache',
+    () async {
+      await activateMatchingCache();
+      final mapped = mapRemoteFailure(TimeoutException('connection timed out'));
+      expect(mapped, isA<RemoteServiceUnavailableException>());
+      companies.getError = mapped;
+
+      final resolution = await buildResolve()(userId: 'user-1');
+
+      expect(resolution.kind, CompanyAccessKind.cached);
+      expect(resolution.companyId, 'company-a');
+    },
+  );
+
+  test(
+    'authorization or authentication failure does not use the cache',
+    () async {
+      await activateMatchingCache();
+      companies.getError = Exception('Invalid JWT / not authorized');
+
+      final resolution = await buildResolve()(userId: 'user-1');
+
+      expect(resolution.kind, CompanyAccessKind.lookupFailed);
+      expect(await workspace.tenantContext.getActive(), isNotNull);
+    },
+  );
+
+  test('server or malformed-response failure does not use the cache', () async {
+    await activateMatchingCache();
+    companies.getError = StateError(
+      'Current user profile is missing a company_id',
+    );
 
     final resolution = await buildResolve()(userId: 'user-1');
 
-    expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
-    expect(resolution.error, isA<Exception>());
+    expect(resolution.kind, CompanyAccessKind.lookupFailed);
+    expect(resolution.error, isA<StateError>());
   });
 
-  test('sign-out clear prevents stale cached context restore', () async {
-    await workspace.tenantContext.activate(
-      companyId: 'company-a',
-      userId: 'user-1',
-    );
-    await workspace.tenantContext.clear();
-    companies.getError = Exception('network unavailable');
+  test('unexpected exceptions do not use the cache', () async {
+    await activateMatchingCache();
+    companies.getError = FormatException('unexpected payload shape');
 
     final resolution = await buildResolve()(userId: 'user-1');
 
-    expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
+    expect(resolution.kind, CompanyAccessKind.lookupFailed);
+    expect(resolution.error, isA<FormatException>());
   });
 
   test(
@@ -93,7 +131,9 @@ void main() {
         companyId: 'company-a',
         userId: 'user-1',
       );
-      companies.getError = Exception('network unavailable');
+      companies.getError = const RemoteServiceUnavailableException(
+        'network unavailable',
+      );
 
       final resolution = await buildResolve()(userId: 'user-2');
 
@@ -108,7 +148,9 @@ void main() {
         companyId: 'company-b',
         userId: 'user-b',
       );
-      companies.getError = Exception('network unavailable');
+      companies.getError = const RemoteServiceUnavailableException(
+        'network unavailable',
+      );
 
       final resolution = await buildResolve()(userId: 'user-a');
 
@@ -118,6 +160,37 @@ void main() {
       expect(stillCached?.userId, 'user-b');
     },
   );
+
+  test('no-cache offline failure is recoverable offlineUnavailable', () async {
+    companies.getError = const RemoteServiceUnavailableException(
+      'network unavailable',
+    );
+
+    final resolution = await buildResolve()(userId: 'user-1');
+
+    expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
+    expect(resolution.error, isA<RemoteServiceUnavailableException>());
+  });
+
+  test('sign-out clear prevents stale cached context restore', () async {
+    await activateMatchingCache();
+    await workspace.tenantContext.clear();
+    companies.getError = const RemoteServiceUnavailableException(
+      'network unavailable',
+    );
+
+    final resolution = await buildResolve()(userId: 'user-1');
+
+    expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
+  });
+
+  test('online null membership returns onboarding', () async {
+    companies.company = null;
+
+    final resolution = await buildResolve()(userId: 'user-1');
+
+    expect(resolution.kind, CompanyAccessKind.onboarding);
+  });
 
   test(
     'online success is preferred over existing cache (refresh path)',
@@ -137,5 +210,36 @@ void main() {
 
   test('rejects empty userId', () async {
     expect(() => buildResolve()(userId: '  '), throwsA(isA<ArgumentError>()));
+  });
+
+  group('remote connectivity classification', () {
+    test('treats TimeoutException as connectivity failure', () {
+      expect(
+        isRemoteConnectivityFailure(TimeoutException('timed out')),
+        isTrue,
+      );
+    });
+
+    test('does not treat Auth-like or PostgREST-like failures as offline', () {
+      expect(
+        isRemoteConnectivityFailure(Exception('Invalid login credentials')),
+        isFalse,
+      );
+      expect(
+        isRemoteConnectivityFailure(
+          StateError('Current user profile is missing a company_id'),
+        ),
+        isFalse,
+      );
+      expect(isRemoteConnectivityFailure(FormatException('bad json')), isFalse);
+    });
+
+    test('mapRemoteFailure wraps only connectivity failures', () {
+      final wrapped = mapRemoteFailure(TimeoutException('timed out'));
+      expect(wrapped, isA<RemoteServiceUnavailableException>());
+
+      final unchanged = FormatException('bad json');
+      expect(identical(mapRemoteFailure(unchanged), unchanged), isTrue);
+    });
   });
 }

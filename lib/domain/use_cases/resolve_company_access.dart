@@ -1,14 +1,19 @@
 import '../entities/company.dart';
 import '../entities/local_tenant_context.dart';
+import '../exceptions/remote_service_unavailable_exception.dart';
 import '../repositories/company_repository.dart';
 import '../repositories/local_tenant_context_repository.dart';
 
 /// Resolves company membership for the signed-in user.
 ///
-/// Online success returns the remote company. Online failure falls back to the
-/// locally cached [LocalTenantContext] only when it belongs to [userId].
-/// Cached context never authorizes server access — it only unlocks the local
-/// workspace after auth session restore.
+/// Online success returns the remote company. Only
+/// [RemoteServiceUnavailableException] (connectivity / unreachable remote)
+/// may fall back to the locally cached [LocalTenantContext], and only when
+/// that cache belongs to [userId].
+///
+/// Authorization, authentication, RLS, malformed-response, server, and
+/// unexpected programming failures never unlock the cached workspace.
+/// Cached context never authorizes server access.
 class ResolveCompanyAccess {
   const ResolveCompanyAccess(
     this._companyRepository,
@@ -30,7 +35,7 @@ class ResolveCompanyAccess {
         return const CompanyAccessResolution.onboarding();
       }
       return CompanyAccessResolution.online(company: company);
-    } catch (error, stackTrace) {
+    } on RemoteServiceUnavailableException catch (error, stackTrace) {
       final cached = await _tenantContextRepository.getActive();
       if (_isUsableCache(cached, trimmedUserId)) {
         return CompanyAccessResolution.cached(
@@ -39,6 +44,11 @@ class ResolveCompanyAccess {
         );
       }
       return CompanyAccessResolution.offlineUnavailable(
+        error: error,
+        stackTrace: stackTrace,
+      );
+    } catch (error, stackTrace) {
+      return CompanyAccessResolution.lookupFailed(
         error: error,
         stackTrace: stackTrace,
       );
@@ -88,6 +98,15 @@ class CompanyAccessResolution {
          stackTrace: stackTrace,
        );
 
+  const CompanyAccessResolution.lookupFailed({
+    required Object error,
+    StackTrace? stackTrace,
+  }) : this._(
+         kind: CompanyAccessKind.lookupFailed,
+         error: error,
+         stackTrace: stackTrace,
+       );
+
   final CompanyAccessKind kind;
   final Company? company;
   final String? companyId;
@@ -103,9 +122,16 @@ class CompanyAccessResolution {
         return companyId!;
       case CompanyAccessKind.onboarding:
       case CompanyAccessKind.offlineUnavailable:
+      case CompanyAccessKind.lookupFailed:
         throw StateError('No resolved company for $kind');
     }
   }
 }
 
-enum CompanyAccessKind { onboarding, online, cached, offlineUnavailable }
+enum CompanyAccessKind {
+  onboarding,
+  online,
+  cached,
+  offlineUnavailable,
+  lookupFailed,
+}

@@ -6,6 +6,7 @@ import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
 import 'package:ironsight_ai/data/local/offline_inspection_workspace.dart';
 import 'package:ironsight_ai/domain/entities/company.dart';
 import 'package:ironsight_ai/domain/entities/equipment.dart';
+import 'package:ironsight_ai/domain/exceptions/remote_service_unavailable_exception.dart';
 import 'package:ironsight_ai/features/auth/presentation/auth_gate.dart';
 import 'package:ironsight_ai/features/company/presentation/company_gate.dart';
 
@@ -70,7 +71,9 @@ void main() {
     'offline cold start restores workspace when cache matches auth user',
     (tester) async {
       await workspace.prepareTenant(companyId: 'company-a', userId: 'user-1');
-      companies.getError = Exception('network unavailable');
+      companies.getError = const RemoteServiceUnavailableException(
+        'network unavailable',
+      );
 
       await pumpGate(tester, isSignedIn: true);
 
@@ -113,7 +116,9 @@ void main() {
       equipmentId: 'eq-1',
       createdByUserId: 'user-1',
     );
-    companies.getError = Exception('network unavailable');
+    companies.getError = const RemoteServiceUnavailableException(
+      'network unavailable',
+    );
 
     await pumpGate(tester, isSignedIn: true);
 
@@ -145,7 +150,9 @@ void main() {
   testWidgets('no usable cache shows recoverable offline message', (
     tester,
   ) async {
-    companies.getError = Exception('network unavailable');
+    companies.getError = const RemoteServiceUnavailableException(
+      'network unavailable',
+    );
 
     await pumpGate(tester, isSignedIn: true);
 
@@ -155,6 +162,26 @@ void main() {
     );
     expect(find.text('Retry'), findsOneWidget);
     expect(find.text('Heavy Equipment Inspections'), findsNothing);
+  });
+
+  testWidgets('authorization failure with cache does not open the workspace', (
+    tester,
+  ) async {
+    await workspace.prepareTenant(companyId: 'company-a', userId: 'user-1');
+    companies.getError = Exception('Invalid JWT / not authorized');
+
+    await pumpGate(tester, isSignedIn: true);
+
+    expect(
+      find.text('Could not load your company. Please try again.'),
+      findsOneWidget,
+    );
+    expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Heavy Equipment Inspections'), findsNothing);
+    expect(
+      find.textContaining('You\'re offline and no company is cached'),
+      findsNothing,
+    );
   });
 
   testWidgets('sign-out clears cached company context', (tester) async {
@@ -202,7 +229,9 @@ void main() {
       companyId: 'company-a',
       userId: 'user-other',
     );
-    companies.getError = Exception('network unavailable');
+    companies.getError = const RemoteServiceUnavailableException(
+      'network unavailable',
+    );
     authSession.currentUserId = 'user-1';
 
     await pumpGate(tester, isSignedIn: true);

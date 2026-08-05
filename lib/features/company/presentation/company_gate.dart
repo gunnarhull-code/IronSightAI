@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/inspection_session.dart';
 import '../../../data/local/offline_inspection_workspace.dart';
 import '../../../domain/entities/company.dart';
+import '../../../domain/exceptions/remote_service_unavailable_exception.dart';
 import '../../../domain/repositories/auth_session_reader.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/use_cases/create_company_for_current_user.dart';
@@ -100,6 +101,16 @@ class _CompanyGateState extends State<CompanyGate> {
         }
         widget.onInspectionSessionChanged?.call(null);
         return const _CompanyGateResult.offlineUnavailable();
+      case CompanyAccessKind.lookupFailed:
+        debugPrint(
+          'CompanyGate: company lookup failed without cache fallback: '
+          '${resolution.error}',
+        );
+        if (resolution.stackTrace != null) {
+          debugPrintStack(stackTrace: resolution.stackTrace);
+        }
+        widget.onInspectionSessionChanged?.call(null);
+        return const _CompanyGateResult.lookupFailed();
     }
   }
 
@@ -113,11 +124,16 @@ class _CompanyGateState extends State<CompanyGate> {
       }
       widget.onInspectionSessionChanged?.call(null);
       return _CompanyGateResult.dashboard(company: company);
+    } on RemoteServiceUnavailableException catch (error, stackTrace) {
+      debugPrint('CompanyGate: company lookup offline: $error');
+      debugPrintStack(stackTrace: stackTrace);
+      widget.onInspectionSessionChanged?.call(null);
+      return const _CompanyGateResult.offlineUnavailable();
     } catch (error, stackTrace) {
       debugPrint('CompanyGate: company lookup failed: $error');
       debugPrintStack(stackTrace: stackTrace);
       widget.onInspectionSessionChanged?.call(null);
-      return const _CompanyGateResult.offlineUnavailable();
+      return const _CompanyGateResult.lookupFailed();
     }
   }
 
@@ -178,7 +194,13 @@ class _CompanyGateState extends State<CompanyGate> {
         }
 
         final result = snapshot.data;
-        if (result == null || result.offlineUnavailable) {
+        if (result == null ||
+            result.offlineUnavailable ||
+            result.lookupFailed) {
+          final message = result?.offlineUnavailable == true
+              ? 'You\'re offline and no company is cached on this '
+                    'device. Connect to the internet, then try again.'
+              : 'Could not load your company. Please try again.';
           return Scaffold(
             body: SafeArea(
               child: Padding(
@@ -187,11 +209,7 @@ class _CompanyGateState extends State<CompanyGate> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'You\'re offline and no company is cached on this '
-                      'device. Connect to the internet, then try again.',
-                      textAlign: TextAlign.center,
-                    ),
+                    Text(message, textAlign: TextAlign.center),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _retryCompanyLookup,
@@ -226,15 +244,31 @@ class _CompanyGateResult {
   const _CompanyGateResult._({
     required this.needsOnboarding,
     required this.offlineUnavailable,
+    required this.lookupFailed,
     this.company,
     this.session,
   });
 
   const _CompanyGateResult.onboarding()
-    : this._(needsOnboarding: true, offlineUnavailable: false);
+    : this._(
+        needsOnboarding: true,
+        offlineUnavailable: false,
+        lookupFailed: false,
+      );
 
   const _CompanyGateResult.offlineUnavailable()
-    : this._(needsOnboarding: false, offlineUnavailable: true);
+    : this._(
+        needsOnboarding: false,
+        offlineUnavailable: true,
+        lookupFailed: false,
+      );
+
+  const _CompanyGateResult.lookupFailed()
+    : this._(
+        needsOnboarding: false,
+        offlineUnavailable: false,
+        lookupFailed: true,
+      );
 
   const _CompanyGateResult.dashboard({
     required Company company,
@@ -242,6 +276,7 @@ class _CompanyGateResult {
   }) : this._(
          needsOnboarding: false,
          offlineUnavailable: false,
+         lookupFailed: false,
          company: company,
          session: session,
        );
@@ -250,11 +285,13 @@ class _CompanyGateResult {
     : this._(
         needsOnboarding: false,
         offlineUnavailable: false,
+        lookupFailed: false,
         session: session,
       );
 
   final bool needsOnboarding;
   final bool offlineUnavailable;
+  final bool lookupFailed;
   final Company? company;
   final InspectionSession? session;
 }

@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:ironsight_ai/app/app.dart';
 import 'package:ironsight_ai/domain/entities/company.dart';
+import 'package:ironsight_ai/domain/exceptions/remote_service_unavailable_exception.dart';
 import 'package:ironsight_ai/features/auth/presentation/auth_gate.dart';
 import 'package:ironsight_ai/features/company/presentation/company_gate.dart';
 import 'package:ironsight_ai/features/dashboard/presentation/dashboard_screen.dart';
@@ -89,7 +90,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final repository = FakeCompanyRepository(
-      getError: Exception('network unavailable'),
+      getError: const RemoteServiceUnavailableException('network unavailable'),
     );
 
     await tester.pumpWidget(
