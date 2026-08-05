@@ -104,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.text('Could not load your company. Please try again.'),
+      find.textContaining('You\'re offline and no company is cached'),
       findsOneWidget,
     );
     expect(find.text('Retry'), findsOneWidget);
