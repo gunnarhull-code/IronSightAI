@@ -39,27 +39,33 @@ void main() {
     );
   }
 
-  test('online resolution returns company and leaves cache for refresh', () async {
-    final resolution = await buildResolve()(userId: 'user-1');
+  test(
+    'online resolution returns company and leaves cache for refresh',
+    () async {
+      final resolution = await buildResolve()(userId: 'user-1');
 
-    expect(resolution.kind, CompanyAccessKind.online);
-    expect(resolution.company?.id, 'company-a');
-  });
+      expect(resolution.kind, CompanyAccessKind.online);
+      expect(resolution.company?.id, 'company-a');
+    },
+  );
 
-  test('offline cold start restores cached context for matching user', () async {
-    await workspace.tenantContext.activate(
-      companyId: 'company-a',
-      userId: 'user-1',
-    );
-    companies.getError = Exception('network unavailable');
+  test(
+    'offline cold start restores cached context for matching user',
+    () async {
+      await workspace.tenantContext.activate(
+        companyId: 'company-a',
+        userId: 'user-1',
+      );
+      companies.getError = Exception('network unavailable');
 
-    final resolution = await buildResolve()(userId: 'user-1');
+      final resolution = await buildResolve()(userId: 'user-1');
 
-    expect(resolution.kind, CompanyAccessKind.cached);
-    expect(resolution.companyId, 'company-a');
-    expect(resolution.userId, 'user-1');
-    expect(resolution.resolvedCompanyId, 'company-a');
-  });
+      expect(resolution.kind, CompanyAccessKind.cached);
+      expect(resolution.companyId, 'company-a');
+      expect(resolution.userId, 'user-1');
+      expect(resolution.resolvedCompanyId, 'company-a');
+    },
+  );
 
   test('no-cache offline failure is recoverable offlineUnavailable', () async {
     companies.getError = Exception('network unavailable');
@@ -83,50 +89,56 @@ void main() {
     expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
   });
 
-  test('user mismatch rejects another user\'s cached company context', () async {
-    await workspace.tenantContext.activate(
-      companyId: 'company-a',
-      userId: 'user-1',
-    );
-    companies.getError = Exception('network unavailable');
+  test(
+    'user mismatch rejects another user\'s cached company context',
+    () async {
+      await workspace.tenantContext.activate(
+        companyId: 'company-a',
+        userId: 'user-1',
+      );
+      companies.getError = Exception('network unavailable');
 
-    final resolution = await buildResolve()(userId: 'user-2');
+      final resolution = await buildResolve()(userId: 'user-2');
 
-    expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
-  });
+      expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
+    },
+  );
 
-  test('tenant isolation: company B cache is not used for user A offline', () async {
-    await workspace.tenantContext.activate(
-      companyId: 'company-b',
-      userId: 'user-b',
-    );
-    companies.getError = Exception('network unavailable');
+  test(
+    'tenant isolation: company B cache is not used for user A offline',
+    () async {
+      await workspace.tenantContext.activate(
+        companyId: 'company-b',
+        userId: 'user-b',
+      );
+      companies.getError = Exception('network unavailable');
 
-    final resolution = await buildResolve()(userId: 'user-a');
+      final resolution = await buildResolve()(userId: 'user-a');
 
-    expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
-    final stillCached = await workspace.tenantContext.getActive();
-    expect(stillCached?.companyId, 'company-b');
-    expect(stillCached?.userId, 'user-b');
-  });
+      expect(resolution.kind, CompanyAccessKind.offlineUnavailable);
+      final stillCached = await workspace.tenantContext.getActive();
+      expect(stillCached?.companyId, 'company-b');
+      expect(stillCached?.userId, 'user-b');
+    },
+  );
 
-  test('online success is preferred over existing cache (refresh path)', () async {
-    await workspace.tenantContext.activate(
-      companyId: 'company-old',
-      userId: 'user-1',
-    );
-    companies.company = sampleCompany.copyWith(id: 'company-new');
+  test(
+    'online success is preferred over existing cache (refresh path)',
+    () async {
+      await workspace.tenantContext.activate(
+        companyId: 'company-old',
+        userId: 'user-1',
+      );
+      companies.company = sampleCompany.copyWith(id: 'company-new');
 
-    final resolution = await buildResolve()(userId: 'user-1');
+      final resolution = await buildResolve()(userId: 'user-1');
 
-    expect(resolution.kind, CompanyAccessKind.online);
-    expect(resolution.company?.id, 'company-new');
-  });
+      expect(resolution.kind, CompanyAccessKind.online);
+      expect(resolution.company?.id, 'company-new');
+    },
+  );
 
   test('rejects empty userId', () async {
-    expect(
-      () => buildResolve()(userId: '  '),
-      throwsA(isA<ArgumentError>()),
-    );
+    expect(() => buildResolve()(userId: '  '), throwsA(isA<ArgumentError>()));
   });
 }

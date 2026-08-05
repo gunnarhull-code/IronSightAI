@@ -89,43 +89,42 @@ void main() {
     },
   );
 
-  testWidgets(
-    'offline cold start keeps existing local drafts reachable',
-    (tester) async {
-      await workspace.prepareTenant(companyId: 'company-a', userId: 'user-1');
-      final now = DateTime.utc(2026, 8, 1);
-      await workspace.equipmentCatalog.replaceCompanyCatalog(
-        companyId: 'company-a',
-        equipment: [
-          Equipment(
-            id: 'eq-1',
-            companyId: 'company-a',
-            assetName: 'Loader 1',
-            manufacturer: 'Caterpillar',
-            model: '950',
-            serialNumber: 'SN-1',
-            createdAt: now,
-            updatedAt: now,
-          ),
-        ],
-      );
-      final draft = await workspace.inspections.createDraft(
-        companyId: 'company-a',
-        equipmentId: 'eq-1',
-        createdByUserId: 'user-1',
-      );
-      companies.getError = Exception('network unavailable');
+  testWidgets('offline cold start keeps existing local drafts reachable', (
+    tester,
+  ) async {
+    await workspace.prepareTenant(companyId: 'company-a', userId: 'user-1');
+    final now = DateTime.utc(2026, 8, 1);
+    await workspace.equipmentCatalog.replaceCompanyCatalog(
+      companyId: 'company-a',
+      equipment: [
+        Equipment(
+          id: 'eq-1',
+          companyId: 'company-a',
+          assetName: 'Loader 1',
+          manufacturer: 'Caterpillar',
+          model: '950',
+          serialNumber: 'SN-1',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ],
+    );
+    final draft = await workspace.inspections.createDraft(
+      companyId: 'company-a',
+      equipmentId: 'eq-1',
+      createdByUserId: 'user-1',
+    );
+    companies.getError = Exception('network unavailable');
 
-      await pumpGate(tester, isSignedIn: true);
+    await pumpGate(tester, isSignedIn: true);
 
-      expect(find.text('Heavy Equipment Inspections'), findsOneWidget);
+    expect(find.text('Heavy Equipment Inspections'), findsOneWidget);
 
-      final drafts = await workspace.inspections.listForCompany('company-a');
-      expect(drafts, hasLength(1));
-      expect(drafts.single.id, draft.id);
-      expect(drafts.single.companyId, 'company-a');
-    },
-  );
+    final drafts = await workspace.inspections.listForCompany('company-a');
+    expect(drafts, hasLength(1));
+    expect(drafts.single.id, draft.id);
+    expect(drafts.single.companyId, 'company-a');
+  });
 
   testWidgets('online resolution refreshes cached tenant context', (
     tester,
