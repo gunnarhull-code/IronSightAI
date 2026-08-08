@@ -1,12 +1,15 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
 import 'package:ironsight_ai/data/local/offline_inspection_workspace.dart';
 import 'package:ironsight_ai/data/remote/remote_connectivity_failure.dart';
 import 'package:ironsight_ai/domain/entities/company.dart';
 import 'package:ironsight_ai/domain/exceptions/remote_service_unavailable_exception.dart';
 import 'package:ironsight_ai/domain/use_cases/resolve_company_access.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import 'support/fake_auth_session_reader.dart';
 import 'support/fake_company_repository.dart';
@@ -232,6 +235,12 @@ void main() {
         isFalse,
       );
       expect(isRemoteConnectivityFailure(FormatException('bad json')), isFalse);
+      expect(
+        isRemoteConnectivityFailure(
+          const PostgrestException(message: 'JWT expired', code: 'PGRST301'),
+        ),
+        isFalse,
+      );
     });
 
     test('mapRemoteFailure wraps only connectivity failures', () {
@@ -240,6 +249,94 @@ void main() {
 
       final unchanged = FormatException('bad json');
       expect(identical(mapRemoteFailure(unchanged), unchanged), isTrue);
+
+      final postgrest = const PostgrestException(
+        message: 'row-level security',
+        code: '42501',
+      );
+      expect(identical(mapRemoteFailure(postgrest), postgrest), isTrue);
     });
+
+    test(
+      'classifies http IOClient failed-host-lookup wrapper '
+      '(_ClientSocketException), not merely a plain ClientException',
+      () async {
+        final transport = await _captureIoClientFailedHostLookup();
+
+        // Exact Android/PostgREST transport shape from http 1.6 IOClient:
+        // private `_ClientSocketException extends ClientException
+        // implements SocketException`.
+        expect(transport, isA<http.ClientException>());
+        expect(transport, isA<SocketException>());
+        expect(
+          transport.runtimeType.toString(),
+          '_ClientSocketException',
+          reason:
+              'Regression guard: classifier must not rely on runtimeType '
+              'name ClientException/SocketException alone',
+        );
+        expect(
+          isRemoteConnectivityFailure(transport),
+          isTrue,
+          reason:
+              'Samsung S22 airplane-mode path: PostgREST rethrows this '
+              'wrapper unchanged from PostgrestBuilder._executeWithRetry',
+        );
+
+        final mapped = mapRemoteFailure(transport);
+        expect(mapped, isA<RemoteServiceUnavailableException>());
+        expect(
+          (mapped as RemoteServiceUnavailableException).cause,
+          same(transport),
+        );
+      },
+    );
+
+    test(
+      'mapped IOClient failed-host-lookup restores matching company cache',
+      () async {
+        await activateMatchingCache();
+        final transport = await _captureIoClientFailedHostLookup();
+        companies.getError = mapRemoteFailure(transport);
+
+        final resolution = await buildResolve()(userId: 'user-1');
+
+        expect(resolution.kind, CompanyAccessKind.cached);
+        expect(resolution.companyId, 'company-a');
+        expect(resolution.userId, 'user-1');
+      },
+    );
+
+    test(
+      'PostgREST application exception after cache does not restore workspace',
+      () async {
+        await activateMatchingCache();
+        companies.getError = mapRemoteFailure(
+          const PostgrestException(
+            message: 'new row violates row-level security policy',
+            code: '42501',
+          ),
+        );
+
+        final resolution = await buildResolve()(userId: 'user-1');
+
+        expect(resolution.kind, CompanyAccessKind.lookupFailed);
+        expect(resolution.error, isA<PostgrestException>());
+      },
+    );
   });
+}
+
+/// Produces the real http 1.6 `IOClient` failed-host-lookup exception
+/// (`_ClientSocketException`), matching PostgREST's Android transport path.
+Future<Object> _captureIoClientFailedHostLookup() async {
+  final client = http.Client();
+  try {
+    await client.get(Uri.http('http.invalid', '/'));
+    fail('Expected failed host lookup against http.invalid');
+  } catch (error) {
+    return error;
+  } finally {
+    client.close();
+  }
 }
