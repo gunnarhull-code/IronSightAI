@@ -293,6 +293,115 @@ class EquipmentIdCaptureController {
     );
   }
 
+  /// Runs OCR against an already-captured image (required photo reuse).
+  ///
+  /// Does not open the camera. Preserves draft/confirmed values on failure.
+  /// Never silently confirms OCR output.
+  Future<void> recognizeExistingImage(CapturedImage image) async {
+    final preservedDraft = _state.draftValue;
+    final preservedConfirmed = _state.confirmed;
+
+    if (!_textRecognition.isSupported) {
+      _emitRecognizeFailure(
+        EquipmentIdCaptureFailure.unsupportedPlatform(),
+        preservedDraft: preservedDraft,
+        preservedConfirmed: preservedConfirmed,
+        image: image,
+      );
+      return;
+    }
+
+    if (image.isEmpty) {
+      _emitRecognizeFailure(
+        EquipmentIdCaptureFailure.cameraUnavailable(),
+        preservedDraft: preservedDraft,
+        preservedConfirmed: preservedConfirmed,
+      );
+      return;
+    }
+
+    _emit(
+      _state.copyWith(
+        phase: EquipmentIdCapturePhase.recognizing,
+        lastCapturedImage: image,
+        draftValue: preservedDraft,
+        clearFailure: true,
+        clearStatusMessage: true,
+      ),
+    );
+
+    late final List<RecognizedTextBlock> blocks;
+    try {
+      blocks = await _textRecognition.recognize(image);
+    } catch (error) {
+      _emitRecognizeFailure(
+        EquipmentIdCaptureFailure.ocrFailure(error.toString()),
+        preservedDraft: preservedDraft,
+        preservedConfirmed: preservedConfirmed,
+        image: image,
+      );
+      return;
+    }
+
+    final candidates = _buildCandidates(blocks);
+    if (candidates.isEmpty) {
+      _emitRecognizeFailure(
+        EquipmentIdCaptureFailure.noTextDetected(),
+        preservedDraft: preservedDraft,
+        preservedConfirmed: preservedConfirmed,
+        image: image,
+      );
+      return;
+    }
+
+    _emit(
+      EquipmentIdCaptureState(
+        kind: _state.kind,
+        phase: EquipmentIdCapturePhase.awaitingConfirmation,
+        draftValue: preservedDraft,
+        candidates: candidates,
+        cameraOcrSupported: _state.cameraOcrSupported,
+        lastCapturedImage: image,
+        // Advisory only — persisted confirmed values stay on the inspection
+        // until the user explicitly confirms again.
+        statusMessage:
+            'Select a detected candidate, then tap Confirm. Nothing is saved '
+            'until you confirm.',
+      ),
+    );
+  }
+
+  void _emitRecognizeFailure(
+    EquipmentIdCaptureFailure failure, {
+    required String preservedDraft,
+    ConfirmedEquipmentIdValue? preservedConfirmed,
+    CapturedImage? image,
+  }) {
+    if (preservedConfirmed != null) {
+      _emit(
+        _state.copyWith(
+          phase: EquipmentIdCapturePhase.confirmed,
+          failure: failure,
+          draftValue: preservedDraft,
+          confirmed: preservedConfirmed,
+          lastCapturedImage: image,
+          statusMessage: failure.message,
+        ),
+      );
+      return;
+    }
+    _emit(
+      _state.copyWith(
+        phase: EquipmentIdCapturePhase.failed,
+        failure: failure,
+        draftValue: preservedDraft,
+        clearConfirmed: true,
+        lastCapturedImage: image,
+        statusMessage: failure.message,
+      ),
+    );
+  }
+
   /// Runs permission → capture → OCR → candidate presentation.
   Future<void> captureAndRecognize() async {
     final preservedDraft = _state.draftValue;

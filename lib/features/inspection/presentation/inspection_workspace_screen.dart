@@ -1,22 +1,33 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
 import '../../../../data/equipment_id_capture/create_platform_bindings.dart';
+import '../../../../data/equipment_id_capture/camera_capture_page.dart';
 import '../../../../domain/detailed_checklist_templates.dart';
 import '../../../../domain/entities/condition_rating.dart';
 import '../../../../domain/entities/detailed_category_response.dart';
 import '../../../../domain/entities/equipment.dart';
 import '../../../../domain/entities/inspection.dart';
+import '../../../../domain/entities/inspection_media.dart';
+import '../../../../domain/entities/inspection_photo_slot.dart';
 import '../../../../domain/entities/scorecard_category.dart';
+import '../../../../domain/equipment_id_capture/camera_permission_port.dart';
+import '../../../../domain/equipment_id_capture/captured_image.dart';
 import '../../../../domain/equipment_id_capture/confirmed_equipment_id_value.dart';
 import '../../../../domain/equipment_id_capture/equipment_id_capture_controller.dart';
+import '../../../../domain/equipment_id_capture/equipment_id_capture_failure.dart';
 import '../../../../domain/equipment_id_capture/equipment_id_capture_kind.dart';
+import '../../../../domain/equipment_id_capture/image_capture_port.dart';
 import '../../../../domain/exceptions/invalid_inspection_lifecycle_exception.dart';
 import '../../../../domain/repositories/local_equipment_catalog_repository.dart';
+import '../../../../domain/repositories/local_inspection_media_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
 import '../../equipment_id_capture/presentation/equipment_id_capture_panel.dart';
 import 'widgets/condition_rating_controls.dart';
 import 'widgets/local_only_status_banner.dart';
+import 'widgets/required_inspection_photos_section.dart';
 
 /// Builds capture controllers for serial / hour panels in Quick Appraisal.
 typedef EquipmentIdCaptureControllerFactory =
@@ -34,8 +45,11 @@ class InspectionWorkspaceScreen extends StatefulWidget {
     required this.inspectionId,
     required this.inspections,
     required this.equipmentCatalog,
+    required this.inspectionMedia,
     this.navigatorKey,
     this.captureControllerFactory,
+    this.imageCapture,
+    this.cameraPermission,
   });
 
   final String companyId;
@@ -43,12 +57,19 @@ class InspectionWorkspaceScreen extends StatefulWidget {
   final String inspectionId;
   final LocalInspectionRepository inspections;
   final LocalEquipmentCatalogRepository equipmentCatalog;
+  final LocalInspectionMediaRepository inspectionMedia;
 
   /// Root navigator used by camera capture routes on supported platforms.
   final GlobalKey<NavigatorState>? navigatorKey;
 
   /// Optional override for tests (manual-only fakes, etc.).
   final EquipmentIdCaptureControllerFactory? captureControllerFactory;
+
+  /// Optional still-image capture override for required photos / tests.
+  final ImageCapturePort? imageCapture;
+
+  /// Optional camera permission override for required photos / tests.
+  final CameraPermissionPort? cameraPermission;
 
   @override
   State<InspectionWorkspaceScreen> createState() =>
@@ -63,9 +84,13 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
   bool _savingNotes = false;
   bool _mutating = false;
   bool _savingEquipmentId = false;
+  InspectionPhotoSlot? _busyPhotoSlot;
+  final Map<InspectionPhotoSlot, Uint8List> _previewBytes = {};
 
   EquipmentIdCaptureController? _serialController;
   EquipmentIdCaptureController? _hoursController;
+  ImageCapturePort? _photoCapture;
+  CameraPermissionPort? _photoPermission;
 
   @override
   void initState() {
@@ -80,6 +105,37 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     _serialController?.dispose();
     _hoursController?.dispose();
     super.dispose();
+  }
+
+  ImageCapturePort get _resolvedPhotoCapture {
+    final existing = _photoCapture;
+    if (existing != null) return existing;
+    if (widget.imageCapture != null) {
+      return _photoCapture = widget.imageCapture!;
+    }
+    final nav = widget.navigatorKey;
+    if (nav != null) {
+      return _photoCapture = NavigatorCameraImageCapture(
+        navigatorKey: nav,
+        pageTitle: 'Capture required photo',
+      );
+    }
+    final bindings = createPlatformEquipmentIdCaptureBindings(
+      navigatorKey: widget.navigatorKey,
+    );
+    return _photoCapture = bindings.imageCapture;
+  }
+
+  CameraPermissionPort get _resolvedPhotoPermission {
+    final existing = _photoPermission;
+    if (existing != null) return existing;
+    if (widget.cameraPermission != null) {
+      return _photoPermission = widget.cameraPermission!;
+    }
+    final bindings = createPlatformEquipmentIdCaptureBindings(
+      navigatorKey: widget.navigatorKey,
+    );
+    return _photoPermission = bindings.cameraPermission;
   }
 
   EquipmentIdCaptureController _createController({
@@ -130,7 +186,46 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
       _notesController.text = inspection.overallNotes ?? '';
     }
     _ensureCaptureControllers(inspection);
-    return _WorkspaceData(inspection: inspection, equipment: equipment);
+
+    final mediaList = await widget.inspectionMedia.listForInspection(
+      companyId: widget.companyId,
+      inspectionId: widget.inspectionId,
+    );
+    final mediaBySlot = <InspectionPhotoSlot, InspectionMedia>{
+      for (final item in mediaList) item.slot: item,
+    };
+    await _hydratePreviews(mediaBySlot);
+
+    return _WorkspaceData(
+      inspection: inspection,
+      equipment: equipment,
+      mediaBySlot: mediaBySlot,
+    );
+  }
+
+  Future<void> _hydratePreviews(
+    Map<InspectionPhotoSlot, InspectionMedia> mediaBySlot,
+  ) async {
+    final next = <InspectionPhotoSlot, Uint8List>{};
+    for (final entry in mediaBySlot.entries) {
+      final cached = _previewBytes[entry.key];
+      if (cached != null && cached.length == entry.value.byteSize) {
+        next[entry.key] = cached;
+        continue;
+      }
+      try {
+        final image = await widget.inspectionMedia.loadCapturedImage(
+          companyId: widget.companyId,
+          media: entry.value,
+        );
+        next[entry.key] = Uint8List.fromList(image.bytes);
+      } catch (_) {
+        // Preview is best-effort; slot still shows Completed from metadata.
+      }
+    }
+    _previewBytes
+      ..clear()
+      ..addAll(next);
   }
 
   void _reload() {
@@ -178,6 +273,156 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     } finally {
       if (mounted) setState(() => _savingEquipmentId = false);
     }
+  }
+
+  Future<CapturedImage?> _captureStillImage() async {
+    final permission = await _resolvedPhotoPermission.request();
+    if (permission == CameraPermissionStatus.denied ||
+        permission == CameraPermissionStatus.permanentlyDenied ||
+        permission == CameraPermissionStatus.restricted ||
+        permission == CameraPermissionStatus.unavailable) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            permission == CameraPermissionStatus.denied ||
+                    permission == CameraPermissionStatus.permanentlyDenied
+                ? EquipmentIdCaptureFailure.permissionDenied().message
+                : EquipmentIdCaptureFailure.cameraUnavailable().message,
+          ),
+        ),
+      );
+      return null;
+    }
+
+    try {
+      final image = await _resolvedPhotoCapture.captureStill();
+      if (image.isEmpty) return null;
+      return image;
+    } on EquipmentIdCaptureException catch (error) {
+      if (!mounted) return null;
+      if (error.failure.kind !=
+          EquipmentIdCaptureFailureKind.captureCancelled) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.failure.message)));
+      }
+      return null;
+    } catch (_) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not capture photo.')));
+      return null;
+    }
+  }
+
+  Future<void> _saveRequiredPhoto(
+    Inspection inspection,
+    InspectionPhotoSlot slot, {
+    required bool runOcrWhenApplicable,
+  }) async {
+    if (_busyPhotoSlot != null ||
+        !inspection.isIncomplete ||
+        inspection.isDiscarded) {
+      return;
+    }
+
+    setState(() => _busyPhotoSlot = slot);
+    try {
+      final image = await _captureStillImage();
+      if (image == null) return;
+
+      await widget.inspectionMedia.saveRequiredPhoto(
+        companyId: widget.companyId,
+        inspectionId: inspection.id,
+        slot: slot,
+        image: image,
+        updatedByUserId: widget.userId,
+      );
+
+      if (runOcrWhenApplicable) {
+        await _recognizeRequiredPhoto(slot, image);
+      }
+
+      if (mounted) _reload();
+    } on InvalidInspectionLifecycleException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not save photo locally.')),
+      );
+    } finally {
+      if (mounted) setState(() => _busyPhotoSlot = null);
+    }
+  }
+
+  Future<void> _recognizeRequiredPhoto(
+    InspectionPhotoSlot slot,
+    CapturedImage image,
+  ) async {
+    if (slot.feedsSerialOcr) {
+      await _serialController?.recognizeExistingImage(image);
+    } else if (slot.feedsHourMeterOcr) {
+      await _hoursController?.recognizeExistingImage(image);
+    }
+  }
+
+  /// OCR scan reuses the required serial/hour photo when present; otherwise
+  /// captures once into that required slot then runs OCR.
+  Future<void> _scanOcrFromRequiredPhoto(
+    Inspection inspection,
+    EquipmentIdCaptureKind kind,
+  ) async {
+    final slot = kind == EquipmentIdCaptureKind.serialNumber
+        ? InspectionPhotoSlot.serialDataPlate
+        : InspectionPhotoSlot.hourMeterDashboard;
+    final controller = kind == EquipmentIdCaptureKind.serialNumber
+        ? _serialController
+        : _hoursController;
+    if (controller == null) return;
+
+    final existing = await widget.inspectionMedia.getBySlot(
+      companyId: widget.companyId,
+      inspectionId: inspection.id,
+      slot: slot,
+    );
+    if (existing != null) {
+      try {
+        final image = await widget.inspectionMedia.loadCapturedImage(
+          companyId: widget.companyId,
+          media: existing,
+        );
+        await controller.recognizeExistingImage(image);
+      } catch (_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not read the required photo for OCR.'),
+          ),
+        );
+      }
+      return;
+    }
+
+    await _saveRequiredPhoto(inspection, slot, runOcrWhenApplicable: true);
+  }
+
+  void _previewPhoto(InspectionPhotoSlot slot) {
+    final bytes = _previewBytes[slot];
+    if (bytes == null) return;
+    showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        child: InteractiveViewer(
+          child: Image.memory(bytes, fit: BoxFit.contain),
+        ),
+      ),
+    );
   }
 
   Future<void> _saveRating(
@@ -347,6 +592,10 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
         inspectionId: inspection.id,
         updatedByUserId: widget.userId,
       );
+      await widget.inspectionMedia.purgeForInspection(
+        companyId: widget.companyId,
+        inspectionId: inspection.id,
+      );
       if (!mounted) return;
       Navigator.of(context).pop(true);
     } on InvalidInspectionLifecycleException catch (error) {
@@ -458,6 +707,30 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    const SizedBox(height: 16),
+                    IgnorePointer(
+                      ignoring: !editable || _busyPhotoSlot != null,
+                      child: Opacity(
+                        opacity: editable && _busyPhotoSlot == null ? 1 : 0.6,
+                        child: RequiredInspectionPhotosSection(
+                          mediaBySlot: data.mediaBySlot,
+                          previewBytesBySlot: Map.unmodifiable(_previewBytes),
+                          enabled: editable,
+                          busySlot: _busyPhotoSlot,
+                          onCapture: (slot) => _saveRequiredPhoto(
+                            inspection,
+                            slot,
+                            runOcrWhenApplicable: true,
+                          ),
+                          onRetake: (slot) => _saveRequiredPhoto(
+                            inspection,
+                            slot,
+                            runOcrWhenApplicable: true,
+                          ),
+                          onPreview: _previewPhoto,
+                        ),
+                      ),
+                    ),
                     if (serialController != null &&
                         hoursController != null) ...[
                       const SizedBox(height: 16),
@@ -467,8 +740,9 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Scan or type serial number and hours. OCR never saves '
-                        'until you confirm. Works offline.',
+                        'Scan or type serial number and hours. OCR reuses the '
+                        'required serial/hour photos and never saves until you '
+                        'confirm. Works offline.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -481,6 +755,10 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                           child: EquipmentIdCapturePanel(
                             key: const ValueKey('qa-serial-capture'),
                             controller: serialController,
+                            onScanRequested: () => _scanOcrFromRequiredPhoto(
+                              inspection,
+                              EquipmentIdCaptureKind.serialNumber,
+                            ),
                             onConfirmed: (state) =>
                                 _onEquipmentIdConfirmed(inspection, state),
                           ),
@@ -494,6 +772,10 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                           child: EquipmentIdCapturePanel(
                             key: const ValueKey('qa-hours-capture'),
                             controller: hoursController,
+                            onScanRequested: () => _scanOcrFromRequiredPhoto(
+                              inspection,
+                              EquipmentIdCaptureKind.hourMeter,
+                            ),
                             onConfirmed: (state) =>
                                 _onEquipmentIdConfirmed(inspection, state),
                           ),
@@ -577,10 +859,15 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
 }
 
 class _WorkspaceData {
-  const _WorkspaceData({required this.inspection, required this.equipment});
+  const _WorkspaceData({
+    required this.inspection,
+    required this.equipment,
+    required this.mediaBySlot,
+  });
 
   final Inspection inspection;
   final Equipment? equipment;
+  final Map<InspectionPhotoSlot, InspectionMedia> mediaBySlot;
 }
 
 class _CategoryCard extends StatelessWidget {
