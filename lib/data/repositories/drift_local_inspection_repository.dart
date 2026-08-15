@@ -561,10 +561,7 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
       return existing;
     }
     InspectionLifecycle.ensureCanComplete(existing);
-    await _ensureGuidedCompleteness(
-      companyId: companyId,
-      inspection: existing,
-    );
+    await _ensureGuidedCompleteness(companyId: companyId, inspection: existing);
     if (existing.equipmentId == null || existing.equipmentId!.isEmpty) {
       throw GuidedQuickAppraisalIncompleteException(
         'Existing-equipment completion requires a linked Equipment record.',
@@ -605,10 +602,7 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
       );
     }
 
-    await _ensureGuidedCompleteness(
-      companyId: companyId,
-      inspection: existing,
-    );
+    await _ensureGuidedCompleteness(companyId: companyId, inspection: existing);
 
     final assetName = existing.pendingAssetName?.trim() ?? '';
     final manufacturer = existing.pendingManufacturer?.trim() ?? '';
@@ -619,8 +613,9 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
       );
     }
 
-    final verifiedSerial =
-        existing.serialIsUnableToVerify ? null : existing.serialNumber?.trim();
+    final verifiedSerial = existing.serialIsUnableToVerify
+        ? null
+        : existing.serialNumber?.trim();
     if (verifiedSerial != null && verifiedSerial.isNotEmpty) {
       final duplicate = await _findEquipmentBySerial(
         companyId: companyId,
@@ -637,9 +632,7 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     }
 
     final equipmentId =
-        existing.equipmentId ??
-        existing.pendingEquipmentId ??
-        _idGenerator();
+        existing.equipmentId ?? existing.pendingEquipmentId ?? _idGenerator();
     final now = _clock();
 
     try {
@@ -943,10 +936,9 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     required String serialNumber,
   }) async {
     final normalized = serialNumber.trim().toUpperCase();
-    final rows =
-        await (_db.select(_db.localEquipmentCache)
-              ..where((table) => table.companyId.equals(companyId)))
-            .get();
+    final rows = await (_db.select(
+      _db.localEquipmentCache,
+    )..where((table) => table.companyId.equals(companyId))).get();
     for (final row in rows) {
       final serial = row.serialNumber?.trim().toUpperCase();
       if (serial != null && serial.isNotEmpty && serial == normalized) {

@@ -55,10 +55,9 @@ class DriftLocalEquipmentCatalogRepository
     _requireNonEmpty(companyId, 'companyId');
     final normalized = serialNumber.trim().toUpperCase();
     if (normalized.isEmpty) return null;
-    final rows =
-        await (_db.select(_db.localEquipmentCache)
-              ..where((table) => table.companyId.equals(companyId)))
-            .get();
+    final rows = await (_db.select(
+      _db.localEquipmentCache,
+    )..where((table) => table.companyId.equals(companyId))).get();
     for (final row in rows) {
       final serial = row.serialNumber?.trim().toUpperCase();
       if (serial != null && serial.isNotEmpty && serial == normalized) {

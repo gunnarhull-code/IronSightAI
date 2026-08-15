@@ -6,17 +6,19 @@ import 'package:ironsight_ai/data/local/drift/app_database.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
-  test('schema v3 to current creates inspection_media and guided columns', () async {
-    final file = File(
-      '${Directory.systemTemp.path}/ironsight_media_mig_${DateTime.now().microsecondsSinceEpoch}.sqlite',
-    );
-    addTearDown(() {
-      if (file.existsSync()) file.deleteSync();
-    });
+  test(
+    'schema v3 to current creates inspection_media and guided columns',
+    () async {
+      final file = File(
+        '${Directory.systemTemp.path}/ironsight_media_mig_${DateTime.now().microsecondsSinceEpoch}.sqlite',
+      );
+      addTearDown(() {
+        if (file.existsSync()) file.deleteSync();
+      });
 
-    // Simulate a pre-v4 database with inspections only (no media table).
-    final raw = sqlite3.open(file.path);
-    raw.execute('''
+      // Simulate a pre-v4 database with inspections only (no media table).
+      final raw = sqlite3.open(file.path);
+      raw.execute('''
       CREATE TABLE inspections (
         id TEXT NOT NULL PRIMARY KEY,
         company_id TEXT NOT NULL,
@@ -41,42 +43,43 @@ void main() {
         discarded_at INTEGER NULL
       );
     ''');
-    raw.execute('PRAGMA user_version = 3;');
-    raw.close();
+      raw.execute('PRAGMA user_version = 3;');
+      raw.close();
 
-    final db = AppDatabase(NativeDatabase(file));
-    addTearDown(db.close);
+      final db = AppDatabase(NativeDatabase(file));
+      addTearDown(db.close);
 
-    // Opening triggers onUpgrade through current schema.
-    final tables = await db
-        .customSelect(
-          "SELECT name FROM sqlite_master WHERE type = 'table' "
-          "AND name = 'inspection_media'",
-        )
-        .get();
-    expect(tables, hasLength(1));
+      // Opening triggers onUpgrade through current schema.
+      final tables = await db
+          .customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'inspection_media'",
+          )
+          .get();
+      expect(tables, hasLength(1));
 
-    final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.data['user_version'], db.schemaVersion);
+      final version = await db.customSelect('PRAGMA user_version').getSingle();
+      expect(version.data['user_version'], db.schemaVersion);
 
-    await db.customStatement(
-      "INSERT INTO inspection_media ("
-      "id, company_id, inspection_id, slot, local_relative_path, mime_type, "
-      "byte_size, captured_at, updated_at, local_updated_at"
-      ") VALUES ("
-      "'m1', 'c1', 'i1', 'front_left_overview', 'inspection_media/x.jpg', "
-      "'image/jpeg', 3, 0, 0, 0"
-      ")",
-    );
-    final rows = await db.select(db.inspectionMediaItems).get();
-    expect(rows, hasLength(1));
-    expect(rows.single.slot, 'front_left_overview');
+      await db.customStatement(
+        "INSERT INTO inspection_media ("
+        "id, company_id, inspection_id, slot, local_relative_path, mime_type, "
+        "byte_size, captured_at, updated_at, local_updated_at"
+        ") VALUES ("
+        "'m1', 'c1', 'i1', 'front_left_overview', 'inspection_media/x.jpg', "
+        "'image/jpeg', 3, 0, 0, 0"
+        ")",
+      );
+      final rows = await db.select(db.inspectionMediaItems).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.slot, 'front_left_overview');
 
-    final guidedCols = await db
-        .customSelect("PRAGMA table_info('inspections')")
-        .get();
-    final names = guidedCols.map((row) => row.data['name']).toSet();
-    expect(names.contains('machine_source'), isTrue);
-    expect(names.contains('guided_step'), isTrue);
-  });
+      final guidedCols = await db
+          .customSelect("PRAGMA table_info('inspections')")
+          .get();
+      final names = guidedCols.map((row) => row.data['name']).toSet();
+      expect(names.contains('machine_source'), isTrue);
+      expect(names.contains('guided_step'), isTrue);
+    },
+  );
 }

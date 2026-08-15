@@ -16,8 +16,7 @@ void main() {
   final now = DateTime.utc(2026, 8, 15, 12);
 
   Inspection draft({
-    InspectionMachineSource? machineSource =
-        InspectionMachineSource.newMachine,
+    InspectionMachineSource? machineSource = InspectionMachineSource.newMachine,
     String? equipmentId,
     String? pendingAssetName = 'Unit 1',
     String? pendingManufacturer = 'Cat',
@@ -87,8 +86,14 @@ void main() {
       expect(GuidedQuickAppraisalStep.order, hasLength(7));
       expect(GuidedQuickAppraisalStep.machineSource.stepNumber, 1);
       expect(GuidedQuickAppraisalStep.reviewAndComplete.stepNumber, 7);
-      expect(GuidedQuickAppraisalStep.requiredPhotos.next, GuidedQuickAppraisalStep.serialAndHours);
-      expect(GuidedQuickAppraisalStep.serialAndHours.previous, GuidedQuickAppraisalStep.requiredPhotos);
+      expect(
+        GuidedQuickAppraisalStep.requiredPhotos.next,
+        GuidedQuickAppraisalStep.serialAndHours,
+      );
+      expect(
+        GuidedQuickAppraisalStep.serialAndHours.previous,
+        GuidedQuickAppraisalStep.requiredPhotos,
+      );
     });
   });
 
@@ -112,7 +117,10 @@ void main() {
           GuidedQuickAppraisalRequirement.hours,
         }),
       );
-      expect(result.firstIncompleteStep, GuidedQuickAppraisalStep.equipmentIdentity);
+      expect(
+        result.firstIncompleteStep,
+        GuidedQuickAppraisalStep.equipmentIdentity,
+      );
     });
 
     test('explicit unavailable serial/hours satisfy requirements', () {
@@ -209,8 +217,14 @@ void main() {
       expect(inspection.hasResolvedHours, isTrue);
       expect(inspection.serialIsUnableToVerify, isTrue);
       expect(inspection.hoursAreUnavailable, isTrue);
-      expect(inspection.confirmedSerialNumber?.method, EquipmentIdCaptureMethod.unableToVerify);
-      expect(inspection.confirmedHourMeter?.method, EquipmentIdCaptureMethod.unavailable);
+      expect(
+        inspection.confirmedSerialNumber?.method,
+        EquipmentIdCaptureMethod.unableToVerify,
+      );
+      expect(
+        inspection.confirmedHourMeter?.method,
+        EquipmentIdCaptureMethod.unavailable,
+      );
     });
   });
 }

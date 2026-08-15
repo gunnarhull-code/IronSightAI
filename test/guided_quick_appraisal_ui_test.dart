@@ -162,48 +162,51 @@ void main() {
     expect(saved.guidedStep, GuidedQuickAppraisalStep.requiredPhotos);
   });
 
-  testWidgets('serial unable-to-verify and hours unavailable persist without Confirm', (
+  testWidgets(
+    'serial unable-to-verify and hours unavailable persist without Confirm',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final draft = await workspace.inspections.createGuidedDraft(
+        companyId: 'company-a',
+        createdByUserId: 'user-1',
+        machineSource: InspectionMachineSource.newMachine,
+      );
+      await workspace.inspections.updateGuidedIntake(
+        companyId: 'company-a',
+        inspectionId: draft.id,
+        pendingAssetName: 'Unit',
+        pendingManufacturer: 'Cat',
+        pendingModel: '320',
+      );
+
+      await pumpGuided(
+        tester,
+        inspectionId: draft.id,
+        initialStep: GuidedQuickAppraisalStep.serialAndHours,
+      );
+
+      expect(find.text('Confirm'), findsNothing);
+      await tester.ensureVisible(find.text('Unable to verify'));
+      await tester.tap(find.text('Unable to verify'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Unavailable / not displayed'));
+      await tester.tap(find.text('Unavailable / not displayed'));
+      await tester.pumpAndSettle();
+
+      final saved = await workspace.inspections.getById(
+        companyId: 'company-a',
+        inspectionId: draft.id,
+      );
+      expect(saved!.serialIsUnableToVerify, isTrue);
+      expect(saved.hoursAreUnavailable, isTrue);
+    },
+  );
+
+  testWidgets('condition ratings include Not assessed and persist', (
     tester,
   ) async {
-    await tester.binding.setSurfaceSize(const Size(390, 1600));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final draft = await workspace.inspections.createGuidedDraft(
-      companyId: 'company-a',
-      createdByUserId: 'user-1',
-      machineSource: InspectionMachineSource.newMachine,
-    );
-    await workspace.inspections.updateGuidedIntake(
-      companyId: 'company-a',
-      inspectionId: draft.id,
-      pendingAssetName: 'Unit',
-      pendingManufacturer: 'Cat',
-      pendingModel: '320',
-    );
-
-    await pumpGuided(
-      tester,
-      inspectionId: draft.id,
-      initialStep: GuidedQuickAppraisalStep.serialAndHours,
-    );
-
-    expect(find.text('Confirm'), findsNothing);
-    await tester.ensureVisible(find.text('Unable to verify'));
-    await tester.tap(find.text('Unable to verify'));
-    await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Unavailable / not displayed'));
-    await tester.tap(find.text('Unavailable / not displayed'));
-    await tester.pumpAndSettle();
-
-    final saved = await workspace.inspections.getById(
-      companyId: 'company-a',
-      inspectionId: draft.id,
-    );
-    expect(saved!.serialIsUnableToVerify, isTrue);
-    expect(saved.hoursAreUnavailable, isTrue);
-  });
-
-  testWidgets('condition ratings include Not assessed and persist', (tester) async {
     await tester.binding.setSurfaceSize(const Size(390, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -243,7 +246,9 @@ void main() {
     expect(saved!.ratingFor(ScorecardCategory.engine), ConditionRating.good);
   });
 
-  testWidgets('review lists missing requirements and jumps to step', (tester) async {
+  testWidgets('review lists missing requirements and jumps to step', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(390, 1600));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -269,7 +274,9 @@ void main() {
     expect(find.textContaining('Step 2'), findsWidgets);
   });
 
-  testWidgets('existing equipment selection from local catalog', (tester) async {
+  testWidgets('existing equipment selection from local catalog', (
+    tester,
+  ) async {
     await tester.binding.setSurfaceSize(const Size(390, 1200));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 

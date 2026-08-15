@@ -113,29 +113,32 @@ void main() {
   });
 
   group('step progression persistence', () {
-    test('updateGuidedIntake preserves identity and step across reopen', () async {
-      final draft = await workspace.inspections.createGuidedDraft(
-        companyId: 'company-a',
-        createdByUserId: 'user-1',
-        machineSource: InspectionMachineSource.newMachine,
-      );
-      await workspace.inspections.updateGuidedIntake(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-        pendingAssetName: 'Loader',
-        pendingManufacturer: 'Komatsu',
-        pendingModel: 'wa380',
-        guidedStep: GuidedQuickAppraisalStep.requiredPhotos,
-      );
-      final restored = await workspace.inspections.getById(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-      );
-      expect(restored!.pendingAssetName, 'Loader');
-      expect(restored.pendingManufacturer, 'Komatsu');
-      expect(restored.pendingModel, 'wa380');
-      expect(restored.guidedStep, GuidedQuickAppraisalStep.requiredPhotos);
-    });
+    test(
+      'updateGuidedIntake preserves identity and step across reopen',
+      () async {
+        final draft = await workspace.inspections.createGuidedDraft(
+          companyId: 'company-a',
+          createdByUserId: 'user-1',
+          machineSource: InspectionMachineSource.newMachine,
+        );
+        await workspace.inspections.updateGuidedIntake(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+          pendingAssetName: 'Loader',
+          pendingManufacturer: 'Komatsu',
+          pendingModel: 'wa380',
+          guidedStep: GuidedQuickAppraisalStep.requiredPhotos,
+        );
+        final restored = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
+        expect(restored!.pendingAssetName, 'Loader');
+        expect(restored.pendingManufacturer, 'Komatsu');
+        expect(restored.pendingModel, 'wa380');
+        expect(restored.guidedStep, GuidedQuickAppraisalStep.requiredPhotos);
+      },
+    );
   });
 
   group('unavailable serial and hours', () {
@@ -159,7 +162,10 @@ void main() {
         inspectionId: draft.id,
       );
       expect(cleared.serialNumber, isNull);
-      expect(cleared.serialCaptureMethod, EquipmentIdCaptureMethod.unableToVerify);
+      expect(
+        cleared.serialCaptureMethod,
+        EquipmentIdCaptureMethod.unableToVerify,
+      );
       expect(cleared.hasResolvedSerial, isTrue);
 
       final hours = await workspace.inspections.markHoursUnavailable(
@@ -167,59 +173,71 @@ void main() {
         inspectionId: draft.id,
       );
       expect(hours.hourMeterReading, isNull);
-      expect(hours.hourMeterCaptureMethod, EquipmentIdCaptureMethod.unavailable);
+      expect(
+        hours.hourMeterCaptureMethod,
+        EquipmentIdCaptureMethod.unavailable,
+      );
       expect(hours.hasResolvedHours, isTrue);
     });
   });
 
   group('new-machine atomic completion', () {
-    test('creates exactly one local equipment and completed inspection', () async {
-      final draft = await workspace.inspections.createGuidedDraft(
-        companyId: 'company-a',
-        createdByUserId: 'user-1',
-        machineSource: InspectionMachineSource.newMachine,
-      );
-      await workspace.inspections.updateGuidedIntake(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-        pendingAssetName: 'Dozer',
-        pendingManufacturer: 'Cat',
-        pendingModel: 'D6',
-      );
-      await fillRequiredPhotos(draft.id);
-      await workspace.inspections.saveConfirmedEquipmentId(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-        confirmedValue: const ConfirmedEquipmentIdValue(
-          kind: EquipmentIdCaptureKind.serialNumber,
-          value: 'SN-NEW-1',
-          method: EquipmentIdCaptureMethod.manual,
-        ),
-      );
-      await workspace.inspections.markHoursUnavailable(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-      );
+    test(
+      'creates exactly one local equipment and completed inspection',
+      () async {
+        final draft = await workspace.inspections.createGuidedDraft(
+          companyId: 'company-a',
+          createdByUserId: 'user-1',
+          machineSource: InspectionMachineSource.newMachine,
+        );
+        await workspace.inspections.updateGuidedIntake(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+          pendingAssetName: 'Dozer',
+          pendingManufacturer: 'Cat',
+          pendingModel: 'D6',
+        );
+        await fillRequiredPhotos(draft.id);
+        await workspace.inspections.saveConfirmedEquipmentId(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.serialNumber,
+            value: 'SN-NEW-1',
+            method: EquipmentIdCaptureMethod.manual,
+          ),
+        );
+        await workspace.inspections.markHoursUnavailable(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
 
-      final completed = await workspace.inspections.completeGuidedNewMachine(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-        updatedByUserId: 'user-1',
-      );
-      expect(completed.completionStatus, InspectionCompletionStatus.completed);
-      expect(completed.equipmentId, isNotNull);
+        final completed = await workspace.inspections.completeGuidedNewMachine(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+          updatedByUserId: 'user-1',
+        );
+        expect(
+          completed.completionStatus,
+          InspectionCompletionStatus.completed,
+        );
+        expect(completed.equipmentId, isNotNull);
 
-      final catalog = await workspace.equipmentCatalog.listForCompany(
-        'company-a',
-      );
-      expect(catalog, hasLength(1));
-      expect(catalog.single.id, completed.equipmentId);
-      expect(catalog.single.assetName, 'Dozer');
-      expect(catalog.single.manufacturer, 'Cat');
-      expect(catalog.single.model, 'D6');
-      expect(catalog.single.serialNumber, 'SN-NEW-1');
-      expect(catalog.single.catalogOrigin, LocalEquipmentCatalogOrigin.localCreated);
-    });
+        final catalog = await workspace.equipmentCatalog.listForCompany(
+          'company-a',
+        );
+        expect(catalog, hasLength(1));
+        expect(catalog.single.id, completed.equipmentId);
+        expect(catalog.single.assetName, 'Dozer');
+        expect(catalog.single.manufacturer, 'Cat');
+        expect(catalog.single.model, 'D6');
+        expect(catalog.single.serialNumber, 'SN-NEW-1');
+        expect(
+          catalog.single.catalogOrigin,
+          LocalEquipmentCatalogOrigin.localCreated,
+        );
+      },
+    );
 
     test('completion is idempotent and does not duplicate equipment', () async {
       final draft = await workspace.inspections.createGuidedDraft(
@@ -259,72 +277,78 @@ void main() {
       );
     });
 
-    test('duplicate same-company serial offers existing equipment path', () async {
-      await workspace.equipmentCatalog.replaceCompanyCatalog(
-        companyId: 'company-a',
-        equipment: [equipment(id: 'eq-existing', serialNumber: 'DUP-1')],
-      );
-      final draft = await workspace.inspections.createGuidedDraft(
-        companyId: 'company-a',
-        createdByUserId: 'user-1',
-        machineSource: InspectionMachineSource.newMachine,
-      );
-      await workspace.inspections.updateGuidedIntake(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-        pendingAssetName: 'Other',
-        pendingManufacturer: 'Cat',
-        pendingModel: '320',
-      );
-      await fillRequiredPhotos(draft.id);
-      await workspace.inspections.saveConfirmedEquipmentId(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-        confirmedValue: const ConfirmedEquipmentIdValue(
-          kind: EquipmentIdCaptureKind.serialNumber,
-          value: 'dup-1',
-          method: EquipmentIdCaptureMethod.manual,
-        ),
-      );
-      await workspace.inspections.markHoursUnavailable(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-      );
-
-      expect(
-        () => workspace.inspections.completeGuidedNewMachine(
+    test(
+      'duplicate same-company serial offers existing equipment path',
+      () async {
+        await workspace.equipmentCatalog.replaceCompanyCatalog(
+          companyId: 'company-a',
+          equipment: [equipment(id: 'eq-existing', serialNumber: 'DUP-1')],
+        );
+        final draft = await workspace.inspections.createGuidedDraft(
+          companyId: 'company-a',
+          createdByUserId: 'user-1',
+          machineSource: InspectionMachineSource.newMachine,
+        );
+        await workspace.inspections.updateGuidedIntake(
           companyId: 'company-a',
           inspectionId: draft.id,
-        ),
-        throwsA(
-          isA<DuplicateLocalEquipmentSerialException>().having(
-            (e) => e.existingEquipmentId,
-            'existingEquipmentId',
-            'eq-existing',
+          pendingAssetName: 'Other',
+          pendingManufacturer: 'Cat',
+          pendingModel: '320',
+        );
+        await fillRequiredPhotos(draft.id);
+        await workspace.inspections.saveConfirmedEquipmentId(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.serialNumber,
+            value: 'dup-1',
+            method: EquipmentIdCaptureMethod.manual,
           ),
-        ),
-      );
+        );
+        await workspace.inspections.markHoursUnavailable(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
 
-      final stillDraft = await workspace.inspections.getById(
-        companyId: 'company-a',
-        inspectionId: draft.id,
-      );
-      expect(stillDraft!.completionStatus, InspectionCompletionStatus.inProgress);
-      expect(stillDraft.equipmentId, isNull);
-
-      final switched = await workspace.inspections
-          .switchGuidedDraftToExistingEquipment(
+        expect(
+          () => workspace.inspections.completeGuidedNewMachine(
             companyId: 'company-a',
             inspectionId: draft.id,
-            equipmentId: 'eq-existing',
-          );
-      expect(
-        switched.machineSource,
-        InspectionMachineSource.existingEquipment,
-      );
-      expect(switched.equipmentId, 'eq-existing');
-      expect(switched.pendingAssetName, isNull);
-    });
+          ),
+          throwsA(
+            isA<DuplicateLocalEquipmentSerialException>().having(
+              (e) => e.existingEquipmentId,
+              'existingEquipmentId',
+              'eq-existing',
+            ),
+          ),
+        );
+
+        final stillDraft = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
+        expect(
+          stillDraft!.completionStatus,
+          InspectionCompletionStatus.inProgress,
+        );
+        expect(stillDraft.equipmentId, isNull);
+
+        final switched = await workspace.inspections
+            .switchGuidedDraftToExistingEquipment(
+              companyId: 'company-a',
+              inspectionId: draft.id,
+              equipmentId: 'eq-existing',
+            );
+        expect(
+          switched.machineSource,
+          InspectionMachineSource.existingEquipment,
+        );
+        expect(switched.equipmentId, 'eq-existing');
+        expect(switched.pendingAssetName, isNull);
+      },
+    );
 
     test('failed incomplete completion leaves resumable draft', () async {
       final draft = await workspace.inspections.createGuidedDraft(
@@ -345,7 +369,10 @@ void main() {
       );
       expect(restored!.isIncomplete, isTrue);
       expect(restored.equipmentId, isNull);
-      expect(await workspace.equipmentCatalog.listForCompany('company-a'), isEmpty);
+      expect(
+        await workspace.equipmentCatalog.listForCompany('company-a'),
+        isEmpty,
+      );
     });
   });
 
@@ -353,9 +380,7 @@ void main() {
     test('does not modify equipment master fields', () async {
       await workspace.equipmentCatalog.replaceCompanyCatalog(
         companyId: 'company-a',
-        equipment: [
-          equipment(id: 'eq-1', serialNumber: 'MASTER-SN'),
-        ],
+        equipment: [equipment(id: 'eq-1', serialNumber: 'MASTER-SN')],
       );
       final draft = await workspace.inspections.createGuidedDraft(
         companyId: 'company-a',

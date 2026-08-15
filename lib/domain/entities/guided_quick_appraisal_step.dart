@@ -8,7 +8,8 @@ enum GuidedQuickAppraisalStep {
   notes,
   reviewAndComplete;
 
-  static const List<GuidedQuickAppraisalStep> order = GuidedQuickAppraisalStep.values;
+  static const List<GuidedQuickAppraisalStep> order =
+      GuidedQuickAppraisalStep.values;
 
   int get stepNumber => index + 1;
 
