@@ -79,25 +79,26 @@ silently rewrite O/0, I/1, S/5, or B/8. Serial candidates that contain those
 look-alikes show **Check ambiguous characters.** Manual correction remains
 available. Hours stay numeric-only.
 
-### Defect 3 — OCR-doubled hyphen (fix pending short physical retest)
+### Defect 3 — OCR-doubled hyphen (fixed; physical retest passed)
 
 Device OCR sometimes reads one printed hyphen as two consecutive hyphens
 (`ABC-123` → `ABC--123`). Consecutive ASCII hyphens are never allowed in a
 stored serial: every run of two or more collapses to one (`ABC--123` /
 `ABC---123` → `ABC-123`). Legitimate single hyphens (`SN-0099`) stay intact.
 Letters and digits are never rewritten. Ambiguous-character warnings are
-unchanged. Hour-meter parsing is unchanged.
+unchanged. Hour-meter parsing is unchanged. Manual consecutive hyphens also
+collapse (founder-accepted).
 
 ## Manual Samsung S22 checklist
 
-Device: Samsung S22. Broader physical-device checklist: **passed** (Draft PR
-#25). Keep the PR Draft until the hyphen correction below is retested on
-device.
+Device: Samsung S22. Physical-device QA for Draft PR #25 at `b2532ef`:
+**complete / passed** (steps 1–15). Ready for Gunnar’s manual merge.
 
 Status:
-- [x] Steps 1–14 below — passed on physical Samsung S22 (except hyphen item)
-- [ ] Short retest: OCR-doubled hyphen collapses to a single hyphen on
-  candidate display, one-tap save, manual Done, and draft reopen
+- [x] Steps 1–14 — passed on physical Samsung S22
+- [x] Step 15 hyphen retest — passed on physical Samsung S22 at `b2532ef`
+  (OCR-doubled hyphens collapse; saved/reopened value keeps one hyphen;
+  manual consecutive hyphens also collapse)
 
 Airplane mode recommended for offline proof.
 
@@ -135,9 +136,11 @@ Airplane mode recommended for offline proof.
     stays usable.
 13. Force-stop the app and reopen the draft — saved serial/hours are restored.
 14. Repeat a serial tap + hour manual correction with airplane mode enabled.
-15. **Hyphen retest (pending):** If OCR doubles a printed hyphen
-    (`ABC--123`), the UI must show and save `ABC-123`. Single hyphens such as
-    `SN-0099` must remain. O/0 ambiguous labeling must still appear when
-    relevant. Hours must stay numeric-only.
+15. **Hyphen retest (passed at `b2532ef`):** If OCR doubles a printed hyphen
+    (`ABC--123`), the UI must show and save `ABC-123`. Saved and reopened
+    values retain one hyphen. Manual consecutive hyphens also collapse
+    (founder-accepted). Single hyphens such as `SN-0099` must remain. O/0
+    ambiguous labeling must still appear when relevant. Hours must stay
+    numeric-only.
 
 No video artifacts. Screenshots only if a founder asks for a specific failure.
