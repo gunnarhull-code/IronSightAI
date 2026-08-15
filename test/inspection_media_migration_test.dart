@@ -6,7 +6,7 @@ import 'package:ironsight_ai/data/local/drift/app_database.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 void main() {
-  test('schema v3 to v4 creates inspection_media table safely', () async {
+  test('schema v3 to current creates inspection_media and guided columns', () async {
     final file = File(
       '${Directory.systemTemp.path}/ironsight_media_mig_${DateTime.now().microsecondsSinceEpoch}.sqlite',
     );
@@ -47,7 +47,7 @@ void main() {
     final db = AppDatabase(NativeDatabase(file));
     addTearDown(db.close);
 
-    // Opening triggers onUpgrade < 4.
+    // Opening triggers onUpgrade through current schema.
     final tables = await db
         .customSelect(
           "SELECT name FROM sqlite_master WHERE type = 'table' "
@@ -57,7 +57,7 @@ void main() {
     expect(tables, hasLength(1));
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.data['user_version'], 4);
+    expect(version.data['user_version'], db.schemaVersion);
 
     await db.customStatement(
       "INSERT INTO inspection_media ("
@@ -71,5 +71,12 @@ void main() {
     final rows = await db.select(db.inspectionMediaItems).get();
     expect(rows, hasLength(1));
     expect(rows.single.slot, 'front_left_overview');
+
+    final guidedCols = await db
+        .customSelect("PRAGMA table_info('inspections')")
+        .get();
+    final names = guidedCols.map((row) => row.data['name']).toSet();
+    expect(names.contains('machine_source'), isTrue);
+    expect(names.contains('guided_step'), isTrue);
   });
 }

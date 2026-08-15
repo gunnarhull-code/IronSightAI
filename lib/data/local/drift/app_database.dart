@@ -70,10 +70,22 @@ class AppDatabase extends _$AppDatabase {
               ],
             ),
           );
-          await migrator.addColumn(
-            localEquipmentCache,
-            localEquipmentCache.catalogOrigin,
-          );
+          final equipmentTables = await customSelect(
+            "SELECT name FROM sqlite_master WHERE type = 'table' "
+            "AND name = 'local_equipment_cache'",
+          ).get();
+          if (equipmentTables.isEmpty) {
+            await migrator.createTable(localEquipmentCache);
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_local_equipment_company '
+              'ON local_equipment_cache (company_id)',
+            );
+          } else {
+            await migrator.addColumn(
+              localEquipmentCache,
+              localEquipmentCache.catalogOrigin,
+            );
+          }
         }
       },
     );

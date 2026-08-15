@@ -35,7 +35,40 @@ void main() {
     return 'id-$idTick';
   }
 
-  setUp(() {
+  Future<void> seedEquipment({
+    String companyId = 'company-a',
+    String equipmentId = 'equip-1',
+  }) async {
+    final now = DateTime.utc(2026, 7, 1);
+    await database
+        .into(database.localEquipmentCache)
+        .insert(
+          LocalEquipmentCacheCompanion.insert(
+            id: equipmentId,
+            companyId: companyId,
+            assetName: 'Asset $equipmentId',
+            manufacturer: 'Mfr',
+            model: 'MDL',
+            createdAt: now,
+            updatedAt: now,
+            cachedAt: now,
+          ),
+        );
+  }
+
+  /// Guided Existing drafts require resolved serial/hours before complete.
+  Future<void> resolveGuidedIdentity(String inspectionId) async {
+    await repository.markSerialUnableToVerify(
+      companyId: 'company-a',
+      inspectionId: inspectionId,
+    );
+    await repository.markHoursUnavailable(
+      companyId: 'company-a',
+      inspectionId: inspectionId,
+    );
+  }
+
+  setUp(() async {
     clockTick = 0;
     idTick = 0;
     database = openMemoryAppDatabase();
@@ -44,6 +77,8 @@ void main() {
       clock: nextClock,
       idGenerator: nextId,
     );
+    await seedEquipment();
+    await seedEquipment(companyId: 'company-b', equipmentId: 'equip-b1');
   });
 
   tearDown(() async {
@@ -390,6 +425,7 @@ void main() {
 
     test('cannot discard a completed inspection', () async {
       final id = await createDraft();
+      await resolveGuidedIdentity(id);
       await repository.complete(companyId: 'company-a', inspectionId: id);
 
       expect(
@@ -493,6 +529,7 @@ void main() {
 
     test('rejects confirmation on completed inspections', () async {
       final id = await createDraft();
+      await resolveGuidedIdentity(id);
       await repository.complete(companyId: 'company-a', inspectionId: id);
       expect(
         () => repository.saveConfirmedEquipmentId(

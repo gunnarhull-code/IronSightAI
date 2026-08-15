@@ -8,7 +8,6 @@ import '../entities/inspection_status.dart';
 import '../entities/scorecard_category.dart';
 import '../equipment_id_capture/confirmed_equipment_id_value.dart';
 import '../equipment_id_capture/equipment_id_capture_kind.dart';
-import '../equipment_id_capture/equipment_id_capture_method.dart';
 
 /// Local persistence boundary for offline inspections.
 ///
