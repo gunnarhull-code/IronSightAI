@@ -5,7 +5,6 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/app_database.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
-import 'package:ironsight_ai/data/local/inspection_media_file_store.dart';
 import 'package:ironsight_ai/data/local/offline_inspection_workspace.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_inspection_repository.dart';
 import 'package:ironsight_ai/domain/entities/equipment.dart';

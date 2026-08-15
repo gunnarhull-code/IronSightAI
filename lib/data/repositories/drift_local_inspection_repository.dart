@@ -29,10 +29,9 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     this._db, {
     DateTime Function()? clock,
     String Function()? idGenerator,
-    LocalInspectionMediaRepository? mediaForCompleteness,
+    LocalInspectionMediaRepository? this._mediaForCompleteness,
   }) : _clock = clock ?? (() => DateTime.now().toUtc()),
-       _idGenerator = idGenerator ?? const Uuid().v4,
-       _mediaForCompleteness = mediaForCompleteness;
+       _idGenerator = idGenerator ?? const Uuid().v4;
 
   final AppDatabase _db;
   final DateTime Function() _clock;
