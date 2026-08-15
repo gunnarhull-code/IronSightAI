@@ -234,13 +234,10 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     });
   }
 
-  Future<void> _onEquipmentIdConfirmed(
+  Future<void> _persistEquipmentId(
     Inspection inspection,
-    EquipmentIdCaptureState state,
+    ConfirmedEquipmentIdValue confirmed,
   ) async {
-    final confirmed = state.confirmed;
-    if (confirmed == null || _savingEquipmentId) return;
-
     final alreadyPersisted = switch (confirmed.kind) {
       EquipmentIdCaptureKind.serialNumber =>
         inspection.serialNumber == confirmed.value &&
@@ -260,16 +257,6 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
         updatedByUserId: widget.userId,
       );
       if (mounted) _reload();
-    } on InvalidInspectionLifecycleException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.message)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save equipment ID locally.')),
-      );
     } finally {
       if (mounted) setState(() => _savingEquipmentId = false);
     }
@@ -741,8 +728,8 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                       const SizedBox(height: 4),
                       Text(
                         'Scan or type serial number and hours. OCR reuses the '
-                        'required serial/hour photos and never saves until you '
-                        'confirm. Works offline.',
+                        'required serial/hour photos. Tap a recommended value '
+                        'or finish typing to save it locally. Works offline.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -759,8 +746,8 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                               inspection,
                               EquipmentIdCaptureKind.serialNumber,
                             ),
-                            onConfirmed: (state) =>
-                                _onEquipmentIdConfirmed(inspection, state),
+                            onPersist: (value) =>
+                                _persistEquipmentId(inspection, value),
                           ),
                         ),
                       ),
@@ -776,8 +763,8 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                               inspection,
                               EquipmentIdCaptureKind.hourMeter,
                             ),
-                            onConfirmed: (state) =>
-                                _onEquipmentIdConfirmed(inspection, state),
+                            onPersist: (value) =>
+                                _persistEquipmentId(inspection, value),
                           ),
                         ),
                       ),

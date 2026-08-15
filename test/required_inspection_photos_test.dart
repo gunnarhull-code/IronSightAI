@@ -371,6 +371,54 @@ void main() {
     expect(inspection!.serialNumber, isNull);
   });
 
+  testWidgets(
+    'tapping a recommended serial saves immediately with no recapture',
+    (tester) async {
+      final inspectionId = await openDraft(tester, equipmentId: 'eq-tap');
+      await workspace.inspectionMedia.saveRequiredPhoto(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+        slot: InspectionPhotoSlot.serialDataPlate,
+        image: _photo,
+      );
+      await reopenWorkspace(tester, inspectionId);
+
+      final scanButton = find.bySemanticsLabel(
+        EquipmentIdCaptureLabels.serialScanButton,
+      );
+      await tester.ensureVisible(scanButton);
+      await tester.pumpAndSettle();
+      await tester.tap(scanButton);
+      await tester.pumpAndSettle();
+
+      expect(photoCapture.captureCallCount, 0);
+      expect(panelCapture.captureCallCount, 0);
+      expect(find.text('Confirm'), findsNothing);
+
+      await tester.tap(
+        find.bySemanticsLabel(
+          '${EquipmentIdCaptureLabels.recommendedPrefix} SN-PHOTO-1 '
+          '${EquipmentIdCaptureLabels.ambiguousCharactersHint}',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Saved: SN-PHOTO-1'), findsOneWidget);
+      final inspection = await workspace.inspections.getById(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+      );
+      expect(inspection!.serialNumber, 'SN-PHOTO-1');
+      expect(
+        inspection.serialCaptureMethod,
+        EquipmentIdCaptureMethod.ocrConfirmed,
+      );
+      expect(photoCapture.captureCallCount, 0);
+      expect(panelCapture.captureCallCount, 0);
+      expect(serialOcr.recognizeCallCount, 1);
+    },
+  );
+
   testWidgets('OCR does not overwrite an already confirmed serial', (
     tester,
   ) async {
@@ -397,6 +445,137 @@ void main() {
     expect(inspection!.serialNumber, 'CONFIRMED-1');
     expect(inspection.serialCaptureMethod, EquipmentIdCaptureMethod.manual);
   });
+
+  testWidgets(
+    'repeated serial photo retakes with OCR stay stable under scroll PageStorage',
+    (tester) async {
+      // Regression: ExpansionTile/Expansible read PageStorage as bool? while the
+      // Quick Appraisal ListView stores a scroll double under the same key chain.
+      serialOcr = FakeTextRecognition(
+        blocks: const [
+          RecognizedTextBlock(rawText: 'SN-100'),
+          RecognizedTextBlock(rawText: 'SN-200'),
+        ],
+      );
+
+      final inspectionId = await openDraft(
+        tester,
+        equipmentId: 'eq-repeat',
+        // Tall viewport keeps slots mounted; we still scroll enough to write a
+        // PageStorage double under the Quick Appraisal ListView key.
+        tallViewport: true,
+      );
+
+      await workspace.inspections.saveConfirmedEquipmentId(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+        confirmedValue: const ConfirmedEquipmentIdValue(
+          kind: EquipmentIdCaptureKind.serialNumber,
+          value: 'KEEP-SERIAL',
+          method: EquipmentIdCaptureMethod.manual,
+        ),
+        updatedByUserId: 'user-1',
+      );
+      await reopenWorkspace(tester, inspectionId);
+
+      final scrollable = find.byType(Scrollable).first;
+      await tester.drag(scrollable, const Offset(0, -120));
+      await tester.pumpAndSettle();
+
+      String? previousMediaId;
+      for (var attempt = 1; attempt <= 3; attempt++) {
+        photoCapture.image = CapturedImage(
+          bytes: kTinyPngBytes,
+          path: '/tmp/serial-$attempt.png',
+          mimeType: 'image/png',
+        );
+
+        await tapCapture(tester, InspectionPhotoSlot.serialDataPlate);
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'retake #$attempt must not throw a PageStorage type cast',
+        );
+
+        expect(
+          find.bySemanticsLabel(
+            RequiredPhotoLabels.previewThumbnail(
+              InspectionPhotoSlot.serialDataPlate,
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(EquipmentIdCaptureLabels.otherPossibilities),
+          findsOneWidget,
+        );
+        // Mount the alternatives section while PageStorage still holds the
+        // ListView scroll double — the old ExpansionTile path crashed here.
+        final expand = find.bySemanticsLabel(
+          EquipmentIdCaptureLabels.expandOtherPossibilities,
+        );
+        if (expand.evaluate().isNotEmpty) {
+          await tester.tap(expand);
+          await tester.pumpAndSettle();
+        }
+        expect(tester.takeException(), isNull);
+        expect(find.text('SN-100'), findsWidgets);
+        expect(find.text('SN-200'), findsWidgets);
+
+        final media = await workspace.inspectionMedia.getBySlot(
+          companyId: 'company-a',
+          inspectionId: inspectionId,
+          slot: InspectionPhotoSlot.serialDataPlate,
+        );
+        expect(media, isNotNull);
+        if (previousMediaId != null) {
+          expect(media!.id, isNot(equals(previousMediaId)));
+        }
+        previousMediaId = media!.id;
+
+        final inspection = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: inspectionId,
+        );
+        expect(
+          inspection!.serialNumber,
+          'KEEP-SERIAL',
+          reason: 'repeated OCR must not auto-replace the saved serial',
+        );
+      }
+
+      expect(photoCapture.captureCallCount, 3);
+      expect(serialOcr.recognizeCallCount, 3);
+
+      // Failed fourth replacement keeps the previous photo and saved serial.
+      final beforeFail = await workspace.inspectionMedia.getBySlot(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+        slot: InspectionPhotoSlot.serialDataPlate,
+      );
+      mediaFiles.failWrites = true;
+      photoCapture.image = const CapturedImage(
+        bytes: kTinyPngBytes,
+        path: '/tmp/serial-fail.png',
+        mimeType: 'image/png',
+      );
+      await tapCapture(tester, InspectionPhotoSlot.serialDataPlate);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Could not save photo locally.'), findsOneWidget);
+
+      final afterFail = await workspace.inspectionMedia.getBySlot(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+        slot: InspectionPhotoSlot.serialDataPlate,
+      );
+      expect(afterFail!.id, beforeFail!.id);
+      final inspection = await workspace.inspections.getById(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+      );
+      expect(inspection!.serialNumber, 'KEEP-SERIAL');
+    },
+  );
 
   testWidgets('captured photos survive reopening the draft', (tester) async {
     final inspectionId = await openDraft(tester, equipmentId: 'eq-4');

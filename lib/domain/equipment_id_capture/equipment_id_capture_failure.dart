@@ -7,6 +7,7 @@ enum EquipmentIdCaptureFailureKind {
   ocrFailure,
   noTextDetected,
   unsupportedPlatform,
+  persistenceFailure,
 }
 
 /// Structured capture failure with user-facing guidance.
@@ -82,6 +83,18 @@ class EquipmentIdCaptureFailure {
       guidance:
           'Use manual entry below. On-device scan is available on Android '
           'and iOS.',
+    );
+  }
+
+  factory EquipmentIdCaptureFailure.persistenceFailure([String? detail]) {
+    return EquipmentIdCaptureFailure(
+      kind: EquipmentIdCaptureFailureKind.persistenceFailure,
+      message: detail == null || detail.isEmpty
+          ? 'Could not save this value on the device.'
+          : 'Could not save this value on the device: $detail',
+      guidance:
+          'The previous saved value was kept. Try again, or enter the '
+          'value manually.',
     );
   }
 }
