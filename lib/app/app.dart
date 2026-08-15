@@ -175,6 +175,7 @@ class _IronSightAppState extends State<IronSightApp> {
         repository: _companyRepository!,
         workspace: _workspace,
         authSession: _authSession,
+        signOut: () => Supabase.instance.client.auth.signOut(),
         onInspectionSessionChanged: _onInspectionSessionChanged,
       ),
     );
