@@ -1,3 +1,4 @@
+import 'ambiguous_serial_characters.dart';
 import 'ocr_plate_noise.dart';
 import 'serial_normalizer.dart';
 
@@ -25,12 +26,17 @@ class SerialFieldCandidate {
     required this.confidence,
     this.sourceRawText,
     this.labelled = false,
+    this.hasAmbiguousCharacters = false,
   });
 
   final String value;
   final double confidence;
   final String? sourceRawText;
   final bool labelled;
+
+  /// True when OCR could have confused look-alike letters/digits in [value].
+  /// The characters are never rewritten automatically.
+  final bool hasAmbiguousCharacters;
 }
 
 /// Parses and ranks OCR text for equipment serial numbers.
@@ -176,6 +182,8 @@ class SerialFieldExtractor {
         confidence: item.score,
         sourceRawText: item.source,
         labelled: item.labelled,
+        hasAmbiguousCharacters:
+            AmbiguousSerialCharacters.hasAmbiguousCharacters(item.value),
       );
     }
 

@@ -7,6 +7,7 @@ class EquipmentIdCandidate {
     this.sourceRawText,
     this.isRecommended = false,
     this.confidence = 0,
+    this.hasAmbiguousCharacters = false,
   });
 
   final String id;
@@ -22,4 +23,7 @@ class EquipmentIdCandidate {
 
   /// Deterministic 0.0–1.0 ranking score. Not engine OCR confidence.
   final double confidence;
+
+  /// Serial OCR may contain look-alike letters/digits. Never auto-corrected.
+  final bool hasAmbiguousCharacters;
 }

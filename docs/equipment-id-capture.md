@@ -37,10 +37,14 @@ hour-meter readings, and is integrated into Quick Appraisal.
 
 - OCR remains on-device and optional. Detected text is never auto-saved.
 - One recommended serial/hour is shown when confidence is sufficient.
-- Weaker field-valid values sit behind **Other possibilities**.
+- Weaker field-valid values sit behind **Other possibilities** (local
+  expand/collapse — not `ExpansionTile` PageStorage under the appraisal list).
 - Tapping a candidate is explicit human confirmation and saves immediately.
 - Manual entry is always visible and saves when editing is completed.
 - There is no second Confirm button for candidate selection or manual save.
+- Serial OCR never silently substitutes look-alike characters (O/0, I/1, S/5,
+  B/8). Ambiguous serials are labelled **Check ambiguous characters.**
+- Hour readings stay strictly numeric; letters are never converted to digits.
 - Capture services perform no network I/O.
 - Saved serial / hours are stored on the **local inspection draft**
   (not rewritten into equipment-master cache by this flow).
@@ -49,6 +53,31 @@ hour-meter readings, and is integrated into Quick Appraisal.
   replacement. Cancelled capture, OCR failure, or persist failure keeps the
   previous saved value.
 - Quick Appraisal scroll position is preserved across equipment-ID saves.
+
+## Samsung S22 device findings (Draft PR #25)
+
+### Defect 1 — repeated serial-photo red screen (fixed)
+
+After roughly the third serial capture/retake, Quick Appraisal showed Flutter’s
+red error screen:
+
+`type 'double' is not a subtype of type 'bool?' in type cast`
+
+Root cause: “Other possibilities” used `ExpansionTile`/`Expansible`, which
+reads PageStorage as `bool?` for expanded state. That widget sits under Quick
+Appraisal’s `ListView` with a `PageStorageKey` that stores the scroll offset as
+a `double`. After scroll + repeated OCR rebuilds that mount alternatives, the
+`as bool?` cast crashed.
+
+Fix: replace `ExpansionTile` with a local expand/collapse section that does not
+touch PageStorage.
+
+### Defect 2 — OCR letter O vs digit 0 (fixed)
+
+Device OCR can read a printed zero as the letter `O`. The app must never
+silently rewrite O/0, I/1, S/5, or B/8. Serial candidates that contain those
+look-alikes show **Check ambiguous characters.** Manual correction remains
+available. Hours stay numeric-only.
 
 ## Manual Samsung S22 checklist
 
@@ -67,18 +96,27 @@ Airplane mode recommended for offline proof.
    Confirm button. Reopen the draft; the serial is still present.
 6. Rescan the same plate. The saved serial stays until you deliberately tap a
    different candidate or finish a manual replacement.
-7. Capture/scan a real hour meter. One recommended numeric reading appears.
+7. Retake the serial photo **at least three times** in a row (scroll the
+   appraisal between retakes). No red error screen. Each successful retake
+   remains previewable and usable for OCR. A failed save keeps the previous
+   photo and the previously saved serial. OCR must not auto-replace the saved
+   serial.
+8. If OCR shows a letter where the plate has a digit (or the reverse), the
+   candidate must keep the OCR characters as-read and show
+   **Check ambiguous characters.** Correct via manual entry / Done — never
+   expect an automatic O→0 rewrite.
+9. Capture/scan a real hour meter. One recommended numeric reading appears.
    If OCR omitted a leading `1`, the shown value must match the characters
    that were read — never invent the missing digit. Correct it by editing the
    manual field and leaving the field / pressing Done.
-8. Misleading plate numbers (weights, dates, capacities) must not be hour
-   recommendations.
-9. Cancel a capture, force an OCR miss, and confirm the previous saved value
-   remains. A persist/save error must restore the previous value with a
-   recoverable banner.
-10. Scroll the appraisal, save a serial/hour, and confirm scroll position
+10. Misleading plate numbers (weights, dates, capacities) must not be hour
+    recommendations. Letter-like OCR in an hour field must not become digits.
+11. Cancel a capture, force an OCR miss, and confirm the previous saved value
+    remains. A persist/save error must restore the previous value with a
+    recoverable banner.
+12. Scroll the appraisal, save a serial/hour, and confirm scroll position
     stays usable.
-11. Force-stop the app and reopen the draft — saved serial/hours are restored.
-12. Repeat a serial tap + hour manual correction with airplane mode enabled.
+13. Force-stop the app and reopen the draft — saved serial/hours are restored.
+14. Repeat a serial tap + hour manual correction with airplane mode enabled.
 
 No video artifacts. Screenshots only if a founder asks for a specific failure.

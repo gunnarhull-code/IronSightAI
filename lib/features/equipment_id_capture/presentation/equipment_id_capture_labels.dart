@@ -7,8 +7,13 @@ abstract final class EquipmentIdCaptureLabels {
   static const String recommendedPrefix = 'Recommended identification value';
   static const String alternativePrefix = 'Other possible identification value';
   static const String otherPossibilities = 'Other possibilities';
+  static const String ambiguousCharactersHint = 'Check ambiguous characters.';
   static const String savedStatePrefix = 'Saved identification value';
   static const String saveError = 'Equipment ID save error';
+  static const String expandOtherPossibilities =
+      'Show other possible identification values';
+  static const String collapseOtherPossibilities =
+      'Hide other possible identification values';
   static const String manualFallbackHint =
       'Manual entry is always available and saves when you finish editing. '
       'Detected text is never saved automatically.';

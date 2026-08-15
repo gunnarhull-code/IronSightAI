@@ -623,6 +623,8 @@ class EquipmentIdCaptureController {
                 extraction.visibleCandidates[i].value ==
                     extraction.recommended!.value,
             confidence: extraction.visibleCandidates[i].confidence,
+            hasAmbiguousCharacters:
+                extraction.visibleCandidates[i].hasAmbiguousCharacters,
           ),
       ];
     }

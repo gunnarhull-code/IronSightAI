@@ -12,6 +12,14 @@ import 'package:ironsight_ai/features/equipment_id_capture/presentation/equipmen
 
 import '../support/fake_equipment_id_capture.dart';
 
+String _candidateSemantics(String value, {required bool recommended}) {
+  final prefix = recommended
+      ? EquipmentIdCaptureLabels.recommendedPrefix
+      : EquipmentIdCaptureLabels.alternativePrefix;
+  // Digits/look-alikes in serial OCR are flagged for human review.
+  return '$prefix $value ${EquipmentIdCaptureLabels.ambiguousCharactersHint}';
+}
+
 void main() {
   Future<EquipmentIdCaptureController> pumpPanel(
     WidgetTester tester, {
@@ -99,7 +107,9 @@ void main() {
       find.text(EquipmentIdCaptureLabels.otherPossibilities),
       findsOneWidget,
     );
-    await tester.tap(find.text(EquipmentIdCaptureLabels.otherPossibilities));
+    await tester.tap(
+      find.bySemanticsLabel(EquipmentIdCaptureLabels.expandOtherPossibilities),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('SN-100'), findsWidgets);
@@ -107,7 +117,8 @@ void main() {
 
     await tester.tap(
       find.bySemanticsLabel(
-        '${EquipmentIdCaptureLabels.alternativePrefix} SN-200',
+        '${EquipmentIdCaptureLabels.alternativePrefix} SN-200 '
+        '${EquipmentIdCaptureLabels.ambiguousCharactersHint}',
       ),
     );
     await tester.pumpAndSettle();
@@ -181,13 +192,17 @@ void main() {
 
       expect(
         find.bySemanticsLabel(
-          '${EquipmentIdCaptureLabels.recommendedPrefix} 50252M6304',
+          _candidateSemantics('50252M6304', recommended: true),
         ),
         findsOneWidget,
       );
+      expect(
+        find.text(EquipmentIdCaptureLabels.ambiguousCharactersHint),
+        findsWidgets,
+      );
       await tester.tap(
         find.bySemanticsLabel(
-          '${EquipmentIdCaptureLabels.recommendedPrefix} 50252M6304',
+          _candidateSemantics('50252M6304', recommended: true),
         ),
       );
       await tester.pumpAndSettle();
@@ -199,6 +214,42 @@ void main() {
       );
     },
   );
+
+  testWidgets('ambiguous OCR letter O is not silently changed to zero', (
+    tester,
+  ) async {
+    final persisted = <ConfirmedEquipmentIdValue>[];
+    final controller = EquipmentIdCaptureController(
+      kind: EquipmentIdCaptureKind.serialNumber,
+      imageCapture: FakeImageCapture(),
+      textRecognition: FakeTextRecognition(
+        blocks: const [RecognizedTextBlock(rawText: 'S/No 5O252M63O4')],
+      ),
+      cameraPermission: FakeCameraPermission(),
+    );
+    await pumpPanel(
+      tester,
+      controller: controller,
+      onPersist: (value) async => persisted.add(value),
+    );
+    await tester.tap(find.text('Scan with camera'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('5O252M63O4'), findsWidgets);
+    expect(find.text('50252M6304'), findsNothing);
+    expect(
+      find.text(EquipmentIdCaptureLabels.ambiguousCharactersHint),
+      findsWidgets,
+    );
+
+    await tester.tap(
+      find.bySemanticsLabel(
+        _candidateSemantics('5O252M63O4', recommended: true),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(persisted.single.value, '5O252M63O4');
+  });
 
   testWidgets('persist failure restores previous saved value', (tester) async {
     final controller = EquipmentIdCaptureController(

@@ -265,22 +265,11 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
           ],
           if (alternatives.isNotEmpty) ...[
             const SizedBox(height: 8),
-            Semantics(
-              container: true,
-              label: EquipmentIdCaptureLabels.otherPossibilities,
-              child: ExpansionTile(
-                title: const Text(EquipmentIdCaptureLabels.otherPossibilities),
-                children: [
-                  for (final candidate in alternatives)
-                    _CandidateButton(
-                      candidate: candidate,
-                      selected: state.selectedCandidateId == candidate.id,
-                      recommended: false,
-                      enabled: !_busy,
-                      onTap: () => _commitCandidate(candidate.id),
-                    ),
-                ],
-              ),
+            _OtherPossibilitiesSection(
+              alternatives: alternatives,
+              selectedCandidateId: state.selectedCandidateId,
+              enabled: !_busy,
+              onSelect: _commitCandidate,
             ),
           ],
           const SizedBox(height: 16),
@@ -356,6 +345,73 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
   }
 }
 
+class _OtherPossibilitiesSection extends StatefulWidget {
+  const _OtherPossibilitiesSection({
+    required this.alternatives,
+    required this.selectedCandidateId,
+    required this.enabled,
+    required this.onSelect,
+  });
+
+  final List<EquipmentIdCandidate> alternatives;
+  final String? selectedCandidateId;
+  final bool enabled;
+  final Future<void> Function(String candidateId) onSelect;
+
+  @override
+  State<_OtherPossibilitiesSection> createState() =>
+      _OtherPossibilitiesSectionState();
+}
+
+/// Local expand/collapse for weaker OCR alternatives.
+///
+/// Must not use [ExpansionTile]/[Expansible] PageStorage under Quick Appraisal's
+/// [PageStorageKey] ListView — that stores a scroll `double`, and Expansible
+/// casts the same entry to `bool?`, crashing after repeated photo/OCR rebuilds.
+class _OtherPossibilitiesSectionState
+    extends State<_OtherPossibilitiesSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      container: true,
+      explicitChildNodes: true,
+      label: EquipmentIdCaptureLabels.otherPossibilities,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            label: _expanded
+                ? EquipmentIdCaptureLabels.collapseOtherPossibilities
+                : EquipmentIdCaptureLabels.expandOtherPossibilities,
+            excludeSemantics: true,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _expanded = !_expanded),
+              icon: Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+              label: Text(
+                EquipmentIdCaptureLabels.otherPossibilities,
+                style: theme.textTheme.titleSmall,
+              ),
+            ),
+          ),
+          if (_expanded)
+            for (final candidate in widget.alternatives)
+              _CandidateButton(
+                candidate: candidate,
+                selected: widget.selectedCandidateId == candidate.id,
+                recommended: false,
+                enabled: widget.enabled,
+                onTap: () => widget.onSelect(candidate.id),
+              ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CandidateButton extends StatelessWidget {
   const _CandidateButton({
     required this.candidate,
@@ -373,24 +429,39 @@ class _CandidateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final prefix = recommended
         ? EquipmentIdCaptureLabels.recommendedPrefix
         : EquipmentIdCaptureLabels.alternativePrefix;
+    final ambiguous = candidate.hasAmbiguousCharacters
+        ? ' ${EquipmentIdCaptureLabels.ambiguousCharactersHint}'
+        : '';
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Semantics(
         button: true,
         selected: selected,
-        label: '$prefix ${candidate.displayValue}',
+        label: '$prefix ${candidate.displayValue}$ambiguous',
         excludeSemantics: true,
         child: recommended
             ? FilledButton.tonal(
                 onPressed: enabled ? onTap : null,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    candidate.displayValue,
-                    style: const TextStyle(fontSize: 18),
+                  child: Column(
+                    children: [
+                      Text(
+                        candidate.displayValue,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                      if (candidate.hasAmbiguousCharacters) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          EquipmentIdCaptureLabels.ambiguousCharactersHint,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               )
@@ -398,9 +469,20 @@ class _CandidateButton extends StatelessWidget {
                 onPressed: enabled ? onTap : null,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(
-                    candidate.displayValue,
-                    style: const TextStyle(fontSize: 16),
+                  child: Column(
+                    children: [
+                      Text(
+                        candidate.displayValue,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                      if (candidate.hasAmbiguousCharacters) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          EquipmentIdCaptureLabels.ambiguousCharactersHint,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
               ),
