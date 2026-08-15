@@ -44,6 +44,7 @@ class GuidedQuickAppraisalScreen extends StatefulWidget {
     this.captureControllerFactory,
     this.imageCapture,
     this.cameraPermission,
+    this.initialStepOverride,
   });
 
   final String companyId;
@@ -56,6 +57,9 @@ class GuidedQuickAppraisalScreen extends StatefulWidget {
   final EquipmentIdCaptureControllerFactory? captureControllerFactory;
   final ImageCapturePort? imageCapture;
   final CameraPermissionPort? cameraPermission;
+
+  /// Test-only: force the first visible step instead of resume resolution.
+  final GuidedQuickAppraisalStep? initialStepOverride;
 
   @override
   State<GuidedQuickAppraisalScreen> createState() =>
@@ -216,7 +220,9 @@ class _GuidedQuickAppraisalScreenState
     );
 
     if (initializeStep && !_stepInitialized) {
-      _step = resolveGuidedResumeStep(inspection: inspection, media: mediaList);
+      _step =
+          widget.initialStepOverride ??
+          resolveGuidedResumeStep(inspection: inspection, media: mediaList);
       _stepInitialized = true;
     }
 
