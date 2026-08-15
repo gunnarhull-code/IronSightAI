@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
 import '../../../../domain/entities/equipment.dart';
+import '../../../../domain/entities/inspection_machine_source.dart';
 import '../../../../domain/repositories/local_equipment_catalog_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
 import '../../../../domain/use_cases/find_active_drafts_for_equipment.dart';
@@ -112,18 +113,19 @@ class _InspectionEquipmentSelectScreenState
         if (!mounted) return;
         if (decision == null) return;
         if (decision == _DuplicateDraftDecision.resume) {
-          await _openWorkspace(drafts.first.id);
+          await _openGuided(drafts.first.id);
           return;
         }
       }
 
-      final draft = await widget.inspections.createDraft(
+      final draft = await widget.inspections.createGuidedDraft(
         companyId: widget.companyId,
-        equipmentId: equipment.id,
         createdByUserId: widget.userId,
+        machineSource: InspectionMachineSource.existingEquipment,
+        equipmentId: equipment.id,
       );
       if (!mounted) return;
-      await _openWorkspace(draft.id);
+      await _openGuided(draft.id);
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -138,10 +140,10 @@ class _InspectionEquipmentSelectScreenState
     }
   }
 
-  Future<void> _openWorkspace(String inspectionId) async {
+  Future<void> _openGuided(String inspectionId) async {
     final changed = await Navigator.of(
       context,
-    ).pushNamed<bool>(AppRoutes.inspectionWorkspace(inspectionId));
+    ).pushNamed<bool>(AppRoutes.guidedQuickAppraisal(inspectionId));
     if (!mounted) return;
     Navigator.of(context).pop(changed == true);
   }
