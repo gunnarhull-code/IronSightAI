@@ -5,7 +5,11 @@ import 'package:drift/drift.dart';
 class Inspections extends Table {
   TextColumn get id => text()();
   TextColumn get companyId => text()();
-  TextColumn get equipmentId => text()();
+
+  /// Linked Equipment id. Null only while a New-machine guided draft is
+  /// incomplete — Equipment is created atomically at successful completion.
+  TextColumn get equipmentId => text().nullable()();
+
   TextColumn get createdByUserId => text()();
   TextColumn get updatedByUserId => text().nullable()();
   TextColumn get completionStatus => text()();
@@ -23,6 +27,21 @@ class Inspections extends Table {
   /// Confirmed hour-meter reading for this inspection draft.
   RealColumn get hourMeterReading => real().nullable()();
   TextColumn get hourMeterCaptureMethod => text().nullable()();
+
+  /// Guided intake: new_machine | existing_equipment. Null = legacy draft.
+  TextColumn get machineSource => text().nullable()();
+
+  /// Pending New-machine identity (not an Equipment row until completion).
+  TextColumn get pendingAssetName => text().nullable()();
+  TextColumn get pendingManufacturer => text().nullable()();
+  TextColumn get pendingModel => text().nullable()();
+
+  /// Last visited guided step storage value.
+  TextColumn get guidedStep => text().nullable()();
+
+  /// Stable Equipment id reserved for New-machine completion idempotency.
+  TextColumn get pendingEquipmentId => text().nullable()();
+
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get localUpdatedAt => dateTime()();

@@ -36,9 +36,9 @@ class $InspectionsTable extends Inspections
   late final GeneratedColumn<String> equipmentId = GeneratedColumn<String>(
     'equipment_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _createdByUserIdMeta = const VerificationMeta(
     'createdByUserId',
@@ -181,6 +181,72 @@ class $InspectionsTable extends Inspections
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _machineSourceMeta = const VerificationMeta(
+    'machineSource',
+  );
+  @override
+  late final GeneratedColumn<String> machineSource = GeneratedColumn<String>(
+    'machine_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pendingAssetNameMeta = const VerificationMeta(
+    'pendingAssetName',
+  );
+  @override
+  late final GeneratedColumn<String> pendingAssetName = GeneratedColumn<String>(
+    'pending_asset_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pendingManufacturerMeta =
+      const VerificationMeta('pendingManufacturer');
+  @override
+  late final GeneratedColumn<String> pendingManufacturer =
+      GeneratedColumn<String>(
+        'pending_manufacturer',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _pendingModelMeta = const VerificationMeta(
+    'pendingModel',
+  );
+  @override
+  late final GeneratedColumn<String> pendingModel = GeneratedColumn<String>(
+    'pending_model',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _guidedStepMeta = const VerificationMeta(
+    'guidedStep',
+  );
+  @override
+  late final GeneratedColumn<String> guidedStep = GeneratedColumn<String>(
+    'guided_step',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pendingEquipmentIdMeta =
+      const VerificationMeta('pendingEquipmentId');
+  @override
+  late final GeneratedColumn<String> pendingEquipmentId =
+      GeneratedColumn<String>(
+        'pending_equipment_id',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -255,6 +321,12 @@ class $InspectionsTable extends Inspections
     serialCaptureMethod,
     hourMeterReading,
     hourMeterCaptureMethod,
+    machineSource,
+    pendingAssetName,
+    pendingManufacturer,
+    pendingModel,
+    guidedStep,
+    pendingEquipmentId,
     createdAt,
     updatedAt,
     localUpdatedAt,
@@ -294,8 +366,6 @@ class $InspectionsTable extends Inspections
           _equipmentIdMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_equipmentIdMeta);
     }
     if (data.containsKey('created_by_user_id')) {
       context.handle(
@@ -417,6 +487,57 @@ class $InspectionsTable extends Inspections
         ),
       );
     }
+    if (data.containsKey('machine_source')) {
+      context.handle(
+        _machineSourceMeta,
+        machineSource.isAcceptableOrUnknown(
+          data['machine_source']!,
+          _machineSourceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_asset_name')) {
+      context.handle(
+        _pendingAssetNameMeta,
+        pendingAssetName.isAcceptableOrUnknown(
+          data['pending_asset_name']!,
+          _pendingAssetNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_manufacturer')) {
+      context.handle(
+        _pendingManufacturerMeta,
+        pendingManufacturer.isAcceptableOrUnknown(
+          data['pending_manufacturer']!,
+          _pendingManufacturerMeta,
+        ),
+      );
+    }
+    if (data.containsKey('pending_model')) {
+      context.handle(
+        _pendingModelMeta,
+        pendingModel.isAcceptableOrUnknown(
+          data['pending_model']!,
+          _pendingModelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('guided_step')) {
+      context.handle(
+        _guidedStepMeta,
+        guidedStep.isAcceptableOrUnknown(data['guided_step']!, _guidedStepMeta),
+      );
+    }
+    if (data.containsKey('pending_equipment_id')) {
+      context.handle(
+        _pendingEquipmentIdMeta,
+        pendingEquipmentId.isAcceptableOrUnknown(
+          data['pending_equipment_id']!,
+          _pendingEquipmentIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -482,7 +603,7 @@ class $InspectionsTable extends Inspections
       equipmentId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}equipment_id'],
-      )!,
+      ),
       createdByUserId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}created_by_user_id'],
@@ -535,6 +656,30 @@ class $InspectionsTable extends Inspections
         DriftSqlType.string,
         data['${effectivePrefix}hour_meter_capture_method'],
       ),
+      machineSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}machine_source'],
+      ),
+      pendingAssetName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_asset_name'],
+      ),
+      pendingManufacturer: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_manufacturer'],
+      ),
+      pendingModel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_model'],
+      ),
+      guidedStep: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}guided_step'],
+      ),
+      pendingEquipmentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pending_equipment_id'],
+      ),
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -568,7 +713,10 @@ class LocalInspectionRow extends DataClass
     implements Insertable<LocalInspectionRow> {
   final String id;
   final String companyId;
-  final String equipmentId;
+
+  /// Linked Equipment id. Null only while a New-machine guided draft is
+  /// incomplete — Equipment is created atomically at successful completion.
+  final String? equipmentId;
   final String createdByUserId;
   final String? updatedByUserId;
   final String completionStatus;
@@ -586,6 +734,20 @@ class LocalInspectionRow extends DataClass
   /// Confirmed hour-meter reading for this inspection draft.
   final double? hourMeterReading;
   final String? hourMeterCaptureMethod;
+
+  /// Guided intake: new_machine | existing_equipment. Null = legacy draft.
+  final String? machineSource;
+
+  /// Pending New-machine identity (not an Equipment row until completion).
+  final String? pendingAssetName;
+  final String? pendingManufacturer;
+  final String? pendingModel;
+
+  /// Last visited guided step storage value.
+  final String? guidedStep;
+
+  /// Stable Equipment id reserved for New-machine completion idempotency.
+  final String? pendingEquipmentId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime localUpdatedAt;
@@ -594,7 +756,7 @@ class LocalInspectionRow extends DataClass
   const LocalInspectionRow({
     required this.id,
     required this.companyId,
-    required this.equipmentId,
+    this.equipmentId,
     required this.createdByUserId,
     this.updatedByUserId,
     required this.completionStatus,
@@ -608,6 +770,12 @@ class LocalInspectionRow extends DataClass
     this.serialCaptureMethod,
     this.hourMeterReading,
     this.hourMeterCaptureMethod,
+    this.machineSource,
+    this.pendingAssetName,
+    this.pendingManufacturer,
+    this.pendingModel,
+    this.guidedStep,
+    this.pendingEquipmentId,
     required this.createdAt,
     required this.updatedAt,
     required this.localUpdatedAt,
@@ -619,7 +787,9 @@ class LocalInspectionRow extends DataClass
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
     map['company_id'] = Variable<String>(companyId);
-    map['equipment_id'] = Variable<String>(equipmentId);
+    if (!nullToAbsent || equipmentId != null) {
+      map['equipment_id'] = Variable<String>(equipmentId);
+    }
     map['created_by_user_id'] = Variable<String>(createdByUserId);
     if (!nullToAbsent || updatedByUserId != null) {
       map['updated_by_user_id'] = Variable<String>(updatedByUserId);
@@ -649,6 +819,24 @@ class LocalInspectionRow extends DataClass
         hourMeterCaptureMethod,
       );
     }
+    if (!nullToAbsent || machineSource != null) {
+      map['machine_source'] = Variable<String>(machineSource);
+    }
+    if (!nullToAbsent || pendingAssetName != null) {
+      map['pending_asset_name'] = Variable<String>(pendingAssetName);
+    }
+    if (!nullToAbsent || pendingManufacturer != null) {
+      map['pending_manufacturer'] = Variable<String>(pendingManufacturer);
+    }
+    if (!nullToAbsent || pendingModel != null) {
+      map['pending_model'] = Variable<String>(pendingModel);
+    }
+    if (!nullToAbsent || guidedStep != null) {
+      map['guided_step'] = Variable<String>(guidedStep);
+    }
+    if (!nullToAbsent || pendingEquipmentId != null) {
+      map['pending_equipment_id'] = Variable<String>(pendingEquipmentId);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['local_updated_at'] = Variable<DateTime>(localUpdatedAt);
@@ -665,7 +853,9 @@ class LocalInspectionRow extends DataClass
     return InspectionsCompanion(
       id: Value(id),
       companyId: Value(companyId),
-      equipmentId: Value(equipmentId),
+      equipmentId: equipmentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(equipmentId),
       createdByUserId: Value(createdByUserId),
       updatedByUserId: updatedByUserId == null && nullToAbsent
           ? const Value.absent()
@@ -693,6 +883,24 @@ class LocalInspectionRow extends DataClass
       hourMeterCaptureMethod: hourMeterCaptureMethod == null && nullToAbsent
           ? const Value.absent()
           : Value(hourMeterCaptureMethod),
+      machineSource: machineSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(machineSource),
+      pendingAssetName: pendingAssetName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingAssetName),
+      pendingManufacturer: pendingManufacturer == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingManufacturer),
+      pendingModel: pendingModel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingModel),
+      guidedStep: guidedStep == null && nullToAbsent
+          ? const Value.absent()
+          : Value(guidedStep),
+      pendingEquipmentId: pendingEquipmentId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(pendingEquipmentId),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       localUpdatedAt: Value(localUpdatedAt),
@@ -713,7 +921,7 @@ class LocalInspectionRow extends DataClass
     return LocalInspectionRow(
       id: serializer.fromJson<String>(json['id']),
       companyId: serializer.fromJson<String>(json['companyId']),
-      equipmentId: serializer.fromJson<String>(json['equipmentId']),
+      equipmentId: serializer.fromJson<String?>(json['equipmentId']),
       createdByUserId: serializer.fromJson<String>(json['createdByUserId']),
       updatedByUserId: serializer.fromJson<String?>(json['updatedByUserId']),
       completionStatus: serializer.fromJson<String>(json['completionStatus']),
@@ -731,6 +939,16 @@ class LocalInspectionRow extends DataClass
       hourMeterCaptureMethod: serializer.fromJson<String?>(
         json['hourMeterCaptureMethod'],
       ),
+      machineSource: serializer.fromJson<String?>(json['machineSource']),
+      pendingAssetName: serializer.fromJson<String?>(json['pendingAssetName']),
+      pendingManufacturer: serializer.fromJson<String?>(
+        json['pendingManufacturer'],
+      ),
+      pendingModel: serializer.fromJson<String?>(json['pendingModel']),
+      guidedStep: serializer.fromJson<String?>(json['guidedStep']),
+      pendingEquipmentId: serializer.fromJson<String?>(
+        json['pendingEquipmentId'],
+      ),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       localUpdatedAt: serializer.fromJson<DateTime>(json['localUpdatedAt']),
@@ -744,7 +962,7 @@ class LocalInspectionRow extends DataClass
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
       'companyId': serializer.toJson<String>(companyId),
-      'equipmentId': serializer.toJson<String>(equipmentId),
+      'equipmentId': serializer.toJson<String?>(equipmentId),
       'createdByUserId': serializer.toJson<String>(createdByUserId),
       'updatedByUserId': serializer.toJson<String?>(updatedByUserId),
       'completionStatus': serializer.toJson<String>(completionStatus),
@@ -760,6 +978,12 @@ class LocalInspectionRow extends DataClass
       'hourMeterCaptureMethod': serializer.toJson<String?>(
         hourMeterCaptureMethod,
       ),
+      'machineSource': serializer.toJson<String?>(machineSource),
+      'pendingAssetName': serializer.toJson<String?>(pendingAssetName),
+      'pendingManufacturer': serializer.toJson<String?>(pendingManufacturer),
+      'pendingModel': serializer.toJson<String?>(pendingModel),
+      'guidedStep': serializer.toJson<String?>(guidedStep),
+      'pendingEquipmentId': serializer.toJson<String?>(pendingEquipmentId),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'localUpdatedAt': serializer.toJson<DateTime>(localUpdatedAt),
@@ -771,7 +995,7 @@ class LocalInspectionRow extends DataClass
   LocalInspectionRow copyWith({
     String? id,
     String? companyId,
-    String? equipmentId,
+    Value<String?> equipmentId = const Value.absent(),
     String? createdByUserId,
     Value<String?> updatedByUserId = const Value.absent(),
     String? completionStatus,
@@ -785,6 +1009,12 @@ class LocalInspectionRow extends DataClass
     Value<String?> serialCaptureMethod = const Value.absent(),
     Value<double?> hourMeterReading = const Value.absent(),
     Value<String?> hourMeterCaptureMethod = const Value.absent(),
+    Value<String?> machineSource = const Value.absent(),
+    Value<String?> pendingAssetName = const Value.absent(),
+    Value<String?> pendingManufacturer = const Value.absent(),
+    Value<String?> pendingModel = const Value.absent(),
+    Value<String?> guidedStep = const Value.absent(),
+    Value<String?> pendingEquipmentId = const Value.absent(),
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? localUpdatedAt,
@@ -793,7 +1023,7 @@ class LocalInspectionRow extends DataClass
   }) => LocalInspectionRow(
     id: id ?? this.id,
     companyId: companyId ?? this.companyId,
-    equipmentId: equipmentId ?? this.equipmentId,
+    equipmentId: equipmentId.present ? equipmentId.value : this.equipmentId,
     createdByUserId: createdByUserId ?? this.createdByUserId,
     updatedByUserId: updatedByUserId.present
         ? updatedByUserId.value
@@ -815,6 +1045,20 @@ class LocalInspectionRow extends DataClass
     hourMeterCaptureMethod: hourMeterCaptureMethod.present
         ? hourMeterCaptureMethod.value
         : this.hourMeterCaptureMethod,
+    machineSource: machineSource.present
+        ? machineSource.value
+        : this.machineSource,
+    pendingAssetName: pendingAssetName.present
+        ? pendingAssetName.value
+        : this.pendingAssetName,
+    pendingManufacturer: pendingManufacturer.present
+        ? pendingManufacturer.value
+        : this.pendingManufacturer,
+    pendingModel: pendingModel.present ? pendingModel.value : this.pendingModel,
+    guidedStep: guidedStep.present ? guidedStep.value : this.guidedStep,
+    pendingEquipmentId: pendingEquipmentId.present
+        ? pendingEquipmentId.value
+        : this.pendingEquipmentId,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
@@ -863,6 +1107,24 @@ class LocalInspectionRow extends DataClass
       hourMeterCaptureMethod: data.hourMeterCaptureMethod.present
           ? data.hourMeterCaptureMethod.value
           : this.hourMeterCaptureMethod,
+      machineSource: data.machineSource.present
+          ? data.machineSource.value
+          : this.machineSource,
+      pendingAssetName: data.pendingAssetName.present
+          ? data.pendingAssetName.value
+          : this.pendingAssetName,
+      pendingManufacturer: data.pendingManufacturer.present
+          ? data.pendingManufacturer.value
+          : this.pendingManufacturer,
+      pendingModel: data.pendingModel.present
+          ? data.pendingModel.value
+          : this.pendingModel,
+      guidedStep: data.guidedStep.present
+          ? data.guidedStep.value
+          : this.guidedStep,
+      pendingEquipmentId: data.pendingEquipmentId.present
+          ? data.pendingEquipmentId.value
+          : this.pendingEquipmentId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       localUpdatedAt: data.localUpdatedAt.present
@@ -896,6 +1158,12 @@ class LocalInspectionRow extends DataClass
           ..write('serialCaptureMethod: $serialCaptureMethod, ')
           ..write('hourMeterReading: $hourMeterReading, ')
           ..write('hourMeterCaptureMethod: $hourMeterCaptureMethod, ')
+          ..write('machineSource: $machineSource, ')
+          ..write('pendingAssetName: $pendingAssetName, ')
+          ..write('pendingManufacturer: $pendingManufacturer, ')
+          ..write('pendingModel: $pendingModel, ')
+          ..write('guidedStep: $guidedStep, ')
+          ..write('pendingEquipmentId: $pendingEquipmentId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
@@ -923,6 +1191,12 @@ class LocalInspectionRow extends DataClass
     serialCaptureMethod,
     hourMeterReading,
     hourMeterCaptureMethod,
+    machineSource,
+    pendingAssetName,
+    pendingManufacturer,
+    pendingModel,
+    guidedStep,
+    pendingEquipmentId,
     createdAt,
     updatedAt,
     localUpdatedAt,
@@ -949,6 +1223,12 @@ class LocalInspectionRow extends DataClass
           other.serialCaptureMethod == this.serialCaptureMethod &&
           other.hourMeterReading == this.hourMeterReading &&
           other.hourMeterCaptureMethod == this.hourMeterCaptureMethod &&
+          other.machineSource == this.machineSource &&
+          other.pendingAssetName == this.pendingAssetName &&
+          other.pendingManufacturer == this.pendingManufacturer &&
+          other.pendingModel == this.pendingModel &&
+          other.guidedStep == this.guidedStep &&
+          other.pendingEquipmentId == this.pendingEquipmentId &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.localUpdatedAt == this.localUpdatedAt &&
@@ -959,7 +1239,7 @@ class LocalInspectionRow extends DataClass
 class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
   final Value<String> id;
   final Value<String> companyId;
-  final Value<String> equipmentId;
+  final Value<String?> equipmentId;
   final Value<String> createdByUserId;
   final Value<String?> updatedByUserId;
   final Value<String> completionStatus;
@@ -973,6 +1253,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
   final Value<String?> serialCaptureMethod;
   final Value<double?> hourMeterReading;
   final Value<String?> hourMeterCaptureMethod;
+  final Value<String?> machineSource;
+  final Value<String?> pendingAssetName;
+  final Value<String?> pendingManufacturer;
+  final Value<String?> pendingModel;
+  final Value<String?> guidedStep;
+  final Value<String?> pendingEquipmentId;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime> localUpdatedAt;
@@ -996,6 +1282,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     this.serialCaptureMethod = const Value.absent(),
     this.hourMeterReading = const Value.absent(),
     this.hourMeterCaptureMethod = const Value.absent(),
+    this.machineSource = const Value.absent(),
+    this.pendingAssetName = const Value.absent(),
+    this.pendingManufacturer = const Value.absent(),
+    this.pendingModel = const Value.absent(),
+    this.guidedStep = const Value.absent(),
+    this.pendingEquipmentId = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.localUpdatedAt = const Value.absent(),
@@ -1006,7 +1298,7 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
   InspectionsCompanion.insert({
     required String id,
     required String companyId,
-    required String equipmentId,
+    this.equipmentId = const Value.absent(),
     required String createdByUserId,
     this.updatedByUserId = const Value.absent(),
     required String completionStatus,
@@ -1020,6 +1312,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     this.serialCaptureMethod = const Value.absent(),
     this.hourMeterReading = const Value.absent(),
     this.hourMeterCaptureMethod = const Value.absent(),
+    this.machineSource = const Value.absent(),
+    this.pendingAssetName = const Value.absent(),
+    this.pendingManufacturer = const Value.absent(),
+    this.pendingModel = const Value.absent(),
+    this.guidedStep = const Value.absent(),
+    this.pendingEquipmentId = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     required DateTime localUpdatedAt,
@@ -1028,7 +1326,6 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        companyId = Value(companyId),
-       equipmentId = Value(equipmentId),
        createdByUserId = Value(createdByUserId),
        completionStatus = Value(completionStatus),
        localLifecycle = Value(localLifecycle),
@@ -1055,6 +1352,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     Expression<String>? serialCaptureMethod,
     Expression<double>? hourMeterReading,
     Expression<String>? hourMeterCaptureMethod,
+    Expression<String>? machineSource,
+    Expression<String>? pendingAssetName,
+    Expression<String>? pendingManufacturer,
+    Expression<String>? pendingModel,
+    Expression<String>? guidedStep,
+    Expression<String>? pendingEquipmentId,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? localUpdatedAt,
@@ -1081,6 +1384,14 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
       if (hourMeterReading != null) 'hour_meter_reading': hourMeterReading,
       if (hourMeterCaptureMethod != null)
         'hour_meter_capture_method': hourMeterCaptureMethod,
+      if (machineSource != null) 'machine_source': machineSource,
+      if (pendingAssetName != null) 'pending_asset_name': pendingAssetName,
+      if (pendingManufacturer != null)
+        'pending_manufacturer': pendingManufacturer,
+      if (pendingModel != null) 'pending_model': pendingModel,
+      if (guidedStep != null) 'guided_step': guidedStep,
+      if (pendingEquipmentId != null)
+        'pending_equipment_id': pendingEquipmentId,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (localUpdatedAt != null) 'local_updated_at': localUpdatedAt,
@@ -1093,7 +1404,7 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
   InspectionsCompanion copyWith({
     Value<String>? id,
     Value<String>? companyId,
-    Value<String>? equipmentId,
+    Value<String?>? equipmentId,
     Value<String>? createdByUserId,
     Value<String?>? updatedByUserId,
     Value<String>? completionStatus,
@@ -1107,6 +1418,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
     Value<String?>? serialCaptureMethod,
     Value<double?>? hourMeterReading,
     Value<String?>? hourMeterCaptureMethod,
+    Value<String?>? machineSource,
+    Value<String?>? pendingAssetName,
+    Value<String?>? pendingManufacturer,
+    Value<String?>? pendingModel,
+    Value<String?>? guidedStep,
+    Value<String?>? pendingEquipmentId,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime>? localUpdatedAt,
@@ -1132,6 +1449,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
       hourMeterReading: hourMeterReading ?? this.hourMeterReading,
       hourMeterCaptureMethod:
           hourMeterCaptureMethod ?? this.hourMeterCaptureMethod,
+      machineSource: machineSource ?? this.machineSource,
+      pendingAssetName: pendingAssetName ?? this.pendingAssetName,
+      pendingManufacturer: pendingManufacturer ?? this.pendingManufacturer,
+      pendingModel: pendingModel ?? this.pendingModel,
+      guidedStep: guidedStep ?? this.guidedStep,
+      pendingEquipmentId: pendingEquipmentId ?? this.pendingEquipmentId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       localUpdatedAt: localUpdatedAt ?? this.localUpdatedAt,
@@ -1196,6 +1519,24 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
         hourMeterCaptureMethod.value,
       );
     }
+    if (machineSource.present) {
+      map['machine_source'] = Variable<String>(machineSource.value);
+    }
+    if (pendingAssetName.present) {
+      map['pending_asset_name'] = Variable<String>(pendingAssetName.value);
+    }
+    if (pendingManufacturer.present) {
+      map['pending_manufacturer'] = Variable<String>(pendingManufacturer.value);
+    }
+    if (pendingModel.present) {
+      map['pending_model'] = Variable<String>(pendingModel.value);
+    }
+    if (guidedStep.present) {
+      map['guided_step'] = Variable<String>(guidedStep.value);
+    }
+    if (pendingEquipmentId.present) {
+      map['pending_equipment_id'] = Variable<String>(pendingEquipmentId.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1236,6 +1577,12 @@ class InspectionsCompanion extends UpdateCompanion<LocalInspectionRow> {
           ..write('serialCaptureMethod: $serialCaptureMethod, ')
           ..write('hourMeterReading: $hourMeterReading, ')
           ..write('hourMeterCaptureMethod: $hourMeterCaptureMethod, ')
+          ..write('machineSource: $machineSource, ')
+          ..write('pendingAssetName: $pendingAssetName, ')
+          ..write('pendingManufacturer: $pendingManufacturer, ')
+          ..write('pendingModel: $pendingModel, ')
+          ..write('guidedStep: $guidedStep, ')
+          ..write('pendingEquipmentId: $pendingEquipmentId, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('localUpdatedAt: $localUpdatedAt, ')
@@ -3479,6 +3826,18 @@ class $LocalEquipmentCacheTable extends LocalEquipmentCache
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _catalogOriginMeta = const VerificationMeta(
+    'catalogOrigin',
+  );
+  @override
+  late final GeneratedColumn<String> catalogOrigin = GeneratedColumn<String>(
+    'catalog_origin',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('remote_cache'),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3498,6 +3857,7 @@ class $LocalEquipmentCacheTable extends LocalEquipmentCache
     createdAt,
     updatedAt,
     cachedAt,
+    catalogOrigin,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3638,6 +3998,15 @@ class $LocalEquipmentCacheTable extends LocalEquipmentCache
     } else if (isInserting) {
       context.missing(_cachedAtMeta);
     }
+    if (data.containsKey('catalog_origin')) {
+      context.handle(
+        _catalogOriginMeta,
+        catalogOrigin.isAcceptableOrUnknown(
+          data['catalog_origin']!,
+          _catalogOriginMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3715,6 +4084,10 @@ class $LocalEquipmentCacheTable extends LocalEquipmentCache
         DriftSqlType.dateTime,
         data['${effectivePrefix}cached_at'],
       )!,
+      catalogOrigin: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}catalog_origin'],
+      )!,
     );
   }
 
@@ -3743,6 +4116,9 @@ class LocalEquipmentCacheRow extends DataClass
   final DateTime createdAt;
   final DateTime updatedAt;
   final DateTime cachedAt;
+
+  /// remote_cache | local_created — local_created survives catalog replace.
+  final String catalogOrigin;
   const LocalEquipmentCacheRow({
     required this.id,
     required this.companyId,
@@ -3761,6 +4137,7 @@ class LocalEquipmentCacheRow extends DataClass
     required this.createdAt,
     required this.updatedAt,
     required this.cachedAt,
+    required this.catalogOrigin,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3800,6 +4177,7 @@ class LocalEquipmentCacheRow extends DataClass
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['cached_at'] = Variable<DateTime>(cachedAt);
+    map['catalog_origin'] = Variable<String>(catalogOrigin);
     return map;
   }
 
@@ -3838,6 +4216,7 @@ class LocalEquipmentCacheRow extends DataClass
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       cachedAt: Value(cachedAt),
+      catalogOrigin: Value(catalogOrigin),
     );
   }
 
@@ -3864,6 +4243,7 @@ class LocalEquipmentCacheRow extends DataClass
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       cachedAt: serializer.fromJson<DateTime>(json['cachedAt']),
+      catalogOrigin: serializer.fromJson<String>(json['catalogOrigin']),
     );
   }
   @override
@@ -3887,6 +4267,7 @@ class LocalEquipmentCacheRow extends DataClass
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'cachedAt': serializer.toJson<DateTime>(cachedAt),
+      'catalogOrigin': serializer.toJson<String>(catalogOrigin),
     };
   }
 
@@ -3908,6 +4289,7 @@ class LocalEquipmentCacheRow extends DataClass
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? cachedAt,
+    String? catalogOrigin,
   }) => LocalEquipmentCacheRow(
     id: id ?? this.id,
     companyId: companyId ?? this.companyId,
@@ -3930,6 +4312,7 @@ class LocalEquipmentCacheRow extends DataClass
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     cachedAt: cachedAt ?? this.cachedAt,
+    catalogOrigin: catalogOrigin ?? this.catalogOrigin,
   );
   LocalEquipmentCacheRow copyWithCompanion(LocalEquipmentCacheCompanion data) {
     return LocalEquipmentCacheRow(
@@ -3958,6 +4341,9 @@ class LocalEquipmentCacheRow extends DataClass
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
+      catalogOrigin: data.catalogOrigin.present
+          ? data.catalogOrigin.value
+          : this.catalogOrigin,
     );
   }
 
@@ -3980,7 +4366,8 @@ class LocalEquipmentCacheRow extends DataClass
           ..write('updatedByName: $updatedByName, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('cachedAt: $cachedAt')
+          ..write('cachedAt: $cachedAt, ')
+          ..write('catalogOrigin: $catalogOrigin')
           ..write(')'))
         .toString();
   }
@@ -4004,6 +4391,7 @@ class LocalEquipmentCacheRow extends DataClass
     createdAt,
     updatedAt,
     cachedAt,
+    catalogOrigin,
   );
   @override
   bool operator ==(Object other) =>
@@ -4025,7 +4413,8 @@ class LocalEquipmentCacheRow extends DataClass
           other.updatedByName == this.updatedByName &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
-          other.cachedAt == this.cachedAt);
+          other.cachedAt == this.cachedAt &&
+          other.catalogOrigin == this.catalogOrigin);
 }
 
 class LocalEquipmentCacheCompanion
@@ -4047,6 +4436,7 @@ class LocalEquipmentCacheCompanion
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<DateTime> cachedAt;
+  final Value<String> catalogOrigin;
   final Value<int> rowid;
   const LocalEquipmentCacheCompanion({
     this.id = const Value.absent(),
@@ -4066,6 +4456,7 @@ class LocalEquipmentCacheCompanion
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.cachedAt = const Value.absent(),
+    this.catalogOrigin = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LocalEquipmentCacheCompanion.insert({
@@ -4086,6 +4477,7 @@ class LocalEquipmentCacheCompanion
     required DateTime createdAt,
     required DateTime updatedAt,
     required DateTime cachedAt,
+    this.catalogOrigin = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        companyId = Value(companyId),
@@ -4113,6 +4505,7 @@ class LocalEquipmentCacheCompanion
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<DateTime>? cachedAt,
+    Expression<String>? catalogOrigin,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -4133,6 +4526,7 @@ class LocalEquipmentCacheCompanion
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (cachedAt != null) 'cached_at': cachedAt,
+      if (catalogOrigin != null) 'catalog_origin': catalogOrigin,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -4155,6 +4549,7 @@ class LocalEquipmentCacheCompanion
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<DateTime>? cachedAt,
+    Value<String>? catalogOrigin,
     Value<int>? rowid,
   }) {
     return LocalEquipmentCacheCompanion(
@@ -4175,6 +4570,7 @@ class LocalEquipmentCacheCompanion
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       cachedAt: cachedAt ?? this.cachedAt,
+      catalogOrigin: catalogOrigin ?? this.catalogOrigin,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -4233,6 +4629,9 @@ class LocalEquipmentCacheCompanion
     if (cachedAt.present) {
       map['cached_at'] = Variable<DateTime>(cachedAt.value);
     }
+    if (catalogOrigin.present) {
+      map['catalog_origin'] = Variable<String>(catalogOrigin.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -4259,6 +4658,7 @@ class LocalEquipmentCacheCompanion
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('cachedAt: $cachedAt, ')
+          ..write('catalogOrigin: $catalogOrigin, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4318,7 +4718,7 @@ typedef $$InspectionsTableCreateCompanionBuilder =
     InspectionsCompanion Function({
       required String id,
       required String companyId,
-      required String equipmentId,
+      Value<String?> equipmentId,
       required String createdByUserId,
       Value<String?> updatedByUserId,
       required String completionStatus,
@@ -4332,6 +4732,12 @@ typedef $$InspectionsTableCreateCompanionBuilder =
       Value<String?> serialCaptureMethod,
       Value<double?> hourMeterReading,
       Value<String?> hourMeterCaptureMethod,
+      Value<String?> machineSource,
+      Value<String?> pendingAssetName,
+      Value<String?> pendingManufacturer,
+      Value<String?> pendingModel,
+      Value<String?> guidedStep,
+      Value<String?> pendingEquipmentId,
       required DateTime createdAt,
       required DateTime updatedAt,
       required DateTime localUpdatedAt,
@@ -4343,7 +4749,7 @@ typedef $$InspectionsTableUpdateCompanionBuilder =
     InspectionsCompanion Function({
       Value<String> id,
       Value<String> companyId,
-      Value<String> equipmentId,
+      Value<String?> equipmentId,
       Value<String> createdByUserId,
       Value<String?> updatedByUserId,
       Value<String> completionStatus,
@@ -4357,6 +4763,12 @@ typedef $$InspectionsTableUpdateCompanionBuilder =
       Value<String?> serialCaptureMethod,
       Value<double?> hourMeterReading,
       Value<String?> hourMeterCaptureMethod,
+      Value<String?> machineSource,
+      Value<String?> pendingAssetName,
+      Value<String?> pendingManufacturer,
+      Value<String?> pendingModel,
+      Value<String?> guidedStep,
+      Value<String?> pendingEquipmentId,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime> localUpdatedAt,
@@ -4509,6 +4921,36 @@ class $$InspectionsTableFilterComposer
 
   ColumnFilters<String> get hourMeterCaptureMethod => $composableBuilder(
     column: $table.hourMeterCaptureMethod,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get machineSource => $composableBuilder(
+    column: $table.machineSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingAssetName => $composableBuilder(
+    column: $table.pendingAssetName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingManufacturer => $composableBuilder(
+    column: $table.pendingManufacturer,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingModel => $composableBuilder(
+    column: $table.pendingModel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get guidedStep => $composableBuilder(
+    column: $table.guidedStep,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get pendingEquipmentId => $composableBuilder(
+    column: $table.pendingEquipmentId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4683,6 +5125,36 @@ class $$InspectionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get machineSource => $composableBuilder(
+    column: $table.machineSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pendingAssetName => $composableBuilder(
+    column: $table.pendingAssetName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pendingManufacturer => $composableBuilder(
+    column: $table.pendingManufacturer,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pendingModel => $composableBuilder(
+    column: $table.pendingModel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get guidedStep => $composableBuilder(
+    column: $table.guidedStep,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get pendingEquipmentId => $composableBuilder(
+    column: $table.pendingEquipmentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -4787,6 +5259,36 @@ class $$InspectionsTableAnnotationComposer
 
   GeneratedColumn<String> get hourMeterCaptureMethod => $composableBuilder(
     column: $table.hourMeterCaptureMethod,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get machineSource => $composableBuilder(
+    column: $table.machineSource,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pendingAssetName => $composableBuilder(
+    column: $table.pendingAssetName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pendingManufacturer => $composableBuilder(
+    column: $table.pendingManufacturer,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pendingModel => $composableBuilder(
+    column: $table.pendingModel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get guidedStep => $composableBuilder(
+    column: $table.guidedStep,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get pendingEquipmentId => $composableBuilder(
+    column: $table.pendingEquipmentId,
     builder: (column) => column,
   );
 
@@ -4901,7 +5403,7 @@ class $$InspectionsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String> companyId = const Value.absent(),
-                Value<String> equipmentId = const Value.absent(),
+                Value<String?> equipmentId = const Value.absent(),
                 Value<String> createdByUserId = const Value.absent(),
                 Value<String?> updatedByUserId = const Value.absent(),
                 Value<String> completionStatus = const Value.absent(),
@@ -4915,6 +5417,12 @@ class $$InspectionsTableTableManager
                 Value<String?> serialCaptureMethod = const Value.absent(),
                 Value<double?> hourMeterReading = const Value.absent(),
                 Value<String?> hourMeterCaptureMethod = const Value.absent(),
+                Value<String?> machineSource = const Value.absent(),
+                Value<String?> pendingAssetName = const Value.absent(),
+                Value<String?> pendingManufacturer = const Value.absent(),
+                Value<String?> pendingModel = const Value.absent(),
+                Value<String?> guidedStep = const Value.absent(),
+                Value<String?> pendingEquipmentId = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime> localUpdatedAt = const Value.absent(),
@@ -4938,6 +5446,12 @@ class $$InspectionsTableTableManager
                 serialCaptureMethod: serialCaptureMethod,
                 hourMeterReading: hourMeterReading,
                 hourMeterCaptureMethod: hourMeterCaptureMethod,
+                machineSource: machineSource,
+                pendingAssetName: pendingAssetName,
+                pendingManufacturer: pendingManufacturer,
+                pendingModel: pendingModel,
+                guidedStep: guidedStep,
+                pendingEquipmentId: pendingEquipmentId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 localUpdatedAt: localUpdatedAt,
@@ -4949,7 +5463,7 @@ class $$InspectionsTableTableManager
               ({
                 required String id,
                 required String companyId,
-                required String equipmentId,
+                Value<String?> equipmentId = const Value.absent(),
                 required String createdByUserId,
                 Value<String?> updatedByUserId = const Value.absent(),
                 required String completionStatus,
@@ -4963,6 +5477,12 @@ class $$InspectionsTableTableManager
                 Value<String?> serialCaptureMethod = const Value.absent(),
                 Value<double?> hourMeterReading = const Value.absent(),
                 Value<String?> hourMeterCaptureMethod = const Value.absent(),
+                Value<String?> machineSource = const Value.absent(),
+                Value<String?> pendingAssetName = const Value.absent(),
+                Value<String?> pendingManufacturer = const Value.absent(),
+                Value<String?> pendingModel = const Value.absent(),
+                Value<String?> guidedStep = const Value.absent(),
+                Value<String?> pendingEquipmentId = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 required DateTime localUpdatedAt,
@@ -4986,6 +5506,12 @@ class $$InspectionsTableTableManager
                 serialCaptureMethod: serialCaptureMethod,
                 hourMeterReading: hourMeterReading,
                 hourMeterCaptureMethod: hourMeterCaptureMethod,
+                machineSource: machineSource,
+                pendingAssetName: pendingAssetName,
+                pendingManufacturer: pendingManufacturer,
+                pendingModel: pendingModel,
+                guidedStep: guidedStep,
+                pendingEquipmentId: pendingEquipmentId,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 localUpdatedAt: localUpdatedAt,
@@ -6441,6 +6967,7 @@ typedef $$LocalEquipmentCacheTableCreateCompanionBuilder =
       required DateTime createdAt,
       required DateTime updatedAt,
       required DateTime cachedAt,
+      Value<String> catalogOrigin,
       Value<int> rowid,
     });
 typedef $$LocalEquipmentCacheTableUpdateCompanionBuilder =
@@ -6462,6 +6989,7 @@ typedef $$LocalEquipmentCacheTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<DateTime> cachedAt,
+      Value<String> catalogOrigin,
       Value<int> rowid,
     });
 
@@ -6556,6 +7084,11 @@ class $$LocalEquipmentCacheTableFilterComposer
 
   ColumnFilters<DateTime> get cachedAt => $composableBuilder(
     column: $table.cachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get catalogOrigin => $composableBuilder(
+    column: $table.catalogOrigin,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6653,6 +7186,11 @@ class $$LocalEquipmentCacheTableOrderingComposer
     column: $table.cachedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get catalogOrigin => $composableBuilder(
+    column: $table.catalogOrigin,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LocalEquipmentCacheTableAnnotationComposer
@@ -6722,6 +7260,11 @@ class $$LocalEquipmentCacheTableAnnotationComposer
 
   GeneratedColumn<DateTime> get cachedAt =>
       $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get catalogOrigin => $composableBuilder(
+    column: $table.catalogOrigin,
+    builder: (column) => column,
+  );
 }
 
 class $$LocalEquipmentCacheTableTableManager
@@ -6784,6 +7327,7 @@ class $$LocalEquipmentCacheTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<DateTime> cachedAt = const Value.absent(),
+                Value<String> catalogOrigin = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LocalEquipmentCacheCompanion(
                 id: id,
@@ -6803,6 +7347,7 @@ class $$LocalEquipmentCacheTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 cachedAt: cachedAt,
+                catalogOrigin: catalogOrigin,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6824,6 +7369,7 @@ class $$LocalEquipmentCacheTableTableManager
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 required DateTime cachedAt,
+                Value<String> catalogOrigin = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LocalEquipmentCacheCompanion.insert(
                 id: id,
@@ -6843,6 +7389,7 @@ class $$LocalEquipmentCacheTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 cachedAt: cachedAt,
+                catalogOrigin: catalogOrigin,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

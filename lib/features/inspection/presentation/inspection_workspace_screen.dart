@@ -178,10 +178,13 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     if (inspection == null) {
       throw StateError('Inspection not found for this company.');
     }
-    final equipment = await widget.equipmentCatalog.getById(
-      companyId: widget.companyId,
-      equipmentId: inspection.equipmentId,
-    );
+    final equipmentId = inspection.equipmentId;
+    final equipment = equipmentId == null || equipmentId.isEmpty
+        ? null
+        : await widget.equipmentCatalog.getById(
+            companyId: widget.companyId,
+            equipmentId: equipmentId,
+          );
     if (_notesController.text != (inspection.overallNotes ?? '')) {
       _notesController.text = inspection.overallNotes ?? '';
     }
@@ -677,11 +680,17 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                   controller: _scrollController,
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                   children: [
-                    Text(
-                      data.equipment?.assetName ??
-                          'Equipment ${inspection.equipmentId}',
-                      style: theme.textTheme.headlineSmall,
-                    ),
+                    Text(() {
+                      if (inspection.isNewMachineDraft) {
+                        final pending = inspection.pendingAssetName?.trim();
+                        if (pending != null && pending.isNotEmpty) {
+                          return pending;
+                        }
+                        return 'New machine draft';
+                      }
+                      return data.equipment?.assetName ??
+                          'Equipment ${inspection.equipmentId ?? 'unknown'}';
+                    }(), style: theme.textTheme.headlineSmall),
                     const SizedBox(height: 4),
                     Text(
                       [

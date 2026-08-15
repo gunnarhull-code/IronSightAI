@@ -5,7 +5,9 @@ import '../equipment_id_capture/hour_meter_parser.dart';
 import 'category_rating.dart';
 import 'condition_rating.dart';
 import 'detailed_category_response.dart';
+import 'guided_quick_appraisal_step.dart';
 import 'inspection_depth.dart';
+import 'inspection_machine_source.dart';
 import 'inspection_status.dart';
 import 'scorecard_category.dart';
 
@@ -18,7 +20,6 @@ class Inspection {
   const Inspection({
     required this.id,
     required this.companyId,
-    required this.equipmentId,
     required this.createdByUserId,
     required this.completionStatus,
     required this.localLifecycle,
@@ -29,6 +30,7 @@ class Inspection {
     required this.createdAt,
     required this.updatedAt,
     required this.localUpdatedAt,
+    this.equipmentId,
     this.updatedByUserId,
     this.remoteId,
     this.overallNotes,
@@ -36,6 +38,12 @@ class Inspection {
     this.serialCaptureMethod,
     this.hourMeterReading,
     this.hourMeterCaptureMethod,
+    this.machineSource,
+    this.pendingAssetName,
+    this.pendingManufacturer,
+    this.pendingModel,
+    this.guidedStep,
+    this.pendingEquipmentId,
     this.detailedResponses = const {},
     this.completedAt,
     this.discardedAt,
@@ -43,7 +51,9 @@ class Inspection {
 
   final String id;
   final String companyId;
-  final String equipmentId;
+
+  /// Linked Equipment. Null only for incomplete New-machine guided drafts.
+  final String? equipmentId;
   final String createdByUserId;
   final String? updatedByUserId;
   final InspectionCompletionStatus completionStatus;
@@ -64,6 +74,15 @@ class Inspection {
   final double? hourMeterReading;
   final EquipmentIdCaptureMethod? hourMeterCaptureMethod;
 
+  final InspectionMachineSource? machineSource;
+  final String? pendingAssetName;
+  final String? pendingManufacturer;
+  final String? pendingModel;
+  final GuidedQuickAppraisalStep? guidedStep;
+
+  /// Reserved Equipment id for New-machine completion idempotency.
+  final String? pendingEquipmentId;
+
   final List<CategoryRating> categoryRatings;
   final Map<ScorecardCategory, DetailedCategoryResponse> detailedResponses;
   final DateTime createdAt;
@@ -80,11 +99,44 @@ class Inspection {
   bool get canDiscard =>
       localLifecycle == InspectionLocalLifecycle.active && isIncomplete;
 
+  bool get isNewMachineDraft =>
+      machineSource == InspectionMachineSource.newMachine;
+
+  bool get isExistingEquipmentDraft =>
+      machineSource == InspectionMachineSource.existingEquipment ||
+      (machineSource == null && equipmentId != null && equipmentId!.isNotEmpty);
+
+  /// True when serial has a saved value or an explicit unavailable choice.
+  bool get hasResolvedSerial =>
+      serialCaptureMethod == EquipmentIdCaptureMethod.unableToVerify ||
+      (serialNumber != null &&
+          serialNumber!.trim().isNotEmpty &&
+          serialCaptureMethod != null);
+
+  /// True when hours have a saved value or an explicit unavailable choice.
+  bool get hasResolvedHours =>
+      hourMeterCaptureMethod == EquipmentIdCaptureMethod.unavailable ||
+      (hourMeterReading != null && hourMeterCaptureMethod != null);
+
+  bool get serialIsUnableToVerify =>
+      serialCaptureMethod == EquipmentIdCaptureMethod.unableToVerify;
+
+  bool get hoursAreUnavailable =>
+      hourMeterCaptureMethod == EquipmentIdCaptureMethod.unavailable;
+
   /// Rehydrates a confirmed serial for capture-panel seeding after reopen.
   ConfirmedEquipmentIdValue? get confirmedSerialNumber {
-    final value = serialNumber;
     final method = serialCaptureMethod;
-    if (value == null || method == null) return null;
+    if (method == null) return null;
+    if (method == EquipmentIdCaptureMethod.unableToVerify) {
+      return const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: '',
+        method: EquipmentIdCaptureMethod.unableToVerify,
+      );
+    }
+    final value = serialNumber;
+    if (value == null) return null;
     return ConfirmedEquipmentIdValue(
       kind: EquipmentIdCaptureKind.serialNumber,
       value: value,
@@ -94,9 +146,17 @@ class Inspection {
 
   /// Rehydrates a confirmed hour reading for capture-panel seeding after reopen.
   ConfirmedEquipmentIdValue? get confirmedHourMeter {
-    final hours = hourMeterReading;
     final method = hourMeterCaptureMethod;
-    if (hours == null || method == null) return null;
+    if (method == null) return null;
+    if (method == EquipmentIdCaptureMethod.unavailable) {
+      return const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.hourMeter,
+        value: '',
+        method: EquipmentIdCaptureMethod.unavailable,
+      );
+    }
+    final hours = hourMeterReading;
+    if (hours == null) return null;
     return ConfirmedEquipmentIdValue(
       kind: EquipmentIdCaptureKind.hourMeter,
       value: const HourMeterParser().formatHours(hours),
@@ -135,6 +195,12 @@ class Inspection {
       'serial_capture_method': serialCaptureMethod?.storageValue,
       'hour_meter_reading': hourMeterReading,
       'hour_meter_capture_method': hourMeterCaptureMethod?.storageValue,
+      'machine_source': machineSource?.storageValue,
+      'pending_asset_name': pendingAssetName,
+      'pending_manufacturer': pendingManufacturer,
+      'pending_model': pendingModel,
+      'guided_step': guidedStep?.storageValue,
+      'pending_equipment_id': pendingEquipmentId,
       'category_ratings': categoryRatings
           .map((rating) => rating.toMap())
           .toList(growable: false),
@@ -165,10 +231,20 @@ class Inspection {
       return EquipmentIdCaptureMethod.fromStorage(raw as String);
     }
 
+    GuidedQuickAppraisalStep? parseStep(Object? raw) {
+      if (raw == null) return null;
+      return GuidedQuickAppraisalStep.fromStorage(raw as String);
+    }
+
+    InspectionMachineSource? parseSource(Object? raw) {
+      if (raw == null) return null;
+      return InspectionMachineSource.fromStorage(raw as String);
+    }
+
     return Inspection(
       id: map['id'] as String,
       companyId: map['company_id'] as String,
-      equipmentId: map['equipment_id'] as String,
+      equipmentId: map['equipment_id'] as String?,
       createdByUserId: map['created_by'] as String,
       updatedByUserId: map['updated_by'] as String?,
       completionStatus: InspectionCompletionStatus.fromStorage(
@@ -190,6 +266,12 @@ class Inspection {
       serialCaptureMethod: parseMethod(map['serial_capture_method']),
       hourMeterReading: (map['hour_meter_reading'] as num?)?.toDouble(),
       hourMeterCaptureMethod: parseMethod(map['hour_meter_capture_method']),
+      machineSource: parseSource(map['machine_source']),
+      pendingAssetName: map['pending_asset_name'] as String?,
+      pendingManufacturer: map['pending_manufacturer'] as String?,
+      pendingModel: map['pending_model'] as String?,
+      guidedStep: parseStep(map['guided_step']),
+      pendingEquipmentId: map['pending_equipment_id'] as String?,
       categoryRatings: rawRatings
           .map(
             (rating) => CategoryRating.fromMap(
@@ -211,6 +293,7 @@ class Inspection {
   }
 
   Inspection copyWith({
+    String? equipmentId,
     String? updatedByUserId,
     InspectionCompletionStatus? completionStatus,
     InspectionLocalLifecycle? localLifecycle,
@@ -223,16 +306,24 @@ class Inspection {
     EquipmentIdCaptureMethod? serialCaptureMethod,
     double? hourMeterReading,
     EquipmentIdCaptureMethod? hourMeterCaptureMethod,
+    InspectionMachineSource? machineSource,
+    String? pendingAssetName,
+    String? pendingManufacturer,
+    String? pendingModel,
+    GuidedQuickAppraisalStep? guidedStep,
+    String? pendingEquipmentId,
     List<CategoryRating>? categoryRatings,
     Map<ScorecardCategory, DetailedCategoryResponse>? detailedResponses,
     DateTime? updatedAt,
     DateTime? localUpdatedAt,
     DateTime? completedAt,
     DateTime? discardedAt,
+    bool clearEquipmentId = false,
     bool clearRemoteId = false,
     bool clearOverallNotes = false,
     bool clearSerialNumber = false,
     bool clearHourMeterReading = false,
+    bool clearPendingIdentity = false,
     bool clearCompletedAt = false,
     bool clearDiscardedAt = false,
     bool clearUpdatedByUserId = false,
@@ -240,7 +331,7 @@ class Inspection {
     return Inspection(
       id: id,
       companyId: companyId,
-      equipmentId: equipmentId,
+      equipmentId: clearEquipmentId ? null : (equipmentId ?? this.equipmentId),
       createdByUserId: createdByUserId,
       updatedByUserId: clearUpdatedByUserId
           ? null
@@ -266,6 +357,20 @@ class Inspection {
       hourMeterCaptureMethod: clearHourMeterReading
           ? null
           : (hourMeterCaptureMethod ?? this.hourMeterCaptureMethod),
+      machineSource: machineSource ?? this.machineSource,
+      pendingAssetName: clearPendingIdentity
+          ? null
+          : (pendingAssetName ?? this.pendingAssetName),
+      pendingManufacturer: clearPendingIdentity
+          ? null
+          : (pendingManufacturer ?? this.pendingManufacturer),
+      pendingModel: clearPendingIdentity
+          ? null
+          : (pendingModel ?? this.pendingModel),
+      guidedStep: guidedStep ?? this.guidedStep,
+      pendingEquipmentId: clearPendingIdentity
+          ? null
+          : (pendingEquipmentId ?? this.pendingEquipmentId),
       categoryRatings: categoryRatings ?? this.categoryRatings,
       detailedResponses: detailedResponses ?? this.detailedResponses,
       createdAt: createdAt,

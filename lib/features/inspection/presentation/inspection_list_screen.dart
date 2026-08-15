@@ -64,9 +64,19 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
     final route =
         inspection.completionStatus == InspectionCompletionStatus.completed
         ? AppRoutes.inspectionReview(inspection.id)
-        : AppRoutes.inspectionWorkspace(inspection.id);
+        : AppRoutes.guidedQuickAppraisal(inspection.id);
     final changed = await Navigator.of(context).pushNamed<bool?>(route);
     if (changed == true && mounted) _reload();
+  }
+
+  String _titleFor(Inspection inspection, Equipment? equipment) {
+    if (equipment != null) return equipment.assetName;
+    final pending = inspection.pendingAssetName?.trim();
+    if (pending != null && pending.isNotEmpty) return pending;
+    if (inspection.isNewMachineDraft) return 'New machine draft';
+    final id = inspection.equipmentId;
+    if (id != null && id.isNotEmpty) return 'Equipment $id';
+    return 'Quick Appraisal draft';
   }
 
   @override
@@ -116,11 +126,11 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final inspection = data.inspections[index];
-                    final equipment =
-                        data.equipmentById[inspection.equipmentId];
-                    final title =
-                        equipment?.assetName ??
-                        'Equipment ${inspection.equipmentId}';
+                    final equipmentId = inspection.equipmentId;
+                    final equipment = equipmentId == null
+                        ? null
+                        : data.equipmentById[equipmentId];
+                    final title = _titleFor(inspection, equipment);
                     final subtitle = _subtitle(inspection, equipment);
                     final statusLabel = _statusLabel(inspection);
                     return Card(
@@ -161,8 +171,9 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
   }
 
   String _subtitle(Inspection inspection, Equipment? equipment) {
-    final manufacturer = equipment?.manufacturer;
-    final model = equipment?.model;
+    final manufacturer =
+        equipment?.manufacturer ?? inspection.pendingManufacturer;
+    final model = equipment?.model ?? inspection.pendingModel;
     final identity = [
       if (manufacturer != null && manufacturer.isNotEmpty) manufacturer,
       if (model != null && model.isNotEmpty) model,
@@ -203,7 +214,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Start a Quick Appraisal from equipment saved on this device.',
+              'Start a guided Quick Appraisal for a new machine or existing equipment.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

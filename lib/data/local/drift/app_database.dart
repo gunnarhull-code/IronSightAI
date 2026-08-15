@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -54,6 +54,26 @@ class AppDatabase extends _$AppDatabase {
         if (from < 4) {
           await migrator.createTable(inspectionMediaItems);
           await _createMediaIndexes();
+        }
+        if (from < 5) {
+          // SQLite cannot ALTER a NOT NULL column to nullable; rebuild.
+          await migrator.alterTable(
+            TableMigration(
+              inspections,
+              newColumns: [
+                inspections.machineSource,
+                inspections.pendingAssetName,
+                inspections.pendingManufacturer,
+                inspections.pendingModel,
+                inspections.guidedStep,
+                inspections.pendingEquipmentId,
+              ],
+            ),
+          );
+          await migrator.addColumn(
+            localEquipmentCache,
+            localEquipmentCache.catalogOrigin,
+          );
         }
       },
     );

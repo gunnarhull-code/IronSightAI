@@ -1,4 +1,5 @@
 import '../entities/equipment.dart';
+import '../entities/local_equipment_catalog_origin.dart';
 
 /// Tenant-scoped local equipment catalog for offline inspection selection.
 ///
@@ -11,7 +12,20 @@ abstract class LocalEquipmentCatalogRepository {
     required String equipmentId,
   });
 
-  /// Replaces the entire cached catalog for [companyId].
+  /// Finds same-company equipment whose serial matches [serialNumber]
+  /// (case-insensitive, trimmed). Never returns other companies.
+  Future<Equipment?> findBySerial({
+    required String companyId,
+    required String serialNumber,
+  });
+
+  /// Inserts or updates a locally created Equipment row (offline New-machine).
+  Future<Equipment> upsertLocalCreated(Equipment equipment);
+
+  /// Replaces the remote-mirrored catalog for [companyId].
+  ///
+  /// Rows with [LocalEquipmentCatalogOrigin.localCreated] that are absent from
+  /// [equipment] are preserved so offline-created machines are not wiped.
   Future<void> replaceCompanyCatalog({
     required String companyId,
     required List<Equipment> equipment,
