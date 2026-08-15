@@ -34,9 +34,27 @@ void main() {
       expect(normalizer.normalizeForStorage('Serial: ABC123'), 'ABC123');
     });
 
+    test(
+      'collapses consecutive ASCII hyphens without changing letters/digits',
+      () {
+        expect(normalizer.normalize('ABC--123'), 'ABC-123');
+        expect(normalizer.normalize('ABC---123'), 'ABC-123');
+        expect(normalizer.normalize('ABC-123'), 'ABC-123');
+        expect(normalizer.normalizeForStorage('ABC--123'), 'ABC-123');
+        expect(normalizer.normalizeForStorage('S/No ABC--123'), 'ABC-123');
+      },
+    );
+
+    test('preserves legitimate single internal hyphens', () {
+      expect(normalizer.normalize('SN-0099'), 'SN-0099');
+      expect(normalizer.normalizeForStorage('SN-0099'), 'SN-0099');
+      expect(normalizer.normalize('CAT-320-0A1'), 'CAT-320-0A1');
+    });
+
     test('does not strip SN- hyphenated serials', () {
       expect(normalizer.normalizeForStorage('SN-0099'), 'SN-0099');
       expect(normalizer.normalizeForStorage('  SN-ABC-99  '), 'SN-ABC-99');
+      expect(normalizer.normalizeForStorage('SN--0099'), 'SN-0099');
     });
 
     test('removes obvious formatting noise without inventing characters', () {

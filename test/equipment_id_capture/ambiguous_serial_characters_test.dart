@@ -44,6 +44,7 @@ void main() {
       const normalizer = SerialNormalizer();
       expect(normalizer.normalizeForStorage('S/No 5O852'), '5O852');
       expect(normalizer.normalize('O0I1S5B8'), 'O0I1S5B8');
+      expect(normalizer.normalize('5O252--M63O4'), '5O252-M63O4');
     });
 
     test('hour parser never converts letters into digits', () {

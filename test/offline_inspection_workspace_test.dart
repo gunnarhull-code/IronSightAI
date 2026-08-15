@@ -702,6 +702,75 @@ void main() {
     });
 
     testWidgets(
+      'reopening draft shows collapsed hyphen serial after manual persist',
+      (tester) async {
+        await tester.binding.setSurfaceSize(const Size(390, 1600));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+
+        await workspace.equipmentCatalog.replaceCompanyCatalog(
+          companyId: 'company-a',
+          equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+        );
+        final draft = await workspace.inspections.createDraft(
+          companyId: 'company-a',
+          equipmentId: 'eq-1',
+          createdByUserId: 'user-1',
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: InspectionWorkspaceScreen(
+              companyId: 'company-a',
+              userId: 'user-1',
+              inspectionId: draft.id,
+              inspections: workspace.inspections,
+              equipmentCatalog: workspace.equipmentCatalog,
+              inspectionMedia: workspace.inspectionMedia,
+              captureControllerFactory: _manualCaptureController,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final serialField = find.bySemanticsLabel(
+          EquipmentIdCaptureLabels.serialManualField,
+        );
+        await tester.ensureVisible(serialField);
+        await tester.enterText(serialField, 'ABC--123');
+        await tester.pump();
+        await tester.testTextInput.receiveAction(TextInputAction.done);
+        await tester.pumpAndSettle();
+
+        final saved = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: draft.id,
+        );
+        expect(saved!.serialNumber, 'ABC-123');
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: InspectionWorkspaceScreen(
+              companyId: 'company-a',
+              userId: 'user-1',
+              inspectionId: draft.id,
+              inspections: workspace.inspections,
+              equipmentCatalog: workspace.equipmentCatalog,
+              inspectionMedia: workspace.inspectionMedia,
+              captureControllerFactory: _manualCaptureController,
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.textContaining('Saved: ABC-123'), findsOneWidget);
+        expect(find.textContaining('Saved: ABC--123'), findsNothing);
+      },
+    );
+
+    testWidgets(
       'workspace keeps scroll position after equipment ID confirm save',
       (tester) async {
         await tester.binding.setSurfaceSize(const Size(390, 800));

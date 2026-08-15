@@ -71,6 +71,21 @@ void main() {
       );
     });
 
+    test('collapses OCR-doubled hyphens in recommended serial', () {
+      final result = extractor.extract(['S/No ABC--123']);
+      expect(result.recommended?.value, 'ABC-123');
+      expect(
+        result.visibleCandidates.map((c) => c.value),
+        isNot(contains('ABC--123')),
+      );
+    });
+
+    test('preserves single hyphens and O/0 ambiguity characters', () {
+      final result = extractor.extract(['S/No SN-O099']);
+      expect(result.recommended?.value, 'SN-O099');
+      expect(result.recommended?.hasAmbiguousCharacters, isTrue);
+    });
+
     test('ranking is deterministic for equal-confidence alternatives', () {
       final first = extractor.extract(['AAA111', 'BBB222']);
       final second = extractor.extract(['AAA111', 'BBB222']);

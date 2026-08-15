@@ -83,6 +83,64 @@ void main() {
     expect(controller.state.confirmed!.value, '50252M6304');
   });
 
+  test('OCR doubled hyphens collapse on one-tap persist', () async {
+    final controller = buildSerial(
+      textRecognition: FakeTextRecognition(
+        blocks: const [RecognizedTextBlock(rawText: 'S/No ABC--123')],
+      ),
+    );
+    await controller.captureAndRecognize();
+    expect(controller.state.candidates.single.displayValue, 'ABC-123');
+    expect(
+      controller.selectCandidate(controller.state.candidates.single.id),
+      isTrue,
+    );
+    expect(controller.state.confirmed!.value, 'ABC-123');
+  });
+
+  test('manual entry collapses consecutive hyphens on persist', () {
+    final controller = buildSerial();
+    controller.updateManualEntry('ABC---123');
+    expect(controller.completeManualEntry(), isTrue);
+    expect(controller.state.confirmed!.value, 'ABC-123');
+  });
+
+  test('single hyphen serials stay intact on persist', () {
+    final controller = buildSerial();
+    controller.updateManualEntry('SN-0099');
+    expect(controller.completeManualEntry(), isTrue);
+    expect(controller.state.confirmed!.value, 'SN-0099');
+  });
+
+  test('draft reopen shows the normalized hyphen serial', () {
+    final controller = buildSerial(
+      initialConfirmed: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'ABC-123',
+        method: EquipmentIdCaptureMethod.ocrConfirmed,
+      ),
+    );
+    expect(controller.state.isConfirmed, isTrue);
+    expect(controller.state.confirmed!.value, 'ABC-123');
+    expect(controller.state.draftValue, 'ABC-123');
+  });
+
+  test('OCR with doubled hyphens does not replace a saved serial', () async {
+    final controller = buildSerial(
+      initialConfirmed: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'KEEP-SERIAL',
+        method: EquipmentIdCaptureMethod.manual,
+      ),
+      textRecognition: FakeTextRecognition(
+        blocks: const [RecognizedTextBlock(rawText: 'S/No ABC--123')],
+      ),
+    );
+    await controller.captureAndRecognize();
+    expect(controller.state.confirmed!.value, 'KEEP-SERIAL');
+    expect(controller.state.candidates.single.displayValue, 'ABC-123');
+  });
+
   test('permission denied preserves manual draft', () async {
     final controller = buildSerial(
       permission: FakeCameraPermission(

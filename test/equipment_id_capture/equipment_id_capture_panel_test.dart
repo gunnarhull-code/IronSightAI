@@ -16,8 +16,10 @@ String _candidateSemantics(String value, {required bool recommended}) {
   final prefix = recommended
       ? EquipmentIdCaptureLabels.recommendedPrefix
       : EquipmentIdCaptureLabels.alternativePrefix;
-  // Digits/look-alikes in serial OCR are flagged for human review.
-  return '$prefix $value ${EquipmentIdCaptureLabels.ambiguousCharactersHint}';
+  final ambiguous = RegExp(r'[O0I1lLS5B8]').hasMatch(value)
+      ? ' ${EquipmentIdCaptureLabels.ambiguousCharactersHint}'
+      : '';
+  return '$prefix $value$ambiguous';
 }
 
 void main() {
@@ -249,6 +251,63 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(persisted.single.value, '5O252M63O4');
+  });
+
+  testWidgets('doubled-hyphen OCR displays and persists collapsed serial', (
+    tester,
+  ) async {
+    final persisted = <ConfirmedEquipmentIdValue>[];
+    final controller = EquipmentIdCaptureController(
+      kind: EquipmentIdCaptureKind.serialNumber,
+      imageCapture: FakeImageCapture(),
+      textRecognition: FakeTextRecognition(
+        blocks: const [RecognizedTextBlock(rawText: 'S/No ABC--123')],
+      ),
+      cameraPermission: FakeCameraPermission(),
+    );
+    await pumpPanel(
+      tester,
+      controller: controller,
+      onPersist: (value) async => persisted.add(value),
+    );
+    await tester.tap(find.text('Scan with camera'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ABC-123'), findsWidgets);
+    expect(find.text('ABC--123'), findsNothing);
+
+    await tester.tap(
+      find.bySemanticsLabel(_candidateSemantics('ABC-123', recommended: true)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Saved: ABC-123'), findsOneWidget);
+    expect(persisted.single.value, 'ABC-123');
+  });
+
+  testWidgets('manual doubled hyphens persist collapsed without Confirm', (
+    tester,
+  ) async {
+    final persisted = <ConfirmedEquipmentIdValue>[];
+    final controller = EquipmentIdCaptureController(
+      kind: EquipmentIdCaptureKind.serialNumber,
+      imageCapture: FakeImageCapture(isSupported: false),
+      textRecognition: FakeTextRecognition(isSupported: false),
+      cameraPermission: FakeCameraPermission(),
+    );
+    await pumpPanel(
+      tester,
+      controller: controller,
+      onPersist: (value) async => persisted.add(value),
+    );
+
+    await tester.enterText(find.byType(TextFormField), 'ABC---123');
+    await tester.pump();
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+
+    expect(controller.state.confirmed!.value, 'ABC-123');
+    expect(find.textContaining('Saved: ABC-123'), findsOneWidget);
+    expect(persisted.single.value, 'ABC-123');
   });
 
   testWidgets('persist failure restores previous saved value', (tester) async {
