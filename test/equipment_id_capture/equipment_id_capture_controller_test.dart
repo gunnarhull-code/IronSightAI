@@ -17,6 +17,7 @@ void main() {
     FakeTextRecognition? textRecognition,
     FakeCameraPermission? permission,
     String initialDraftValue = '',
+    ConfirmedEquipmentIdValue? initialConfirmed,
   }) {
     return EquipmentIdCaptureController(
       kind: EquipmentIdCaptureKind.serialNumber,
@@ -28,10 +29,11 @@ void main() {
           ),
       cameraPermission: permission ?? FakeCameraPermission(),
       initialDraftValue: initialDraftValue,
+      initialConfirmed: initialConfirmed,
     );
   }
 
-  test('selecting a candidate does not confirm', () async {
+  test('tapping a candidate immediately confirms it', () async {
     final controller = buildSerial(
       textRecognition: FakeTextRecognition(
         blocks: const [
@@ -42,36 +44,43 @@ void main() {
     );
     await controller.captureAndRecognize();
     expect(controller.state.candidates, hasLength(2));
-    controller.selectCandidate(controller.state.candidates.first.id);
+    expect(controller.state.candidates.any((c) => c.isRecommended), isFalse);
     expect(
-      controller.state.phase,
-      EquipmentIdCapturePhase.awaitingConfirmation,
+      controller.selectCandidate(controller.state.candidates.first.id),
+      isTrue,
     );
-    expect(controller.state.isConfirmed, isFalse);
-    expect(controller.state.confirmed, isNull);
-    expect(controller.state.draftValue, 'AAA111');
-  });
-
-  test('explicit confirmation is required for OCR candidate', () async {
-    final controller = buildSerial();
-    await controller.captureAndRecognize();
-    controller.selectCandidate(controller.state.candidates.single.id);
-    expect(controller.confirm(), isTrue);
     expect(controller.state.isConfirmed, isTrue);
+    expect(controller.state.confirmed, isNotNull);
+    expect(controller.state.draftValue, 'AAA111');
     expect(
       controller.state.confirmed!.method,
       EquipmentIdCaptureMethod.ocrConfirmed,
     );
-    expect(controller.state.confirmed!.value, 'CAT-001');
   });
 
-  test('manual entry and editing can be confirmed', () {
+  test('OCR does not auto-save or pre-select a value', () async {
+    final controller = buildSerial();
+    await controller.captureAndRecognize();
+    expect(controller.state.isConfirmed, isFalse);
+    expect(controller.state.confirmed, isNull);
+    expect(controller.state.candidates.single.isRecommended, isTrue);
+    expect(controller.state.candidates.single.displayValue, 'CAT-001');
+  });
+
+  test('manual entry saves when editing is completed', () {
     final controller = buildSerial();
     controller.updateManualEntry('  SN-0099  ');
     expect(controller.state.isConfirmed, isFalse);
-    expect(controller.confirm(), isTrue);
+    expect(controller.completeManualEntry(), isTrue);
     expect(controller.state.confirmed!.method, EquipmentIdCaptureMethod.manual);
     expect(controller.state.confirmed!.value, 'SN-0099');
+  });
+
+  test('manual entry strips serial labels from the saved value', () {
+    final controller = buildSerial();
+    controller.updateManualEntry('S/No 50252M6304');
+    expect(controller.completeManualEntry(), isTrue);
+    expect(controller.state.confirmed!.value, '50252M6304');
   });
 
   test('permission denied preserves manual draft', () async {
@@ -164,7 +173,7 @@ void main() {
       EquipmentIdCaptureFailureKind.unsupportedPlatform,
     );
     expect(controller.state.draftValue, 'WEB-VALUE');
-    expect(controller.confirm(), isTrue);
+    expect(controller.completeManualEntry(), isTrue);
     expect(controller.state.confirmed!.method, EquipmentIdCaptureMethod.manual);
   });
 
@@ -177,10 +186,10 @@ void main() {
     );
     controller.updateManualEntry('-10');
     expect(controller.state.canConfirm, isFalse);
-    expect(controller.confirm(), isFalse);
+    expect(controller.completeManualEntry(), isFalse);
   });
 
-  test('hour meter confirms parsed positive value', () {
+  test('hour meter saves parsed positive value on completed edit', () {
     final controller = EquipmentIdCaptureController(
       kind: EquipmentIdCaptureKind.hourMeter,
       imageCapture: FakeImageCapture(),
@@ -188,12 +197,32 @@ void main() {
       cameraPermission: FakeCameraPermission(),
     );
     controller.updateManualEntry('1,234.5');
-    expect(controller.confirm(), isTrue);
+    expect(controller.completeManualEntry(), isTrue);
     expect(controller.state.confirmed!.hours, 1234.5);
     expect(controller.state.confirmed!.value, '1234.5');
   });
 
-  test('multiple hour candidates require selection and confirmation', () async {
+  test(
+    'incomplete hour OCR is not invented and can be corrected manually',
+    () async {
+      final controller = EquipmentIdCaptureController(
+        kind: EquipmentIdCaptureKind.hourMeter,
+        imageCapture: FakeImageCapture(),
+        textRecognition: FakeTextRecognition(
+          blocks: const [RecognizedTextBlock(rawText: 'HOURS 2345')],
+        ),
+        cameraPermission: FakeCameraPermission(),
+      );
+      await controller.captureAndRecognize();
+      expect(controller.state.candidates.single.displayValue, '2345');
+      expect(controller.state.isConfirmed, isFalse);
+      controller.updateManualEntry('12345');
+      expect(controller.completeManualEntry(), isTrue);
+      expect(controller.state.confirmed!.hours, 12345);
+    },
+  );
+
+  test('multiple hour candidates are not auto-saved', () async {
     final controller = EquipmentIdCaptureController(
       kind: EquipmentIdCaptureKind.hourMeter,
       imageCapture: FakeImageCapture(),
@@ -208,8 +237,11 @@ void main() {
     await controller.captureAndRecognize();
     expect(controller.state.candidates.length, greaterThanOrEqualTo(2));
     expect(controller.state.isConfirmed, isFalse);
-    controller.selectCandidate(controller.state.candidates.last.id);
-    expect(controller.confirm(), isTrue);
+    expect(
+      controller.selectCandidate(controller.state.candidates.last.id),
+      isTrue,
+    );
+    expect(controller.state.isConfirmed, isTrue);
   });
 
   test('initialConfirmed seeds a confirmed state without silent OCR', () {
@@ -249,20 +281,12 @@ void main() {
 
       expect(capture.captureCallCount, 0);
       expect(ocr.recognizeCallCount, 1);
-      expect(
-        controller.state.phase,
-        EquipmentIdCapturePhase.awaitingConfirmation,
-      );
       expect(controller.state.isConfirmed, isFalse);
       expect(controller.state.candidates.first.displayValue, 'SN-REUSE-99');
       expect(
-        controller.state.canConfirm,
-        isFalse,
-        reason: 'reused-photo OCR must not pre-fill a confirmable value',
+        controller.selectCandidate(controller.state.candidates.first.id),
+        isTrue,
       );
-
-      controller.selectCandidate(controller.state.candidates.first.id);
-      expect(controller.confirm(), isTrue);
       expect(
         controller.state.confirmed!.method,
         EquipmentIdCaptureMethod.ocrConfirmed,
@@ -295,4 +319,74 @@ void main() {
       EquipmentIdCaptureFailureKind.ocrFailure,
     );
   });
+
+  test('rescan does not replace a saved value until a new tap', () async {
+    final controller = buildSerial(
+      initialConfirmed: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'SAVED-OLD',
+        method: EquipmentIdCaptureMethod.manual,
+      ),
+      textRecognition: FakeTextRecognition(
+        blocks: const [RecognizedTextBlock(rawText: 'S/No NEWER1234')],
+      ),
+    );
+    await controller.captureAndRecognize();
+    expect(controller.state.confirmed!.value, 'SAVED-OLD');
+    expect(controller.state.candidates.first.displayValue, 'NEWER1234');
+    expect(
+      controller.selectCandidate(controller.state.candidates.first.id),
+      isTrue,
+    );
+    expect(controller.state.confirmed!.value, 'NEWER1234');
+  });
+
+  test('persistence failure restores the previous saved value', () async {
+    final controller = buildSerial(
+      initialConfirmed: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'OLD-SAVE',
+        method: EquipmentIdCaptureMethod.manual,
+      ),
+    );
+    controller.updateManualEntry('NEW-SAVE');
+    expect(controller.completeManualEntry(), isTrue);
+    expect(controller.state.confirmed!.value, 'NEW-SAVE');
+    controller.revertToLastSaved(
+      EquipmentIdCaptureFailure.persistenceFailure(),
+    );
+    expect(controller.state.confirmed!.value, 'OLD-SAVE');
+    expect(
+      controller.state.failure!.kind,
+      EquipmentIdCaptureFailureKind.persistenceFailure,
+    );
+  });
+
+  test(
+    'S22 plate OCR recommends 50252M6304 without model or plate noise',
+    () async {
+      final controller = buildSerial(
+        textRecognition: FakeTextRecognition(
+          blocks: const [
+            RecognizedTextBlock(rawText: '25-RC1H S/No 50252M6304 MAST'),
+            RecognizedTextBlock(rawText: 'HT kg 4140 1070'),
+            RecognizedTextBlock(rawText: 'Tyre pressure 900 kPa'),
+            RecognizedTextBlock(rawText: 'Load centre 500 mm'),
+            RecognizedTextBlock(rawText: 'Capacity 2500 kg'),
+            RecognizedTextBlock(rawText: 'Production date 2021'),
+          ],
+        ),
+      );
+      await controller.captureAndRecognize();
+      final recommended = controller.state.candidates.where(
+        (c) => c.isRecommended,
+      );
+      expect(recommended.single.displayValue, '50252M6304');
+      expect(
+        controller.state.candidates.map((c) => c.displayValue),
+        isNot(contains('25-RC1H')),
+      );
+      expect(controller.state.isConfirmed, isFalse);
+    },
+  );
 }

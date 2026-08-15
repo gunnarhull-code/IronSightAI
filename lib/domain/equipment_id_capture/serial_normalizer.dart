@@ -17,6 +17,20 @@ class SerialNormalizer {
   /// Zero-width / BOM noise that OCR sometimes injects.
   static final RegExp _zeroWidth = RegExp(r'[\u200B-\u200D\uFEFF\u2060]');
 
+  /// Leading serial labels, including common OCR substitutions in the label
+  /// itself (`SlNo`, `SINo`). Does not treat `SN-…` as a label — that hyphen
+  /// is part of the serial.
+  static final RegExp _leadingSerialLabel = RegExp(
+    r'^(?:'
+    r'serial(?:\s*(?:no\.?|number|num|#))?|'
+    r's[\s./\\]+n(?:o\.?)?|'
+    r'sn(?:o\.?)?(?=[\s:#])|'
+    r'sl\s*no\.?|'
+    r'si\s*no\.?'
+    r')\s*[:#.\-]*\s*',
+    caseSensitive: false,
+  );
+
   String normalize(String input) {
     var text = input.replaceAll(_zeroWidth, '');
     text = text.replaceAll(_whitespace, ' ').trim();
@@ -41,6 +55,21 @@ class SerialNormalizer {
     }
 
     return buffer.toString().replaceAll(RegExp(r' +'), ' ').trim();
+  }
+
+  /// Removes a leading serial label without inventing remaining characters.
+  String stripLeadingSerialLabel(String input) {
+    final trimmed = input.replaceAll(_zeroWidth, '').trim();
+    if (trimmed.isEmpty) return '';
+    final match = _leadingSerialLabel.firstMatch(trimmed);
+    if (match == null) return trimmed;
+    final rest = trimmed.substring(match.end).trim();
+    return rest.isEmpty ? trimmed : rest;
+  }
+
+  /// Storage form: strip a leading label, then normalize characters.
+  String normalizeForStorage(String input) {
+    return normalize(stripLeadingSerialLabel(input));
   }
 
   /// Builds unique serial candidates from raw OCR blocks.

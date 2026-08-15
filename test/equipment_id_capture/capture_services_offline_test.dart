@@ -24,8 +24,10 @@ void main() {
     );
 
     await controller.captureAndRecognize();
-    controller.selectCandidate(controller.state.candidates.single.id);
-    expect(controller.confirm(), isTrue);
+    expect(
+      controller.selectCandidate(controller.state.candidates.single.id),
+      isTrue,
+    );
 
     expect(recognition.usedNetwork, isFalse);
     expect(imageCapture.captureCallCount, 1);

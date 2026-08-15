@@ -21,6 +21,24 @@ void main() {
       expect(normalizer.normalize('SN_00_99'), 'SN_00_99');
     });
 
+    test('strips leading serial labels from storage form', () {
+      expect(normalizer.normalizeForStorage('S/N 50252M6304'), '50252M6304');
+      expect(normalizer.normalizeForStorage('S/No 50252M6304'), '50252M6304');
+      expect(
+        normalizer.normalizeForStorage('SERIAL NO 50252M6304'),
+        '50252M6304',
+      );
+      expect(normalizer.normalizeForStorage('SERIAL 50252M6304'), '50252M6304');
+      expect(normalizer.normalizeForStorage('SlNo 50252M6304'), '50252M6304');
+      expect(normalizer.normalizeForStorage('SINo 50252M6304'), '50252M6304');
+      expect(normalizer.normalizeForStorage('Serial: ABC123'), 'ABC123');
+    });
+
+    test('does not strip SN- hyphenated serials', () {
+      expect(normalizer.normalizeForStorage('SN-0099'), 'SN-0099');
+      expect(normalizer.normalizeForStorage('  SN-ABC-99  '), 'SN-ABC-99');
+    });
+
     test('removes obvious formatting noise without inventing characters', () {
       expect(normalizer.normalize('#CAT-320*'), 'CAT-320');
       expect(normalizer.normalize('"ABC123"'), 'ABC123');

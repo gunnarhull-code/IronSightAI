@@ -5,9 +5,11 @@ import 'equipment_id_candidate.dart';
 import 'equipment_id_capture_failure.dart';
 import 'equipment_id_capture_kind.dart';
 import 'equipment_id_capture_method.dart';
+import 'hour_meter_field_extractor.dart';
 import 'hour_meter_parser.dart';
 import 'image_capture_port.dart';
 import 'recognized_text_block.dart';
+import 'serial_field_extractor.dart';
 import 'serial_normalizer.dart';
 import 'text_recognition_port.dart';
 
@@ -52,9 +54,8 @@ class EquipmentIdCaptureState {
       phase == EquipmentIdCapturePhase.confirmed && confirmed != null;
 
   bool get canConfirm {
-    if (phase == EquipmentIdCapturePhase.confirmed) return false;
     if (kind == EquipmentIdCaptureKind.serialNumber) {
-      return SerialNormalizer().normalize(draftValue).isNotEmpty;
+      return SerialNormalizer().normalizeForStorage(draftValue).isNotEmpty;
     }
     return const HourMeterParser().parse(draftValue) != null;
   }
@@ -102,10 +103,13 @@ class EquipmentIdCaptureController {
     required this.cameraPermission,
     this.serialNormalizer = const SerialNormalizer(),
     this.hourMeterParser = const HourMeterParser(),
+    this.serialExtractor = const SerialFieldExtractor(),
+    this.hourExtractor = const HourMeterFieldExtractor(),
     String initialDraftValue = '',
     ConfirmedEquipmentIdValue? initialConfirmed,
   }) : _imageCapture = imageCapture,
        _textRecognition = textRecognition,
+       _lastSaved = initialConfirmed,
        _state = _initialState(
          kind: kind,
          imageCapture: imageCapture,
@@ -139,8 +143,8 @@ class EquipmentIdCaptureController {
         cameraOcrSupported: cameraOcrSupported,
         confirmed: initialConfirmed,
         statusMessage: kind == EquipmentIdCaptureKind.serialNumber
-            ? 'Serial number confirmed.'
-            : 'Hour meter reading confirmed.',
+            ? 'Serial number saved to this inspection draft.'
+            : 'Hour meter reading saved to this inspection draft.',
       );
     }
     return EquipmentIdCaptureState(
@@ -157,6 +161,10 @@ class EquipmentIdCaptureController {
   final CameraPermissionPort cameraPermission;
   final SerialNormalizer serialNormalizer;
   final HourMeterParser hourMeterParser;
+  final SerialFieldExtractor serialExtractor;
+  final HourMeterFieldExtractor hourExtractor;
+
+  ConfirmedEquipmentIdValue? _lastSaved;
 
   EquipmentIdCaptureState _state;
   EquipmentIdCaptureState get state => _state;
@@ -195,15 +203,18 @@ class EquipmentIdCaptureController {
         clearFailure: true,
         clearStatusMessage: true,
         statusMessage:
-            'Edit the value, then tap Confirm. Detected text is never saved '
+            'Finish editing to save. Detected text is never saved '
             'automatically.',
       ),
     );
   }
 
-  /// Highlights a candidate and copies it into the draft field — does not
-  /// confirm.
-  void selectCandidate(String candidateId) {
+  /// Highlights a candidate, copies it into the draft, and immediately
+  /// confirms it. The tap is the explicit human confirmation.
+  ///
+  /// Does not persist by itself — the panel / workspace writes the local
+  /// draft after this returns true.
+  bool selectCandidate(String candidateId) {
     EquipmentIdCandidate? selected;
     for (final candidate in _state.candidates) {
       if (candidate.id == candidateId) {
@@ -211,19 +222,73 @@ class EquipmentIdCaptureController {
         break;
       }
     }
-    if (selected == null) return;
+    if (selected == null) return false;
 
     _emit(
       _state.copyWith(
         selectedCandidateId: selected.id,
         draftValue: selected.displayValue,
-        phase: EquipmentIdCapturePhase.awaitingConfirmation,
         clearConfirmed: true,
         clearFailure: true,
-        statusMessage:
-            'Candidate selected. Tap Confirm to accept it, or edit manually.',
+        statusMessage: 'Saving selected value to this inspection draft.',
       ),
     );
+    return confirm();
+  }
+
+  /// Saves the current manual draft when editing is completed.
+  ///
+  /// Returns `false` when the draft is invalid (previous saved value is
+  /// restored) or when the draft already matches the last saved value.
+  bool completeManualEntry() {
+    final normalizedDraft = _normalizedDraft(_state.draftValue);
+    if (normalizedDraft == null) {
+      _restoreLastSaved(
+        statusMessage:
+            'That value is not valid. The previous saved value '
+            'was kept. Enter a valid value to replace it.',
+      );
+      return false;
+    }
+    if (_state.isConfirmed &&
+        _state.confirmed != null &&
+        _sameStoredValue(_state.confirmed!, normalizedDraft)) {
+      return false;
+    }
+    if (_lastSaved != null && _sameStoredValue(_lastSaved!, normalizedDraft)) {
+      _restoreLastSaved();
+      return false;
+    }
+
+    _emit(_state.copyWith(clearSelectedCandidate: true, clearFailure: true));
+    return confirm();
+  }
+
+  /// Records that [state.confirmed] was persisted to the local draft.
+  void markSaved() {
+    if (_state.confirmed == null) return;
+    _lastSaved = _state.confirmed;
+    _emit(
+      _state.copyWith(
+        phase: EquipmentIdCapturePhase.confirmed,
+        statusMessage: _state.kind == EquipmentIdCaptureKind.serialNumber
+            ? 'Serial number saved to this inspection draft.'
+            : 'Hour meter reading saved to this inspection draft.',
+        clearFailure: true,
+      ),
+    );
+  }
+
+  /// Restores the last persisted value after a save failure.
+  void revertToLastSaved(EquipmentIdCaptureFailure failure) {
+    _restoreLastSaved(failure: failure);
+  }
+
+  bool get isAlreadySaved {
+    final confirmed = _state.confirmed;
+    if (confirmed == null || _lastSaved == null) return false;
+    return _sameStoredValue(confirmed, confirmed.value) &&
+        _sameStoredValue(_lastSaved!, confirmed.value);
   }
 
   /// Explicit human confirmation of the current draft value.
@@ -241,7 +306,9 @@ class EquipmentIdCaptureController {
         : EquipmentIdCaptureMethod.manual;
 
     if (_state.kind == EquipmentIdCaptureKind.serialNumber) {
-      final normalized = serialNormalizer.normalize(_state.draftValue);
+      final normalized = serialNormalizer.normalizeForStorage(
+        _state.draftValue,
+      );
       if (normalized.isEmpty) return false;
       final confirmed = ConfirmedEquipmentIdValue(
         kind: EquipmentIdCaptureKind.serialNumber,
@@ -254,7 +321,7 @@ class EquipmentIdCaptureController {
           phase: EquipmentIdCapturePhase.confirmed,
           confirmed: confirmed,
           clearFailure: true,
-          statusMessage: 'Serial number confirmed.',
+          statusMessage: 'Serial number saved to this inspection draft.',
         ),
       );
       return true;
@@ -275,20 +342,22 @@ class EquipmentIdCaptureController {
         phase: EquipmentIdCapturePhase.confirmed,
         confirmed: confirmed,
         clearFailure: true,
-        statusMessage: 'Hour meter reading confirmed.',
+        statusMessage: 'Hour meter reading saved to this inspection draft.',
       ),
     );
     return true;
   }
 
-  /// Clears confirmation so the user can revise without losing draft text.
+  /// Clears the in-progress confirmation chrome so the user can revise.
+  /// The last persisted value is kept until a replacement is saved.
   void clearConfirmation() {
     if (!_state.isConfirmed) return;
     _emit(
       _state.copyWith(
         phase: EquipmentIdCapturePhase.awaitingConfirmation,
         clearConfirmed: true,
-        statusMessage: 'Confirmation cleared. Edit or confirm again.',
+        statusMessage:
+            'Saved value kept. Edit or tap a replacement to change it.',
       ),
     );
   }
@@ -299,7 +368,7 @@ class EquipmentIdCaptureController {
   /// Never silently confirms OCR output.
   Future<void> recognizeExistingImage(CapturedImage image) async {
     final preservedDraft = _state.draftValue;
-    final preservedConfirmed = _state.confirmed;
+    final preservedConfirmed = _lastSaved ?? _state.confirmed;
 
     if (!_textRecognition.isSupported) {
       _emitRecognizeFailure(
@@ -325,6 +394,7 @@ class EquipmentIdCaptureController {
         phase: EquipmentIdCapturePhase.recognizing,
         lastCapturedImage: image,
         draftValue: preservedDraft,
+        confirmed: preservedConfirmed,
         clearFailure: true,
         clearStatusMessage: true,
       ),
@@ -343,8 +413,7 @@ class EquipmentIdCaptureController {
       return;
     }
 
-    final candidates = _buildCandidates(blocks);
-    if (candidates.isEmpty) {
+    if (blocks.isEmpty) {
       _emitRecognizeFailure(
         EquipmentIdCaptureFailure.noTextDetected(),
         preservedDraft: preservedDraft,
@@ -354,20 +423,11 @@ class EquipmentIdCaptureController {
       return;
     }
 
-    _emit(
-      EquipmentIdCaptureState(
-        kind: _state.kind,
-        phase: EquipmentIdCapturePhase.awaitingConfirmation,
-        draftValue: preservedDraft,
-        candidates: candidates,
-        cameraOcrSupported: _state.cameraOcrSupported,
-        lastCapturedImage: image,
-        // Advisory only — persisted confirmed values stay on the inspection
-        // until the user explicitly confirms again.
-        statusMessage:
-            'Select a detected candidate, then tap Confirm. Nothing is saved '
-            'until you confirm.',
-      ),
+    _presentOcrResults(
+      _buildCandidates(blocks),
+      preservedDraft: preservedDraft,
+      preservedConfirmed: preservedConfirmed,
+      image: image,
     );
   }
 
@@ -377,13 +437,14 @@ class EquipmentIdCaptureController {
     ConfirmedEquipmentIdValue? preservedConfirmed,
     CapturedImage? image,
   }) {
-    if (preservedConfirmed != null) {
+    final saved = preservedConfirmed ?? _lastSaved;
+    if (saved != null) {
       _emit(
         _state.copyWith(
           phase: EquipmentIdCapturePhase.confirmed,
           failure: failure,
-          draftValue: preservedDraft,
-          confirmed: preservedConfirmed,
+          draftValue: saved.value,
+          confirmed: saved,
           lastCapturedImage: image,
           statusMessage: failure.message,
         ),
@@ -405,17 +466,13 @@ class EquipmentIdCaptureController {
   /// Runs permission → capture → OCR → candidate presentation.
   Future<void> captureAndRecognize() async {
     final preservedDraft = _state.draftValue;
+    final preservedConfirmed = _lastSaved ?? _state.confirmed;
 
     if (!_imageCapture.isSupported || !_textRecognition.isSupported) {
-      _emit(
-        _state.copyWith(
-          phase: EquipmentIdCapturePhase.failed,
-          failure: EquipmentIdCaptureFailure.unsupportedPlatform(),
-          draftValue: preservedDraft,
-          clearConfirmed: true,
-          statusMessage:
-              EquipmentIdCaptureFailure.unsupportedPlatform().message,
-        ),
+      _emitRecognizeFailure(
+        EquipmentIdCaptureFailure.unsupportedPlatform(),
+        preservedDraft: preservedDraft,
+        preservedConfirmed: preservedConfirmed,
       );
       return;
     }
@@ -424,9 +481,9 @@ class EquipmentIdCaptureController {
       _state.copyWith(
         phase: EquipmentIdCapturePhase.requestingPermission,
         clearFailure: true,
-        clearConfirmed: true,
         clearStatusMessage: true,
         draftValue: preservedDraft,
+        confirmed: preservedConfirmed,
       ),
     );
 
@@ -452,6 +509,7 @@ class EquipmentIdCaptureController {
       _state.copyWith(
         phase: EquipmentIdCapturePhase.capturing,
         draftValue: preservedDraft,
+        confirmed: preservedConfirmed,
       ),
     );
 
@@ -476,6 +534,7 @@ class EquipmentIdCaptureController {
         phase: EquipmentIdCapturePhase.recognizing,
         lastCapturedImage: image,
         draftValue: preservedDraft,
+        confirmed: preservedConfirmed,
       ),
     );
 
@@ -491,8 +550,7 @@ class EquipmentIdCaptureController {
       return;
     }
 
-    final candidates = _buildCandidates(blocks);
-    if (candidates.isEmpty) {
+    if (blocks.isEmpty) {
       _fail(
         EquipmentIdCaptureFailure.noTextDetected(),
         preservedDraft,
@@ -501,17 +559,48 @@ class EquipmentIdCaptureController {
       return;
     }
 
+    _presentOcrResults(
+      _buildCandidates(blocks),
+      preservedDraft: preservedDraft,
+      preservedConfirmed: preservedConfirmed,
+      image: image,
+    );
+  }
+
+  void _presentOcrResults(
+    List<EquipmentIdCandidate> candidates, {
+    required String preservedDraft,
+    ConfirmedEquipmentIdValue? preservedConfirmed,
+    required CapturedImage image,
+  }) {
+    final saved = preservedConfirmed ?? _lastSaved;
+    final hasRecommended = candidates.any((c) => c.isRecommended);
+    final status = () {
+      final kept = saved == null ? '' : ' Saved value was kept.';
+      if (candidates.isEmpty) {
+        return 'No clear reading. Enter the value manually. Detected text '
+            'is never saved automatically.$kept';
+      }
+      if (hasRecommended) {
+        return 'Tap the recommended value to save it. Detected text is '
+            'never saved automatically.$kept';
+      }
+      return 'No clear reading. Other possibilities are listed, or enter '
+          'the value manually.$kept';
+    }();
+
     _emit(
-      EquipmentIdCaptureState(
-        kind: _state.kind,
-        phase: EquipmentIdCapturePhase.awaitingConfirmation,
-        draftValue: preservedDraft,
+      _state.copyWith(
+        phase: saved != null
+            ? EquipmentIdCapturePhase.confirmed
+            : EquipmentIdCapturePhase.awaitingConfirmation,
+        draftValue: saved?.value ?? preservedDraft,
         candidates: candidates,
-        cameraOcrSupported: _state.cameraOcrSupported,
+        confirmed: saved,
+        clearConfirmed: saved == null,
         lastCapturedImage: image,
-        statusMessage:
-            'Select a detected candidate, then tap Confirm. Nothing is saved '
-            'until you confirm.',
+        clearFailure: true,
+        statusMessage: status,
       ),
     );
   }
@@ -519,30 +608,41 @@ class EquipmentIdCaptureController {
   List<EquipmentIdCandidate> _buildCandidates(
     List<RecognizedTextBlock> blocks,
   ) {
+    final texts = blocks.map((b) => b.rawText);
     if (_state.kind == EquipmentIdCaptureKind.serialNumber) {
-      final values = serialNormalizer.candidatesFromRawTexts(
-        blocks.map((b) => b.rawText),
-      );
+      final extraction = serialExtractor.extract(texts);
       return [
-        for (var i = 0; i < values.length; i++)
+        for (var i = 0; i < extraction.visibleCandidates.length; i++)
           EquipmentIdCandidate(
             id: 'serial-$i',
-            displayValue: values[i],
-            sourceRawText: values[i],
+            displayValue: extraction.visibleCandidates[i].value,
+            sourceRawText: extraction.visibleCandidates[i].sourceRawText,
+            isRecommended:
+                extraction.recommended != null &&
+                i == 0 &&
+                extraction.visibleCandidates[i].value ==
+                    extraction.recommended!.value,
+            confidence: extraction.visibleCandidates[i].confidence,
           ),
       ];
     }
 
-    final parsed = hourMeterParser.candidatesFromRawTexts(
-      blocks.map((b) => b.rawText),
-    );
+    final extraction = hourExtractor.extract(texts);
     return [
-      for (var i = 0; i < parsed.length; i++)
+      for (var i = 0; i < extraction.visibleCandidates.length; i++)
         EquipmentIdCandidate(
           id: 'hours-$i',
-          displayValue: parsed[i].displayValue,
-          hours: parsed[i].hours,
-          sourceRawText: parsed[i].sourceRawText,
+          displayValue: extraction.visibleCandidates[i].displayValue,
+          hours: extraction.visibleCandidates[i].hours,
+          sourceRawText: extraction.visibleCandidates[i].sourceRawText,
+          isRecommended:
+              extraction.recommended != null &&
+              i == 0 &&
+              extraction.visibleCandidates[i].displayValue ==
+                  extraction.recommended!.displayValue,
+          confidence: i == 0 && extraction.recommended != null
+              ? HourMeterFieldExtractor.labelledScore
+              : HourMeterFieldExtractor.alternativeThreshold,
         ),
     ];
   }
@@ -552,6 +652,20 @@ class EquipmentIdCaptureController {
     String preservedDraft, {
     CapturedImage? image,
   }) {
+    final saved = _lastSaved;
+    if (saved != null) {
+      _emit(
+        _state.copyWith(
+          phase: EquipmentIdCapturePhase.confirmed,
+          failure: failure,
+          draftValue: saved.value,
+          confirmed: saved,
+          lastCapturedImage: image,
+          statusMessage: failure.message,
+        ),
+      );
+      return;
+    }
     _emit(
       _state.copyWith(
         phase: EquipmentIdCapturePhase.failed,
@@ -560,6 +674,57 @@ class EquipmentIdCaptureController {
         clearConfirmed: true,
         lastCapturedImage: image,
         statusMessage: failure.message,
+      ),
+    );
+  }
+
+  String? _normalizedDraft(String draft) {
+    if (_state.kind == EquipmentIdCaptureKind.serialNumber) {
+      final normalized = serialNormalizer.normalizeForStorage(draft);
+      return normalized.isEmpty ? null : normalized;
+    }
+    final hours = hourMeterParser.parse(draft);
+    if (hours == null || hours < 0) return null;
+    return hourMeterParser.formatHours(hours);
+  }
+
+  bool _sameStoredValue(ConfirmedEquipmentIdValue saved, String normalized) {
+    if (saved.kind == EquipmentIdCaptureKind.hourMeter) {
+      final hours = hourMeterParser.parse(normalized);
+      return hours != null && saved.hours == hours;
+    }
+    return saved.value == normalized;
+  }
+
+  void _restoreLastSaved({
+    EquipmentIdCaptureFailure? failure,
+    String? statusMessage,
+  }) {
+    final saved = _lastSaved;
+    if (saved == null) {
+      _emit(
+        _state.copyWith(
+          phase: EquipmentIdCapturePhase.failed,
+          failure: failure,
+          clearConfirmed: true,
+          statusMessage: statusMessage ?? failure?.message,
+        ),
+      );
+      return;
+    }
+    _emit(
+      _state.copyWith(
+        phase: EquipmentIdCapturePhase.confirmed,
+        confirmed: saved,
+        draftValue: saved.value,
+        failure: failure,
+        clearFailure: failure == null,
+        statusMessage:
+            statusMessage ??
+            (failure?.message ??
+                (_state.kind == EquipmentIdCaptureKind.serialNumber
+                    ? 'Serial number saved to this inspection draft.'
+                    : 'Hour meter reading saved to this inspection draft.')),
       ),
     );
   }

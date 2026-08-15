@@ -371,6 +371,53 @@ void main() {
     expect(inspection!.serialNumber, isNull);
   });
 
+  testWidgets(
+    'tapping a recommended serial saves immediately with no recapture',
+    (tester) async {
+      final inspectionId = await openDraft(tester, equipmentId: 'eq-tap');
+      await workspace.inspectionMedia.saveRequiredPhoto(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+        slot: InspectionPhotoSlot.serialDataPlate,
+        image: _photo,
+      );
+      await reopenWorkspace(tester, inspectionId);
+
+      final scanButton = find.bySemanticsLabel(
+        EquipmentIdCaptureLabels.serialScanButton,
+      );
+      await tester.ensureVisible(scanButton);
+      await tester.pumpAndSettle();
+      await tester.tap(scanButton);
+      await tester.pumpAndSettle();
+
+      expect(photoCapture.captureCallCount, 0);
+      expect(panelCapture.captureCallCount, 0);
+      expect(find.text('Confirm'), findsNothing);
+
+      await tester.tap(
+        find.bySemanticsLabel(
+          '${EquipmentIdCaptureLabels.recommendedPrefix} SN-PHOTO-1',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Saved: SN-PHOTO-1'), findsOneWidget);
+      final inspection = await workspace.inspections.getById(
+        companyId: 'company-a',
+        inspectionId: inspectionId,
+      );
+      expect(inspection!.serialNumber, 'SN-PHOTO-1');
+      expect(
+        inspection.serialCaptureMethod,
+        EquipmentIdCaptureMethod.ocrConfirmed,
+      );
+      expect(photoCapture.captureCallCount, 0);
+      expect(panelCapture.captureCallCount, 0);
+      expect(serialOcr.recognizeCallCount, 1);
+    },
+  );
+
   testWidgets('OCR does not overwrite an already confirmed serial', (
     tester,
   ) async {

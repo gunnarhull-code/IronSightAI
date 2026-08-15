@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../domain/equipment_id_capture/confirmed_equipment_id_value.dart';
+import '../../../domain/equipment_id_capture/equipment_id_candidate.dart';
 import '../../../domain/equipment_id_capture/equipment_id_capture_controller.dart';
 import '../../../domain/equipment_id_capture/equipment_id_capture_failure.dart';
 import '../../../domain/equipment_id_capture/equipment_id_capture_kind.dart';
@@ -16,12 +18,14 @@ class EquipmentIdCapturePanel extends StatefulWidget {
   const EquipmentIdCapturePanel({
     super.key,
     required this.controller,
-    this.onConfirmed,
+    this.onPersist,
     this.onScanRequested,
   });
 
   final EquipmentIdCaptureController controller;
-  final ValueChanged<EquipmentIdCaptureState>? onConfirmed;
+
+  /// Persists a human-accepted value to the local inspection draft.
+  final Future<void> Function(ConfirmedEquipmentIdValue value)? onPersist;
 
   /// When set, replaces the default camera+OCR scan with a caller-owned flow
   /// (e.g. reuse a required serial/hour photo).
@@ -36,7 +40,7 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
   late final TextEditingController _textController;
   late final FocusNode _manualFocus;
   late final FocusNode _scanFocus;
-  late final FocusNode _confirmFocus;
+  bool _committing = false;
 
   @override
   void initState() {
@@ -46,7 +50,7 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
     );
     _manualFocus = FocusNode(debugLabel: 'equipment-id-manual');
     _scanFocus = FocusNode(debugLabel: 'equipment-id-scan');
-    _confirmFocus = FocusNode(debugLabel: 'equipment-id-confirm');
+    _manualFocus.addListener(_onManualFocusChange);
     widget.controller.addListener(_onControllerState);
   }
 
@@ -60,6 +64,12 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
     }
   }
 
+  void _onManualFocusChange() {
+    if (!_manualFocus.hasFocus && mounted) {
+      _commitManual();
+    }
+  }
+
   void _onControllerState(EquipmentIdCaptureState state) {
     if (!mounted) return;
     if (_textController.text != state.draftValue && !_manualFocus.hasFocus) {
@@ -69,18 +79,15 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
       );
     }
     setState(() {});
-    if (state.isConfirmed) {
-      widget.onConfirmed?.call(state);
-    }
   }
 
   @override
   void dispose() {
+    _manualFocus.removeListener(_onManualFocusChange);
     widget.controller.removeListener(_onControllerState);
     _textController.dispose();
     _manualFocus.dispose();
     _scanFocus.dispose();
-    _confirmFocus.dispose();
     super.dispose();
   }
 
@@ -106,16 +113,80 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
     final phase = widget.controller.state.phase;
     return phase == EquipmentIdCapturePhase.requestingPermission ||
         phase == EquipmentIdCapturePhase.capturing ||
-        phase == EquipmentIdCapturePhase.recognizing;
+        phase == EquipmentIdCapturePhase.recognizing ||
+        _committing;
+  }
+
+  Future<void> _commitCandidate(String candidateId) async {
+    if (_committing) return;
+    _committing = true;
+    setState(() {});
+    try {
+      if (!widget.controller.selectCandidate(candidateId)) return;
+      await _persistCurrent();
+    } finally {
+      if (mounted) {
+        _committing = false;
+        setState(() {});
+      } else {
+        _committing = false;
+      }
+    }
+  }
+
+  Future<void> _commitManual() async {
+    if (_committing) return;
+    _committing = true;
+    setState(() {});
+    try {
+      if (!widget.controller.completeManualEntry()) return;
+      await _persistCurrent();
+    } finally {
+      if (mounted) {
+        _committing = false;
+        setState(() {});
+      } else {
+        _committing = false;
+      }
+    }
+  }
+
+  Future<void> _persistCurrent() async {
+    final confirmed = widget.controller.state.confirmed;
+    if (confirmed == null) return;
+    if (widget.controller.isAlreadySaved) {
+      widget.controller.markSaved();
+      return;
+    }
+    final persist = widget.onPersist;
+    if (persist == null) {
+      widget.controller.markSaved();
+      return;
+    }
+    try {
+      await persist(confirmed);
+      if (!mounted) return;
+      widget.controller.markSaved();
+    } catch (error) {
+      if (!mounted) return;
+      widget.controller.revertToLastSaved(
+        EquipmentIdCaptureFailure.persistenceFailure(error.toString()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final state = widget.controller.state;
     final theme = Theme.of(context);
+    final recommended = state.candidates.where((c) => c.isRecommended).toList();
+    final alternatives = state.candidates
+        .where((c) => !c.isRecommended)
+        .toList();
 
     return Semantics(
       container: true,
+      explicitChildNodes: true,
       label: _title,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -146,6 +217,7 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
           Semantics(
             button: true,
             label: _scanLabel,
+            excludeSemantics: true,
             child: SizedBox(
               height: 56,
               child: FilledButton.icon(
@@ -178,47 +250,44 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
               ),
             ),
           ),
-          if (state.candidates.isNotEmpty) ...[
+          if (recommended.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Text(
-              'Detected candidates — tap to select, then confirm',
-              style: theme.textTheme.titleSmall,
-            ),
+            Text('Recommended', style: theme.textTheme.titleSmall),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final candidate in state.candidates)
-                  Semantics(
-                    button: true,
-                    selected: state.selectedCandidateId == candidate.id,
-                    label:
-                        '${EquipmentIdCaptureLabels.candidatePrefix} '
-                        '${candidate.displayValue}',
-                    child: FilterChip(
-                      label: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 6,
-                        ),
-                        child: Text(
-                          candidate.displayValue,
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ),
+            for (final candidate in recommended)
+              _CandidateButton(
+                candidate: candidate,
+                selected: state.selectedCandidateId == candidate.id,
+                recommended: true,
+                enabled: !_busy,
+                onTap: () => _commitCandidate(candidate.id),
+              ),
+          ],
+          if (alternatives.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Semantics(
+              container: true,
+              label: EquipmentIdCaptureLabels.otherPossibilities,
+              child: ExpansionTile(
+                title: const Text(EquipmentIdCaptureLabels.otherPossibilities),
+                children: [
+                  for (final candidate in alternatives)
+                    _CandidateButton(
+                      candidate: candidate,
                       selected: state.selectedCandidateId == candidate.id,
-                      onSelected: (_) =>
-                          widget.controller.selectCandidate(candidate.id),
+                      recommended: false,
+                      enabled: !_busy,
+                      onTap: () => _commitCandidate(candidate.id),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ],
           const SizedBox(height: 16),
           Semantics(
             textField: true,
             label: _manualLabel,
+            excludeSemantics: true,
             child: TextFormField(
               controller: _textController,
               focusNode: _manualFocus,
@@ -233,16 +302,11 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
                   : null,
               decoration: InputDecoration(
                 labelText: _manualLabel,
-                helperText: 'Always available — edit anytime',
+                helperText: 'Always available — saves when you finish editing',
                 border: const OutlineInputBorder(),
               ),
               onChanged: widget.controller.updateManualEntry,
-              onFieldSubmitted: (_) {
-                if (state.canConfirm) {
-                  _confirmFocus.requestFocus();
-                  widget.controller.confirm();
-                }
-              },
+              onFieldSubmitted: (_) => _commitManual(),
             ),
           ),
           const SizedBox(height: 12),
@@ -260,6 +324,10 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
           if (state.isConfirmed)
             Semantics(
               liveRegion: true,
+              label:
+                  '${EquipmentIdCaptureLabels.savedStatePrefix} '
+                  '${state.confirmed!.value}',
+              excludeSemantics: true,
               child: Material(
                 color: theme.colorScheme.secondaryContainer,
                 child: Padding(
@@ -273,7 +341,7 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Confirmed: ${state.confirmed!.value}',
+                          'Saved: ${state.confirmed!.value}',
                           style: theme.textTheme.titleMedium,
                         ),
                       ),
@@ -281,34 +349,61 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
                   ),
                 ),
               ),
-            )
-          else
-            Semantics(
-              button: true,
-              label: EquipmentIdCaptureLabels.confirmButton,
-              child: SizedBox(
-                height: 56,
-                child: FilledButton(
-                  focusNode: _confirmFocus,
-                  onPressed: state.canConfirm && !_busy
-                      ? () => widget.controller.confirm()
-                      : null,
-                  child: const Text('Confirm', style: TextStyle(fontSize: 18)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CandidateButton extends StatelessWidget {
+  const _CandidateButton({
+    required this.candidate,
+    required this.selected,
+    required this.recommended,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final EquipmentIdCandidate candidate;
+  final bool selected;
+  final bool recommended;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final prefix = recommended
+        ? EquipmentIdCaptureLabels.recommendedPrefix
+        : EquipmentIdCaptureLabels.alternativePrefix;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: '$prefix ${candidate.displayValue}',
+        excludeSemantics: true,
+        child: recommended
+            ? FilledButton.tonal(
+                onPressed: enabled ? onTap : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    candidate.displayValue,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+              )
+            : OutlinedButton(
+                onPressed: enabled ? onTap : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    candidate.displayValue,
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ),
               ),
-            ),
-          if (state.isConfirmed) ...[
-            const SizedBox(height: 8),
-            Semantics(
-              button: true,
-              label: EquipmentIdCaptureLabels.clearConfirmationButton,
-              child: TextButton(
-                onPressed: widget.controller.clearConfirmation,
-                child: const Text('Edit confirmed value'),
-              ),
-            ),
-          ],
-        ],
       ),
     );
   }
@@ -326,6 +421,8 @@ class _FailureBanner extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Semantics(
         liveRegion: true,
+        label: EquipmentIdCaptureLabels.saveError,
+        excludeSemantics: true,
         child: Material(
           color: theme.colorScheme.errorContainer,
           child: Padding(

@@ -490,6 +490,23 @@ void main() {
         throwsA(isA<InvalidInspectionLifecycleException>()),
       );
     });
+
+    test('rejects confirmation on completed inspections', () async {
+      final id = await createDraft();
+      await repository.complete(companyId: 'company-a', inspectionId: id);
+      expect(
+        () => repository.saveConfirmedEquipmentId(
+          companyId: 'company-a',
+          inspectionId: id,
+          confirmedValue: const ConfirmedEquipmentIdValue(
+            kind: EquipmentIdCaptureKind.serialNumber,
+            value: 'X',
+            method: EquipmentIdCaptureMethod.manual,
+          ),
+        ),
+        throwsA(isA<InvalidInspectionLifecycleException>()),
+      );
+    });
   });
 
   group('persistence across reconnect', () {

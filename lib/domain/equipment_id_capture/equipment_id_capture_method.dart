@@ -1,12 +1,13 @@
 /// How a confirmed identification value was produced.
 ///
 /// OCR output is never authoritative on its own — confirmed values always
-/// reflect an explicit human action (select + confirm, or manual entry).
+/// reflect an explicit human action (tapping a candidate, or finishing
+/// manual entry).
 enum EquipmentIdCaptureMethod {
-  /// User selected an OCR candidate and explicitly confirmed it.
+  /// User tapped an OCR candidate, which immediately persists it.
   ocrConfirmed,
 
-  /// User typed or edited the value and explicitly confirmed it.
+  /// User typed or edited the value and finished editing.
   manual;
 
   String get storageValue => switch (this) {

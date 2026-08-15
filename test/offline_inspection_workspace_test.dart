@@ -497,6 +497,9 @@ void main() {
     testWidgets('workspace persists rating tap and supports keyboard notes', (
       tester,
     ) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       await workspace.equipmentCatalog.replaceCompanyCatalog(
         companyId: 'company-a',
         equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
@@ -532,9 +535,12 @@ void main() {
       expect(find.byType(ConditionRatingControls), findsWidgets);
 
       final engineCard = find.widgetWithText(Card, 'Engine');
-      await tester.tap(
-        find.descendant(of: engineCard, matching: find.text('Good')),
+      final engineGood = find.descendant(
+        of: engineCard,
+        matching: find.text('Good'),
       );
+      await tester.scrollUntilVisible(engineGood, 80, scrollable: scrollable);
+      await tester.tap(engineGood);
       await tester.pumpAndSettle();
 
       final saved = await workspace.inspections.getById(
@@ -611,13 +617,8 @@ void main() {
       );
       await tester.ensureVisible(serialField);
       await tester.enterText(serialField, 'sn-abc-99');
-      await tester.pumpAndSettle();
-      final serialConfirm = find.descendant(
-        of: find.byKey(const ValueKey('qa-serial-capture')),
-        matching: find.text('Confirm'),
-      );
-      await tester.ensureVisible(serialConfirm);
-      await tester.tap(serialConfirm);
+      await tester.pump();
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
       final hoursField = find.bySemanticsLabel(
@@ -625,13 +626,8 @@ void main() {
       );
       await tester.ensureVisible(hoursField);
       await tester.enterText(hoursField, '1234.5');
-      await tester.pumpAndSettle();
-      final hoursConfirm = find.descendant(
-        of: find.byKey(const ValueKey('qa-hours-capture')),
-        matching: find.text('Confirm'),
-      );
-      await tester.ensureVisible(hoursConfirm);
-      await tester.tap(hoursConfirm);
+      await tester.pump();
+      await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
 
       final saved = await workspace.inspections.getById(
@@ -696,14 +692,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Confirmed: CAT320GX'), findsOneWidget);
+      expect(find.textContaining('Saved: CAT320GX'), findsOneWidget);
       await tester.scrollUntilVisible(
-        find.textContaining('Confirmed: 2500'),
+        find.textContaining('Saved: 2500'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
-      expect(find.textContaining('Confirmed: 2500'), findsOneWidget);
-      expect(find.text('Edit confirmed value'), findsNWidgets(2));
+      expect(find.textContaining('Saved: 2500'), findsOneWidget);
     });
 
     testWidgets(
