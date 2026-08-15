@@ -17,10 +17,15 @@ class EquipmentIdCapturePanel extends StatefulWidget {
     super.key,
     required this.controller,
     this.onConfirmed,
+    this.onScanRequested,
   });
 
   final EquipmentIdCaptureController controller;
   final ValueChanged<EquipmentIdCaptureState>? onConfirmed;
+
+  /// When set, replaces the default camera+OCR scan with a caller-owned flow
+  /// (e.g. reuse a required serial/hour photo).
+  final Future<void> Function()? onScanRequested;
 
   @override
   State<EquipmentIdCapturePanel> createState() =>
@@ -147,7 +152,14 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
                 focusNode: _scanFocus,
                 onPressed: _busy || !state.cameraOcrSupported
                     ? null
-                    : () => widget.controller.captureAndRecognize(),
+                    : () {
+                        final custom = widget.onScanRequested;
+                        if (custom != null) {
+                          custom();
+                        } else {
+                          widget.controller.captureAndRecognize();
+                        }
+                      },
                 icon: _busy
                     ? const SizedBox(
                         width: 22,
@@ -157,7 +169,9 @@ class _EquipmentIdCapturePanelState extends State<EquipmentIdCapturePanel> {
                     : const Icon(Icons.photo_camera, size: 28),
                 label: Text(
                   state.cameraOcrSupported
-                      ? 'Scan with camera'
+                      ? (widget.onScanRequested != null
+                            ? 'Scan required photo'
+                            : 'Scan with camera')
                       : 'Scan unavailable',
                   style: const TextStyle(fontSize: 18),
                 ),

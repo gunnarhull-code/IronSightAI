@@ -1,14 +1,17 @@
 import '../../domain/repositories/auth_session_reader.dart';
 import '../../domain/repositories/equipment_repository.dart';
 import '../../domain/repositories/local_equipment_catalog_repository.dart';
+import '../../domain/repositories/local_inspection_media_repository.dart';
 import '../../domain/repositories/local_inspection_repository.dart';
 import '../../domain/repositories/local_tenant_context_repository.dart';
 import '../repositories/drift_local_equipment_catalog_repository.dart';
+import '../repositories/drift_local_inspection_media_repository.dart';
 import '../repositories/drift_local_inspection_repository.dart';
 import '../repositories/drift_local_tenant_context_repository.dart';
 import '../services/equipment_catalog_refresh_service.dart';
 import 'drift/app_database.dart';
 import 'drift/open_inspection_database.dart';
+import 'inspection_media_file_store.dart';
 
 /// Local-first offline inspection workspace dependencies.
 ///
@@ -18,18 +21,22 @@ class OfflineInspectionWorkspace {
   OfflineInspectionWorkspace({
     required this.database,
     required this.inspections,
+    required this.inspectionMedia,
     required this.equipmentCatalog,
     required this.tenantContext,
     required this.catalogRefresh,
     required this.authSession,
+    required this.mediaFiles,
   });
 
   final AppDatabase database;
   final LocalInspectionRepository inspections;
+  final LocalInspectionMediaRepository inspectionMedia;
   final LocalEquipmentCatalogRepository equipmentCatalog;
   final LocalTenantContextRepository tenantContext;
   final EquipmentCatalogRefreshService catalogRefresh;
   final AuthSessionReader authSession;
+  final InspectionMediaFileStore mediaFiles;
 
   static Future<OfflineInspectionWorkspace> open({
     required EquipmentRepository remoteEquipmentRepository,
@@ -51,6 +58,7 @@ class OfflineInspectionWorkspace {
     required AppDatabase database,
     required EquipmentRepository remoteEquipmentRepository,
     required AuthSessionReader authSession,
+    InspectionMediaFileStore? mediaFiles,
   }) {
     final equipmentCatalog = DriftLocalEquipmentCatalogRepository(database);
     final tenantContext = DriftLocalTenantContextRepository(
@@ -58,6 +66,12 @@ class OfflineInspectionWorkspace {
       equipmentCatalog,
     );
     final inspections = DriftLocalInspectionRepository(database);
+    final files = mediaFiles ?? InspectionMediaFileStore();
+    final inspectionMedia = DriftLocalInspectionMediaRepository(
+      database,
+      inspections,
+      files,
+    );
     final catalogRefresh = EquipmentCatalogRefreshService(
       remoteEquipmentRepository: remoteEquipmentRepository,
       localCatalog: equipmentCatalog,
@@ -65,10 +79,12 @@ class OfflineInspectionWorkspace {
     return OfflineInspectionWorkspace(
       database: database,
       inspections: inspections,
+      inspectionMedia: inspectionMedia,
       equipmentCatalog: equipmentCatalog,
       tenantContext: tenantContext,
       catalogRefresh: catalogRefresh,
       authSession: authSession,
+      mediaFiles: files,
     );
   }
 

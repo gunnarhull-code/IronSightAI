@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
+import 'package:ironsight_ai/data/local/inspection_media_file_store.dart';
 import 'package:ironsight_ai/data/local/offline_inspection_workspace.dart';
 import 'package:ironsight_ai/domain/entities/condition_rating.dart';
 import 'package:ironsight_ai/domain/entities/detailed_category_response.dart';
@@ -63,18 +64,26 @@ Equipment _equipment({
 
 void main() {
   late OfflineInspectionWorkspace workspace;
+  late Directory mediaRoot;
 
   setUp(() {
+    mediaRoot = Directory.systemTemp.createTempSync('ironsight_media_');
     final database = openMemoryAppDatabase();
     workspace = OfflineInspectionWorkspace.fromDatabase(
       database: database,
       remoteEquipmentRepository: FakeEquipmentRepository(),
       authSession: FakeAuthSessionReader(),
+      mediaFiles: InspectionMediaFileStore(
+        documentsDirectoryOverride: () => mediaRoot,
+      ),
     );
   });
 
   tearDown(() async {
     await workspace.dispose();
+    if (mediaRoot.existsSync()) {
+      mediaRoot.deleteSync(recursive: true);
+    }
   });
 
   group('tenant-scoped local context', () {
@@ -506,6 +515,7 @@ void main() {
             inspectionId: draft.id,
             inspections: workspace.inspections,
             equipmentCatalog: workspace.equipmentCatalog,
+            inspectionMedia: workspace.inspectionMedia,
             captureControllerFactory: _manualCaptureController,
           ),
         ),
@@ -587,6 +597,7 @@ void main() {
             inspectionId: draft.id,
             inspections: workspace.inspections,
             equipmentCatalog: workspace.equipmentCatalog,
+            inspectionMedia: workspace.inspectionMedia,
             captureControllerFactory: _manualCaptureController,
           ),
         ),
@@ -678,6 +689,7 @@ void main() {
             inspectionId: draft.id,
             inspections: workspace.inspections,
             equipmentCatalog: workspace.equipmentCatalog,
+            inspectionMedia: workspace.inspectionMedia,
             captureControllerFactory: _manualCaptureController,
           ),
         ),
@@ -718,6 +730,7 @@ void main() {
               inspectionId: draft.id,
               inspections: workspace.inspections,
               equipmentCatalog: workspace.equipmentCatalog,
+              inspectionMedia: workspace.inspectionMedia,
               captureControllerFactory: _manualCaptureController,
             ),
           ),
@@ -782,6 +795,7 @@ void main() {
               inspectionId: draft.id,
               inspections: workspace.inspections,
               equipmentCatalog: workspace.equipmentCatalog,
+              inspectionMedia: workspace.inspectionMedia,
               captureControllerFactory: _manualCaptureController,
             ),
           ),
@@ -934,6 +948,7 @@ void main() {
             inspectionId: draft.id,
             inspections: workspace.inspections,
             equipmentCatalog: workspace.equipmentCatalog,
+            inspectionMedia: workspace.inspectionMedia,
             captureControllerFactory: _manualCaptureController,
           ),
         ),

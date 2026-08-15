@@ -167,6 +167,7 @@ Route<dynamic>? buildAppRoute(
           inspectionId: workspaceId,
           inspections: session.workspace.inspections,
           equipmentCatalog: session.workspace.equipmentCatalog,
+          inspectionMedia: session.workspace.inspectionMedia,
           navigatorKey: navigatorKey,
         ),
       );

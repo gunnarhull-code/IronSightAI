@@ -3,6 +3,7 @@ import 'package:sqlite3/common.dart' show CommonDatabase;
 
 import 'tables/inspection_category_ratings_table.dart';
 import 'tables/inspection_detailed_responses_table.dart';
+import 'tables/inspection_media_table.dart';
 import 'tables/inspections_table.dart';
 import 'tables/local_equipment_cache_table.dart';
 import 'tables/local_tenant_contexts_table.dart';
@@ -14,6 +15,7 @@ part 'app_database.g.dart';
     Inspections,
     InspectionCategoryRatings,
     InspectionDetailedResponses,
+    InspectionMediaItems,
     LocalTenantContexts,
     LocalEquipmentCache,
   ],
@@ -22,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration {
@@ -49,6 +51,10 @@ class AppDatabase extends _$AppDatabase {
             inspections.hourMeterCaptureMethod,
           );
         }
+        if (from < 4) {
+          await migrator.createTable(inspectionMediaItems);
+          await _createMediaIndexes();
+        }
       },
     );
   }
@@ -73,6 +79,19 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS idx_local_equipment_company '
       'ON local_equipment_cache (company_id)',
+    );
+    await _createMediaIndexes();
+  }
+
+  Future<void> _createMediaIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS idx_inspection_media_company_inspection '
+      'ON inspection_media (company_id, inspection_id)',
+    );
+    await customStatement(
+      'CREATE UNIQUE INDEX IF NOT EXISTS '
+      'idx_inspection_media_company_inspection_slot '
+      'ON inspection_media (company_id, inspection_id, slot)',
     );
   }
 }
