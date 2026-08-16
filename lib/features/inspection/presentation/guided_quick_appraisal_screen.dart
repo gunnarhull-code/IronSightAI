@@ -286,7 +286,7 @@ class _GuidedQuickAppraisalScreenState
   }
 
   void _announceSaveError(String message) {
-    SemanticsService.announce(message, TextDirection.ltr);
+    _announceForAccessibility(message);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -299,6 +299,13 @@ class _GuidedQuickAppraisalScreenState
         ),
       ),
     );
+  }
+
+  void _announceForAccessibility(String message) {
+    final view = View.maybeOf(context);
+    if (view != null) {
+      SemanticsService.sendAnnouncement(view, message, TextDirection.ltr);
+    }
   }
 
   GuidedQuickAppraisalStep get _currentStep =>
@@ -325,7 +332,7 @@ class _GuidedQuickAppraisalScreenState
       if (!mounted) return;
       const message =
           'Could not save step progress locally. Stay here and retry.';
-      SemanticsService.announce(message, TextDirection.ltr);
+      _announceForAccessibility(message);
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text(message)));
@@ -378,7 +385,7 @@ class _GuidedQuickAppraisalScreenState
       } catch (_) {
         if (!mounted) return false;
         const message = 'Could not save notes locally. Stay here and retry.';
-        SemanticsService.announce(message, TextDirection.ltr);
+        _announceForAccessibility(message);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text(message)));
@@ -447,7 +454,7 @@ class _GuidedQuickAppraisalScreenState
       if (!mounted) return false;
       if (announceError) {
         const message = 'Could not save equipment identity locally.';
-        SemanticsService.announce(message, TextDirection.ltr);
+        _announceForAccessibility(message);
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text(message)));
