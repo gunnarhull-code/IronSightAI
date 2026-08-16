@@ -65,9 +65,14 @@ GuidedQuickAppraisalCompleteness evaluateGuidedQuickAppraisalCompleteness({
       .toList(growable: false);
 
   final source = inspection.machineSource;
-  if (source == null &&
-      (inspection.equipmentId == null || inspection.equipmentId!.isEmpty)) {
-    missing.add(GuidedQuickAppraisalRequirement.machineSource);
+  // Guided completeness applies only to guided drafts. Callers must not use
+  // this helper to gate legacy (machineSource == null) completion.
+  if (source == null) {
+    return const GuidedQuickAppraisalCompleteness(
+      missing: {},
+      missingPhotoSlots: [],
+      unratedCategories: [],
+    );
   }
 
   if (source == InspectionMachineSource.newMachine) {
@@ -77,8 +82,7 @@ GuidedQuickAppraisalCompleteness evaluateGuidedQuickAppraisalCompleteness({
     if (name.isEmpty || manufacturer.isEmpty || model.isEmpty) {
       missing.add(GuidedQuickAppraisalRequirement.equipmentIdentity);
     }
-  } else if (source == InspectionMachineSource.existingEquipment ||
-      source == null) {
+  } else if (source == InspectionMachineSource.existingEquipment) {
     if (inspection.equipmentId == null || inspection.equipmentId!.isEmpty) {
       missing.add(GuidedQuickAppraisalRequirement.equipmentIdentity);
     }

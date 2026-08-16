@@ -102,9 +102,15 @@ class Inspection {
   bool get isNewMachineDraft =>
       machineSource == InspectionMachineSource.newMachine;
 
+  /// Explicit guided Existing-equipment drafts only (not migrated legacy).
   bool get isExistingEquipmentDraft =>
-      machineSource == InspectionMachineSource.existingEquipment ||
-      (machineSource == null && equipmentId != null && equipmentId!.isNotEmpty);
+      machineSource == InspectionMachineSource.existingEquipment;
+
+  /// Guided intake drafts created after the guided Quick Appraisal feature.
+  bool get isGuidedDraft => machineSource != null;
+
+  /// Pre-guided drafts (machineSource unset after Drift migration).
+  bool get isLegacyDraft => machineSource == null;
 
   /// True when serial has a saved value or an explicit unavailable choice.
   bool get hasResolvedSerial =>

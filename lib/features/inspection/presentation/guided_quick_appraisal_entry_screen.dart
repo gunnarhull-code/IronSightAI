@@ -7,6 +7,7 @@ import '../../../../domain/entities/inspection_machine_source.dart';
 import '../../../../domain/entities/inspection_status.dart';
 import '../../../../domain/repositories/local_equipment_catalog_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
+import 'inspection_draft_routing.dart';
 import 'inspection_equipment_select_screen.dart';
 import 'widgets/local_only_status_banner.dart';
 
@@ -67,6 +68,18 @@ class _GuidedQuickAppraisalEntryScreenState
     setState(() {
       _future = _load();
     });
+  }
+
+  Future<void> _openDraft(Inspection inspection) async {
+    final changed = await Navigator.of(
+      context,
+    ).pushNamed<bool?>(incompleteInspectionRoute(inspection));
+    if (!mounted) return;
+    if (changed == true) {
+      Navigator.of(context).pop(true);
+      return;
+    }
+    _reload();
   }
 
   Future<void> _openGuided(String inspectionId) async {
@@ -246,7 +259,7 @@ class _GuidedQuickAppraisalEntryScreenState
                         Card(
                           child: ListTile(
                             enabled: !_starting,
-                            onTap: () => _openGuided(draft.id),
+                            onTap: () => _openDraft(draft),
                             title: Text(
                               _draftTitle(
                                 draft,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../app/router.dart';
 import '../../../../data/equipment_id_capture/camera_capture_page.dart';
 import '../../../../data/equipment_id_capture/create_platform_bindings.dart';
 import '../../../../domain/entities/condition_rating.dart';
@@ -81,6 +83,7 @@ class _GuidedQuickAppraisalScreenState
   bool _savingNotes = false;
   bool _savingEquipmentId = false;
   bool _completing = false;
+  bool _legacyRedirectScheduled = false;
   InspectionPhotoSlot? _busyPhotoSlot;
   final Map<InspectionPhotoSlot, Uint8List> _previewBytes = {};
 
@@ -179,6 +182,11 @@ class _GuidedQuickAppraisalScreenState
       throw StateError('Inspection not found for this company.');
     }
 
+    // Defensive: never convert or complete legacy drafts in the guided flow.
+    if (inspection.isLegacyDraft) {
+      _scheduleLegacyWorkspaceRedirect();
+    }
+
     final equipmentId = inspection.equipmentId;
     final equipment = equipmentId == null || equipmentId.isEmpty
         ? null
@@ -266,6 +274,33 @@ class _GuidedQuickAppraisalScreenState
     });
   }
 
+  void _scheduleLegacyWorkspaceRedirect() {
+    if (_legacyRedirectScheduled) return;
+    _legacyRedirectScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(
+        AppRoutes.inspectionWorkspace(widget.inspectionId),
+      );
+    });
+  }
+
+  void _announceSaveError(String message) {
+    SemanticsService.announce(message, TextDirection.ltr);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: SnackBarAction(
+          label: 'Retry',
+          onPressed: () {
+            if (_mutating || _savingNotes) return;
+            _saveAndExit();
+          },
+        ),
+      ),
+    );
+  }
+
   GuidedQuickAppraisalStep get _currentStep =>
       _step ?? GuidedQuickAppraisalStep.machineSource;
 
@@ -288,99 +323,137 @@ class _GuidedQuickAppraisalScreenState
       _reload();
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not save step progress locally.')),
-      );
+      const message =
+          'Could not save step progress locally. Stay here and retry.';
+      SemanticsService.announce(message, TextDirection.ltr);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _mutating = false);
     }
   }
 
   Future<void> _saveAndExit() async {
+    if (_mutating || _savingNotes || _savingEquipmentId) return;
+    setState(() => _mutating = true);
     try {
       await _persistStep(_currentStep);
+      if (_currentStep == GuidedQuickAppraisalStep.equipmentIdentity) {
+        final ok = await _persistPendingIdentity(
+          reload: false,
+          announceError: false,
+        );
+        if (!ok) {
+          if (!mounted) return;
+          _announceSaveError(
+            'Could not save equipment identity locally. Stay here and retry.',
+          );
+          return;
+        }
+      }
       if (_currentStep == GuidedQuickAppraisalStep.notes) {
         await _saveNotesSilently();
       }
-      if (_currentStep == GuidedQuickAppraisalStep.equipmentIdentity) {
-        await _persistPendingIdentity(reload: false);
-      }
+      if (!mounted) return;
+      Navigator.of(context).pop(false);
     } catch (_) {
-      // Still allow exit; draft remains resumable.
+      if (!mounted) return;
+      _announceSaveError(
+        'Could not save this step locally. Stay here and retry.',
+      );
+    } finally {
+      if (mounted) setState(() => _mutating = false);
     }
-    if (!mounted) return;
-    Navigator.of(context).pop(false);
+  }
+
+  Future<bool> _persistCurrentStepEdits() async {
+    if (_currentStep == GuidedQuickAppraisalStep.equipmentIdentity) {
+      return _persistPendingIdentity(reload: false);
+    }
+    if (_currentStep == GuidedQuickAppraisalStep.notes) {
+      try {
+        await _saveNotesSilently();
+        return true;
+      } catch (_) {
+        if (!mounted) return false;
+        const message = 'Could not save notes locally. Stay here and retry.';
+        SemanticsService.announce(message, TextDirection.ltr);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(message)));
+        return false;
+      }
+    }
+    return true;
   }
 
   Future<void> _onBack(Inspection inspection) async {
+    if (_mutating || _savingNotes) return;
     final previous = _currentStep.previous;
     if (previous == null) {
       await _saveAndExit();
       return;
     }
-    if (_currentStep == GuidedQuickAppraisalStep.equipmentIdentity) {
-      await _persistPendingIdentity(reload: false);
-    }
-    if (_currentStep == GuidedQuickAppraisalStep.notes) {
-      await _saveNotesSilently();
-    }
+    final ok = await _persistCurrentStepEdits();
+    if (!ok) return;
     await _goToStep(previous);
   }
 
   Future<void> _onNext(Inspection inspection) async {
-    if (_currentStep == GuidedQuickAppraisalStep.equipmentIdentity) {
-      final ok = await _persistPendingIdentity(reload: false);
-      if (!ok) return;
-    }
-    if (_currentStep == GuidedQuickAppraisalStep.notes) {
-      await _saveNotesSilently();
-    }
+    if (_mutating || _savingNotes) return;
+    final ok = await _persistCurrentStepEdits();
+    if (!ok) return;
     final next = _currentStep.next;
     if (next == null) return;
     await _goToStep(next);
   }
 
-  Future<bool> _persistPendingIdentity({required bool reload}) async {
+  Future<bool> _persistPendingIdentity({
+    required bool reload,
+    bool announceError = true,
+  }) async {
     final data = await _future;
     final inspection = data.inspection;
     if (!inspection.isIncomplete || inspection.isDiscarded) return true;
 
-    if (inspection.machineSource == InspectionMachineSource.newMachine ||
-        (inspection.machineSource == null &&
-            (inspection.equipmentId == null ||
-                inspection.equipmentId!.isEmpty))) {
-      final name = _assetNameController.text.trim();
-      final manufacturer = _manufacturerController.text.trim();
-      final model = _modelController.text.trim().toUpperCase();
-      if (_modelController.text != model) {
-        _modelController.value = TextEditingValue(
-          text: model,
-          selection: TextSelection.collapsed(offset: model.length),
-        );
-      }
-      try {
-        await widget.inspections.updateGuidedIntake(
-          companyId: widget.companyId,
-          inspectionId: widget.inspectionId,
-          updatedByUserId: widget.userId,
-          pendingAssetName: name.isEmpty ? null : name,
-          pendingManufacturer: manufacturer.isEmpty ? null : manufacturer,
-          pendingModel: model.isEmpty ? null : model,
-          guidedStep: _currentStep,
-        );
-        if (reload && mounted) _reload();
-        return true;
-      } catch (_) {
-        if (!mounted) return false;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save equipment identity locally.'),
-          ),
-        );
-        return false;
-      }
+    // Only New-machine guided drafts edit pending identity here.
+    if (inspection.machineSource != InspectionMachineSource.newMachine) {
+      return true;
     }
-    return true;
+
+    final name = _assetNameController.text.trim();
+    final manufacturer = _manufacturerController.text.trim();
+    final model = _modelController.text.trim().toUpperCase();
+    if (_modelController.text != model) {
+      _modelController.value = TextEditingValue(
+        text: model,
+        selection: TextSelection.collapsed(offset: model.length),
+      );
+    }
+    try {
+      await widget.inspections.updateGuidedIntake(
+        companyId: widget.companyId,
+        inspectionId: widget.inspectionId,
+        updatedByUserId: widget.userId,
+        pendingAssetName: name.isEmpty ? null : name,
+        pendingManufacturer: manufacturer.isEmpty ? null : manufacturer,
+        pendingModel: model.isEmpty ? null : model,
+        guidedStep: _currentStep,
+      );
+      if (reload && mounted) _reload();
+      return true;
+    } catch (_) {
+      if (!mounted) return false;
+      if (announceError) {
+        const message = 'Could not save equipment identity locally.';
+        SemanticsService.announce(message, TextDirection.ltr);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text(message)));
+      }
+      return false;
+    }
   }
 
   Future<void> _setMachineSource(InspectionMachineSource source) async {
@@ -867,7 +940,9 @@ class _GuidedQuickAppraisalScreenState
         title: Text(step.title),
         actions: [
           TextButton(
-            onPressed: _mutating ? null : _saveAndExit,
+            onPressed: (_mutating || _savingNotes || _savingEquipmentId)
+                ? null
+                : _saveAndExit,
             child: const Text('Save and exit'),
           ),
         ],
@@ -902,6 +977,9 @@ class _GuidedQuickAppraisalScreenState
 
           final data = snapshot.data!;
           final inspection = data.inspection;
+          if (inspection.isLegacyDraft) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final editable = inspection.isIncomplete && !inspection.isDiscarded;
 
           return Column(
@@ -1084,10 +1162,7 @@ class _GuidedQuickAppraisalScreenState
   Widget _buildIdentityStep(ThemeData theme, _GuidedData data, bool editable) {
     final inspection = data.inspection;
     final isNew =
-        inspection.machineSource == InspectionMachineSource.newMachine ||
-        (inspection.machineSource == null &&
-            (inspection.equipmentId == null ||
-                inspection.equipmentId!.isEmpty));
+        inspection.machineSource == InspectionMachineSource.newMachine;
 
     if (isNew) {
       return Column(

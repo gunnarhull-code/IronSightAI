@@ -154,6 +154,22 @@ void main() {
       );
     });
 
+    test('legacy drafts are not gated by guided completeness', () {
+      final result = evaluateGuidedQuickAppraisalCompleteness(
+        inspection: draft(
+          machineSource: null,
+          equipmentId: 'eq-1',
+          pendingAssetName: null,
+          pendingManufacturer: null,
+          pendingModel: null,
+          serialCaptureMethod: null,
+          hourMeterCaptureMethod: null,
+        ),
+        media: const [],
+      );
+      expect(result.isComplete, isTrue);
+    });
+
     test('seeded not assessed ratings satisfy condition requirement', () {
       final result = evaluateGuidedQuickAppraisalCompleteness(
         inspection: draft(

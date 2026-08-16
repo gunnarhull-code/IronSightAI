@@ -6,6 +6,7 @@ import '../../../../domain/entities/inspection.dart';
 import '../../../../domain/entities/inspection_status.dart';
 import '../../../../domain/repositories/local_equipment_catalog_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
+import 'inspection_draft_routing.dart';
 import 'widgets/local_only_status_banner.dart';
 
 /// Company-scoped local inspection list with loading/empty/error states.
@@ -61,10 +62,7 @@ class _InspectionListScreenState extends State<InspectionListScreen> {
   }
 
   Future<void> _openInspection(Inspection inspection) async {
-    final route =
-        inspection.completionStatus == InspectionCompletionStatus.completed
-        ? AppRoutes.inspectionReview(inspection.id)
-        : AppRoutes.guidedQuickAppraisal(inspection.id);
+    final route = incompleteInspectionRoute(inspection);
     final changed = await Navigator.of(context).pushNamed<bool?>(route);
     if (changed == true && mounted) _reload();
   }
