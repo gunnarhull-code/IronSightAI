@@ -24,7 +24,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -34,6 +34,11 @@ class AppDatabase extends _$AppDatabase {
         await _createIndexes();
       },
       onUpgrade: (Migrator migrator, int from, int to) async {
+        if (from > to) {
+          // Preserve every on-device row when opening a newer physical schema
+          // stamp with an older expected version. Never delete or rewrite.
+          return;
+        }
         if (from < 2) {
           await migrator.createTable(localTenantContexts);
           await migrator.createTable(localEquipmentCache);
@@ -54,6 +59,12 @@ class AppDatabase extends _$AppDatabase {
         if (from < 4) {
           await migrator.createTable(inspectionMediaItems);
           await _createMediaIndexes();
+        }
+        if (from < 5) {
+          // Compatibility stamp only. Do not rebuild tables or port guided
+          // domain from interim PR #26. Devices that already ran that build may
+          // physically have nullable equipment_id + guided columns; legacy
+          // reads exclude null equipment_id rows at the SQL boundary.
         }
       },
     );

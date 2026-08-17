@@ -151,16 +151,25 @@ class _InspectionEquipmentSelectScreenState
       );
       debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Could not start a local draft. Check equipment cache and retry.',
-          ),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_draftStartFailureMessage(error))));
     } finally {
       if (mounted) setState(() => _starting = false);
     }
+  }
+
+  /// User-facing copy for draft-start failures. Keeps equipment-cache guidance
+  /// only when that is the actual failure mode.
+  static String _draftStartFailureMessage(Object error) {
+    if (error is StateError) {
+      final message = error.message;
+      if (message.contains('not in the local company catalog')) {
+        return 'Could not start a local draft. Check equipment cache and retry.';
+      }
+    }
+    return 'Could not start a local draft. Local inspection data could not be '
+        'read. Retry.';
   }
 
   Future<void> _openWorkspace(String inspectionId) async {

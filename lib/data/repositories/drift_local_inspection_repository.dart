@@ -115,7 +115,10 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
         await (_db.select(_db.inspections)..where(
               (table) =>
                   table.id.equals(inspectionId) &
-                  table.companyId.equals(companyId),
+                  table.companyId.equals(companyId) &
+                  // Skip interim guided drafts (null equipment_id) so the
+                  // legacy non-null Drift mapper never sees them.
+                  table.equipmentId.isNotNull(),
             ))
             .getSingleOrNull();
     if (row == null) return null;
@@ -130,7 +133,13 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     _requireNonEmpty(companyId, 'companyId');
 
     final query = _db.select(_db.inspections)
-      ..where((table) => table.companyId.equals(companyId))
+      ..where(
+        (table) =>
+            table.companyId.equals(companyId) &
+            // Exclude guided New-machine drafts with null equipment_id at the
+            // SQL boundary before Drift's non-null v4/v5-stamp mapper runs.
+            table.equipmentId.isNotNull(),
+      )
       ..orderBy([
         (table) =>
             OrderingTerm(expression: table.updatedAt, mode: OrderingMode.desc),
