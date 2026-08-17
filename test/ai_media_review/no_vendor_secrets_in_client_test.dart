@@ -38,4 +38,21 @@ void main() {
       }
     }
   });
+
+  test('pubspec does not depend on AGP-incompatible video_thumbnail', () {
+    final pubspec = File('pubspec.yaml').readAsStringSync();
+    final lock = File('pubspec.lock').readAsStringSync();
+    expect(
+      pubspec.contains('video_thumbnail'),
+      isFalse,
+      reason:
+          'video_thumbnail 0.5.x fails on AGP 9 (jcenter / kotlin-android). '
+          'Use the in-app walkaround frame MethodChannel instead.',
+    );
+    expect(
+      RegExp(r'^\s+video_thumbnail:', multiLine: true).hasMatch(lock),
+      isFalse,
+      reason: 'pubspec.lock must not resolve video_thumbnail',
+    );
+  });
 }

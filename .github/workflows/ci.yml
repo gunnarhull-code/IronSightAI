@@ -53,3 +53,45 @@ jobs:
 
       - name: Test
         run: flutter test
+
+  android-debug-apk:
+    name: Android debug APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: "3.44.8"
+          cache: true
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Create safe test configuration
+        run: |
+          set -euo pipefail
+          if [ ! -f .env.example ]; then
+            echo "::error::Required safe test configuration is unavailable: .env.example is missing."
+            exit 1
+          fi
+          cp .env.example .env
+
+      - name: Build Android debug APK
+        run: |
+          set -euo pipefail
+          chmod +x ./scripts/verify_android_apk.sh
+          ./scripts/verify_android_apk.sh
