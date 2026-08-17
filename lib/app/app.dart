@@ -101,6 +101,7 @@ class _IronSightAppState extends State<IronSightApp> {
         _equipmentRepository = LocalCatalogSyncingEquipmentRepository(
           remote: remoteEquipment,
           localCatalog: workspace.equipmentCatalog,
+          catalogRefresh: workspace.catalogRefresh,
         );
         _openingWorkspace = false;
       });

@@ -111,6 +111,57 @@ void main() {
       },
     );
 
+    test(
+      'create upsert discards in-flight refresh that would wipe the new row',
+      () async {
+        final remote = _LatchingEquipmentRepository();
+        final workspace = OfflineInspectionWorkspace.fromDatabase(
+          database: openMemoryAppDatabase(),
+          remoteEquipmentRepository: remote,
+          authSession: FakeAuthSessionReader(),
+        );
+        addTearDown(workspace.dispose);
+
+        remote.seed(const []);
+        final firstStarted = Completer<void>();
+        remote.onGetStarted = firstStarted.complete;
+        final staleRefresh = workspace.catalogRefresh.refreshCompanyCatalog(
+          'company-a',
+        );
+        await firstStarted.future;
+
+        final syncing = LocalCatalogSyncingEquipmentRepository(
+          remote: FakeEquipmentRepository(companyId: 'company-a'),
+          localCatalog: workspace.equipmentCatalog,
+          catalogRefresh: workspace.catalogRefresh,
+        );
+        final created = await syncing.createEquipment(
+          EquipmentDetails.validated(
+            assetName: 'Protected New',
+            manufacturer: 'Caterpillar',
+            model: '320',
+          ),
+        );
+
+        remote.releaseGet();
+        expect(await staleRefresh, isFalse);
+
+        expect(
+          await workspace.equipmentCatalog.getById(
+            companyId: 'company-a',
+            equipmentId: created.id,
+          ),
+          isNotNull,
+        );
+        final draft = await workspace.inspections.createDraft(
+          companyId: 'company-a',
+          equipmentId: created.id,
+          createdByUserId: 'user-1',
+        );
+        expect(draft.equipmentId, created.id);
+      },
+    );
+
     test('stale catalog refresh does not overwrite a newer refresh', () async {
       final remote = _LatchingEquipmentRepository();
       final database = openMemoryAppDatabase();

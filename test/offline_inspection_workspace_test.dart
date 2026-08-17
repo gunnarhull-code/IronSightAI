@@ -219,13 +219,17 @@ void main() {
   });
 
   group('offline inspection drafts', () {
+    Future<void> seedDefaultEquipment() async {
+      await workspace.equipmentCatalog.replaceCompanyCatalog(
+        companyId: 'company-a',
+        equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+      );
+    }
+
     test(
       'creates draft from locally available equipment and reopens it',
       () async {
-        await workspace.equipmentCatalog.replaceCompanyCatalog(
-          companyId: 'company-a',
-          equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
-        );
+        await seedDefaultEquipment();
         final draft = await workspace.inspections.createDraft(
           companyId: 'company-a',
           equipmentId: 'eq-1',
@@ -247,6 +251,7 @@ void main() {
     test(
       'duplicate active drafts are discoverable for Resume/Create Another',
       () async {
+        await seedDefaultEquipment();
         final first = await workspace.inspections.createDraft(
           companyId: 'company-a',
           equipmentId: 'eq-1',
@@ -268,6 +273,7 @@ void main() {
     test(
       'persists ratings, detailed responses, and notes immediately',
       () async {
+        await seedDefaultEquipment();
         final draft = await workspace.inspections.createDraft(
           companyId: 'company-a',
           equipmentId: 'eq-1',
@@ -322,6 +328,7 @@ void main() {
     );
 
     test('review summary highlights incomplete categories', () async {
+      await seedDefaultEquipment();
       final draft = await workspace.inspections.createDraft(
         companyId: 'company-a',
         equipmentId: 'eq-1',
@@ -347,6 +354,7 @@ void main() {
     });
 
     test('completes locally and blocks later mutation', () async {
+      await seedDefaultEquipment();
       final draft = await workspace.inspections.createDraft(
         companyId: 'company-a',
         equipmentId: 'eq-1',
@@ -372,6 +380,7 @@ void main() {
     });
 
     test('discarded drafts cannot be mutated or completed', () async {
+      await seedDefaultEquipment();
       final draft = await workspace.inspections.createDraft(
         companyId: 'company-a',
         equipmentId: 'eq-1',

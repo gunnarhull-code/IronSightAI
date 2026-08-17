@@ -21,11 +21,17 @@ class EquipmentCatalogRefreshService {
 
   int _generation = 0;
 
+  /// Drops in-flight refresh results so they cannot overwrite a newer local
+  /// catalog mutation (for example an equipment create upsert).
+  void discardInFlightRefreshes() {
+    _generation++;
+  }
+
   /// Attempts a remote fetch and replaces the local company catalog.
   ///
   /// Returns `true` when the local catalog was updated. Returns `false` when
-  /// the network/remote call failed, or when a newer refresh superseded this
-  /// one — local data is left unchanged in those cases.
+  /// the network/remote call failed, or when a newer refresh / local mutation
+  /// superseded this one — local data is left unchanged in those cases.
   Future<bool> refreshCompanyCatalog(String companyId) async {
     if (companyId.trim().isEmpty) return false;
     final generation = ++_generation;

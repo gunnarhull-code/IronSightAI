@@ -94,7 +94,10 @@ void main() {
   testWidgets('offline cold start keeps existing local drafts reachable', (
     tester,
   ) async {
-    await workspace.prepareTenant(companyId: 'company-a', userId: 'user-1');
+    await workspace.tenantContext.activate(
+      companyId: 'company-a',
+      userId: 'user-1',
+    );
     final now = DateTime.utc(2026, 8, 1);
     await workspace.equipmentCatalog.replaceCompanyCatalog(
       companyId: 'company-a',

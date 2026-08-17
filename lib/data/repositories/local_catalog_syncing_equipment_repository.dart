@@ -2,6 +2,7 @@ import '../../domain/entities/equipment.dart';
 import '../../domain/entities/equipment_details.dart';
 import '../../domain/repositories/equipment_repository.dart';
 import '../../domain/repositories/local_equipment_catalog_repository.dart';
+import '../services/equipment_catalog_refresh_service.dart';
 
 /// Remote [EquipmentRepository] that keeps the local inspection catalog in sync.
 ///
@@ -10,13 +11,14 @@ import '../../domain/repositories/local_equipment_catalog_repository.dart';
 /// from the local catalog until a racy full refresh completes.
 class LocalCatalogSyncingEquipmentRepository implements EquipmentRepository {
   LocalCatalogSyncingEquipmentRepository({
-    required EquipmentRepository remote,
-    required LocalEquipmentCatalogRepository localCatalog,
-  }) : _remote = remote,
-       _localCatalog = localCatalog;
+    required this._remote,
+    required this._localCatalog,
+    this._catalogRefresh,
+  });
 
   final EquipmentRepository _remote;
   final LocalEquipmentCatalogRepository _localCatalog;
+  final EquipmentCatalogRefreshService? _catalogRefresh;
 
   /// Underlying remote repository (catalog refresh must not recurse through
   /// sync-on-write).
@@ -33,6 +35,7 @@ class LocalCatalogSyncingEquipmentRepository implements EquipmentRepository {
   Future<Equipment> createEquipment(EquipmentDetails details) async {
     final created = await _remote.createEquipment(details);
     await _localCatalog.upsertEquipment(created);
+    _catalogRefresh?.discardInFlightRefreshes();
     return created;
   }
 
@@ -40,6 +43,7 @@ class LocalCatalogSyncingEquipmentRepository implements EquipmentRepository {
   Future<Equipment> updateEquipment(String id, EquipmentDetails details) async {
     final updated = await _remote.updateEquipment(id, details);
     await _localCatalog.upsertEquipment(updated);
+    _catalogRefresh?.discardInFlightRefreshes();
     return updated;
   }
 
@@ -52,6 +56,7 @@ class LocalCatalogSyncingEquipmentRepository implements EquipmentRepository {
         companyId: existing.companyId,
         equipmentId: existing.id,
       );
+      _catalogRefresh?.discardInFlightRefreshes();
     }
   }
 
