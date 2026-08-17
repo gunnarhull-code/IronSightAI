@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' show Variable, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/app_database.dart';
+import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_equipment_catalog_repository.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_inspection_repository.dart';
 import 'package:ironsight_ai/domain/entities/inspection_status.dart';
@@ -185,7 +186,7 @@ void main() {
       raw.execute('PRAGMA user_version = 5;');
       raw.close();
 
-      final db = AppDatabase(NativeDatabase(file));
+      final db = AppDatabase(NativeDatabase(file), existingSchemaVersion: 5);
       addTearDown(db.close);
 
       final inspections = DriftLocalInspectionRepository(db);
@@ -250,6 +251,76 @@ void main() {
           )
           .get();
       expect(stillGuided, hasLength(1));
+
+      // The guided build's schema stamp must survive, so that build still runs
+      // its own migration exactly once when it is installed again.
+      final stamp = await db.customSelect('PRAGMA user_version').getSingle();
+      expect(stamp.data['user_version'], 5);
     },
   );
+
+  test('reading an existing file never rewrites its schema stamp', () async {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    addTearDown(() {
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = false;
+    });
+
+    final directory = Directory.systemTemp.createTempSync('ironsight_stamp_');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    final file = File('${directory.path}/inspections.sqlite');
+    const key = 'stamp-test-key';
+
+    // A device on this build's own schema keeps version 4, so a later guided
+    // build still applies its 4 → 5 migration.
+    final current = openFileAppDatabase(
+      file,
+      encryptionKey: key,
+      requireCipher: false,
+    );
+    await current.customStatement('SELECT 1');
+    expect(
+      (await current.customSelect('PRAGMA user_version').getSingle())
+          .data['user_version'],
+      4,
+    );
+    await current.close();
+    expect(
+      readExistingSchemaVersion(file, encryptionKey: key, requireCipher: false),
+      4,
+    );
+
+    // Simulate the same device after an interim guided build stamped it 5.
+    final bump = openFileAppDatabase(
+      file,
+      encryptionKey: key,
+      requireCipher: false,
+    );
+    await bump.customStatement('PRAGMA user_version = 5');
+    await bump.close();
+
+    final reopened = openFileAppDatabase(
+      file,
+      encryptionKey: key,
+      requireCipher: false,
+    );
+    addTearDown(reopened.close);
+    expect(
+      (await reopened.customSelect('PRAGMA user_version').getSingle())
+          .data['user_version'],
+      5,
+    );
+  });
+
+  test('missing database file reports no existing schema stamp', () {
+    final directory = Directory.systemTemp.createTempSync('ironsight_absent_');
+    addTearDown(() => directory.deleteSync(recursive: true));
+    expect(
+      readExistingSchemaVersion(
+        File('${directory.path}/absent.sqlite'),
+        encryptionKey: 'unused',
+        requireCipher: false,
+      ),
+      isNull,
+    );
+  });
 }

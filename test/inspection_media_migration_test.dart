@@ -57,7 +57,7 @@ void main() {
     expect(tables, hasLength(1));
 
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.data['user_version'], 5);
+    expect(version.data['user_version'], 4);
 
     await db.customStatement(
       "INSERT INTO inspection_media ("

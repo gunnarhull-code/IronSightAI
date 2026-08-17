@@ -21,10 +21,31 @@ part 'app_database.g.dart';
   ],
 )
 class AppDatabase extends _$AppDatabase {
-  AppDatabase(super.executor);
+  /// [existingSchemaVersion] is the `user_version` already stamped on the file
+  /// before this build opened it, when that is known.
+  AppDatabase(super.executor, {this.existingSchemaVersion});
 
+  /// Schema version this build knows how to create and migrate to.
+  static const int supportedSchemaVersion = 4;
+
+  /// `user_version` already stamped on the file before this build opened it.
+  final int? existingSchemaVersion;
+
+  /// Reports the on-disk version when a newer build already migrated the file.
+  ///
+  /// A device that ran an interim guided build carries a higher `user_version`
+  /// and a physically newer `inspections` table. Drift rewrites `user_version`
+  /// downwards whenever the reported version is lower than the stored one,
+  /// which would later make that newer build re-run its own migration against
+  /// columns that already exist. Reporting the stored version keeps the stamp
+  /// truthful, runs no migration, and leaves every row untouched — legacy reads
+  /// exclude the unsupported rows at the SQL boundary instead.
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion {
+    final existing = existingSchemaVersion;
+    if (existing != null && existing > supportedSchemaVersion) return existing;
+    return supportedSchemaVersion;
+  }
 
   @override
   MigrationStrategy get migration {
@@ -34,9 +55,8 @@ class AppDatabase extends _$AppDatabase {
         await _createIndexes();
       },
       onUpgrade: (Migrator migrator, int from, int to) async {
-        if (from > to) {
-          // Preserve every on-device row when opening a newer physical schema
-          // stamp with an older expected version. Never delete or rewrite.
+        if (from >= to) {
+          // Never delete, rewrite, or downgrade an existing newer file.
           return;
         }
         if (from < 2) {
@@ -59,12 +79,6 @@ class AppDatabase extends _$AppDatabase {
         if (from < 4) {
           await migrator.createTable(inspectionMediaItems);
           await _createMediaIndexes();
-        }
-        if (from < 5) {
-          // Compatibility stamp only. Do not rebuild tables or port guided
-          // domain from interim PR #26. Devices that already ran that build may
-          // physically have nullable equipment_id + guided columns; legacy
-          // reads exclude null equipment_id rows at the SQL boundary.
         }
       },
     );

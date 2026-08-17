@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart';
 
 import 'app_database.dart';
 import 'local_inspection_encryption_key_store.dart';
@@ -37,7 +38,44 @@ AppDatabase openFileAppDatabase(
         requireCipher: requireCipher,
       ),
     ),
+    existingSchemaVersion: readExistingSchemaVersion(
+      file,
+      encryptionKey: encryptionKey,
+      requireCipher: requireCipher,
+    ),
   );
+}
+
+/// Reads `user_version` from an existing database file without migrating it.
+///
+/// Returns `null` for a missing or unreadable file so the normal create /
+/// migrate path applies. Read before Drift opens the file, because Drift
+/// rewrites `user_version` to the version the build reports.
+int? readExistingSchemaVersion(
+  File file, {
+  required String encryptionKey,
+  bool requireCipher = true,
+}) {
+  if (!file.existsSync() || file.lengthSync() == 0) return null;
+  Database? database;
+  try {
+    database = sqlite3.open(file.path);
+    configureLocalDatabaseEncryption(
+      database,
+      encryptionKey: encryptionKey,
+      requireCipher: requireCipher,
+    );
+    final rows = database.select('PRAGMA user_version');
+    if (rows.isEmpty) return null;
+    final values = rows.first.values;
+    if (values.isEmpty) return null;
+    final version = values.first;
+    return version is int ? version : null;
+  } on Object {
+    return null;
+  } finally {
+    database?.close();
+  }
 }
 
 /// Opens the on-device encrypted inspections database in the app documents dir.
