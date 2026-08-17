@@ -109,11 +109,15 @@ class AiMediaReviewController extends ChangeNotifier {
       return;
     }
     _walkaround = recorded;
+    final frameCount = VideoFrameExtraction.boundFrames(
+      recorded.representativeFrames,
+      expectedVideoPath: recorded.localPath,
+    ).length;
     _emitReady(
       announcement:
           'Walkaround video saved on this device. Frame-based review will '
-          'send ${VideoFrameExtraction.boundFrames(recorded.representativeFrames).length} '
-          'extracted frames, not the original video.',
+          'send $frameCount frames decoded from the recording, not the '
+          'original video.',
     );
   }
 
@@ -142,6 +146,7 @@ class AiMediaReviewController extends ChangeNotifier {
           ? 0
           : VideoFrameExtraction.boundFrames(
               _walkaround!.representativeFrames,
+              expectedVideoPath: _walkaround!.localPath,
             ).length,
       videoDuration: _walkaround?.duration,
       statusAnnouncement:
@@ -282,7 +287,10 @@ class AiMediaReviewController extends ChangeNotifier {
   int get _frameCount {
     final video = _walkaround;
     if (video == null) return 0;
-    return VideoFrameExtraction.boundFrames(video.representativeFrames).length;
+    return VideoFrameExtraction.boundFrames(
+      video.representativeFrames,
+      expectedVideoPath: video.localPath,
+    ).length;
   }
 
   Future<Inspection> _reloadInspection() async {
@@ -322,7 +330,7 @@ class AiMediaReviewController extends ChangeNotifier {
           AiMediaImage(
             id: 'walkaround-frame-$i',
             role: AiMediaImageRole.videoFrame,
-            image: frames[i],
+            image: frames[i].image,
             label: 'Walkaround video frame ${i + 1}',
             frameIndex: i,
           ),

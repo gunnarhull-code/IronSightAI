@@ -190,15 +190,17 @@ void main() {
     () async {
       final id = await openDraft();
       await addPhoto(id);
+      final videoPath = '/secret/original-walkaround.mp4';
       final video = FakeWalkaroundVideoCapture(
         video: WalkaroundVideo(
-          localPath: '/secret/original-walkaround.mp4',
+          localPath: videoPath,
           duration: const Duration(seconds: 20),
           representativeFrames: [
             for (var i = 0; i < 8; i++)
-              CapturedImage(
+              decodedFrame(
+                videoPath: videoPath,
                 bytes: List<int>.filled(4, i + 1),
-                mimeType: 'image/jpeg',
+                timeOffsetMs: i * 2500,
               ),
           ],
           mimeType: 'video/mp4',
@@ -231,11 +233,14 @@ void main() {
       final id = await openDraft();
       await addPhoto(id);
       final video = FakeWalkaroundVideoCapture(
-        video: const WalkaroundVideo(
+        video: WalkaroundVideo(
           localPath: '/tmp/too-long.mp4',
-          duration: Duration(seconds: 31),
+          duration: const Duration(seconds: 31),
           representativeFrames: [
-            CapturedImage(bytes: [1, 2, 3], mimeType: 'image/jpeg'),
+            decodedFrame(
+              videoPath: '/tmp/too-long.mp4',
+              bytes: const [1, 2, 3],
+            ),
           ],
         ),
       );

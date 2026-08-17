@@ -83,7 +83,20 @@ Deno.serve(async (req) => {
       inspectionId,
       images,
     });
-    return json(result, 200);
+    const model = Deno.env.get("AI_MODEL")?.trim() || "gpt-4o-mini";
+    const baseUrl = (Deno.env.get("AI_PROVIDER_BASE_URL") ??
+      "https://api.openai.com/v1").replace(/\/+$/, "");
+    return json({
+      ...(result && typeof result === "object"
+        ? result as Record<string, unknown>
+        : { suggestions: result }),
+      provider: {
+        kind: "openai_compatible_chat_completions",
+        base_url: baseUrl,
+        model,
+        credentials: "server_side_only",
+      },
+    }, 200);
   } catch (error) {
     if (error instanceof ProviderUnconfiguredError) {
       return json({ error: "provider_unconfigured" }, 503);

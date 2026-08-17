@@ -6,18 +6,25 @@ import 'package:flutter/material.dart';
 
 import '../../domain/ai/walkaround_video.dart';
 import '../../domain/ai/walkaround_video_capture_port.dart';
-import '../../domain/equipment_id_capture/captured_image.dart';
+import '../../domain/ai/walkaround_video_frame_decoder.dart';
+import '../../domain/ai/video_frame_extraction.dart';
 import '../../domain/equipment_id_capture/equipment_id_capture_failure.dart';
 import '../../domain/equipment_id_capture/image_capture_port.dart';
+import 'create_walkaround_frame_decoder.dart';
 
 /// Full-screen walkaround recorder. Original video stays on-device.
+///
+/// Representative frames are decoded from the recorded MP4. Separate camera
+/// stills taken before or after recording are never used for video analysis.
 class WalkaroundVideoCapturePage extends StatefulWidget {
   const WalkaroundVideoCapturePage({
     super.key,
     this.title = 'Walkaround video',
+    this.frameDecoder,
   });
 
   final String title;
+  final WalkaroundVideoFrameDecoder? frameDecoder;
 
   @override
   State<WalkaroundVideoCapturePage> createState() =>
@@ -33,9 +40,11 @@ class _WalkaroundVideoCapturePageState
   Duration _elapsed = Duration.zero;
   Timer? _ticker;
   DateTime? _startedAt;
-  String? _startStillPath;
 
   static const Duration _limit = WalkaroundVideo.maxDuration;
+
+  late final WalkaroundVideoFrameDecoder _frameDecoder =
+      widget.frameDecoder ?? createWalkaroundVideoFrameDecoder();
 
   @override
   void initState() {
@@ -84,8 +93,6 @@ class _WalkaroundVideoCapturePageState
     }
     setState(() => _busy = true);
     try {
-      final startStill = await controller.takePicture();
-      _startStillPath = startStill.path;
       await controller.startVideoRecording();
       _startedAt = DateTime.now();
       _ticker?.cancel();
@@ -128,31 +135,6 @@ class _WalkaroundVideoCapturePageState
     try {
       final started = _startedAt ?? DateTime.now();
       final videoFile = await controller.stopVideoRecording();
-      CapturedImage? endFrame;
-      try {
-        final endStill = await controller.takePicture();
-        endFrame = CapturedImage(
-          bytes: await File(endStill.path).readAsBytes(),
-          path: endStill.path,
-          mimeType: 'image/jpeg',
-        );
-      } catch (_) {
-        // End still is best-effort; start frame plus the local video remain.
-      }
-      final startPath = _startStillPath;
-      final frames = <CapturedImage>[];
-      if (startPath != null) {
-        frames.add(
-          CapturedImage(
-            bytes: await File(startPath).readAsBytes(),
-            path: startPath,
-            mimeType: 'image/jpeg',
-          ),
-        );
-      }
-      if (endFrame != null && endFrame.path != startPath) {
-        frames.add(endFrame);
-      }
       final duration = DateTime.now().difference(started);
       if (duration > _limit + const Duration(seconds: 1)) {
         if (!mounted) return;
@@ -166,12 +148,20 @@ class _WalkaroundVideoCapturePageState
       final recordedDuration = duration > _limit ? _limit : duration;
       final videoPath = videoFile.path;
       final byteSize = await File(videoPath).length();
+
+      // Decode representative frames from the recorded MP4 only.
+      final frames = await VideoFrameExtraction.decodeAndBound(
+        decoder: _frameDecoder,
+        videoPath: videoPath,
+        duration: recordedDuration,
+      );
+
       if (!mounted) return;
       Navigator.of(context).pop(
         WalkaroundVideo(
           localPath: videoPath,
           duration: recordedDuration,
-          representativeFrames: List<CapturedImage>.unmodifiable(frames),
+          representativeFrames: frames,
           byteSize: byteSize,
         ),
       );
@@ -187,7 +177,9 @@ class _WalkaroundVideoCapturePageState
       setState(() {
         _busy = false;
         _recording = false;
-        _error = error.toString();
+        _error =
+            'Could not decode walkaround video frames from the recording. '
+            'The original video stayed on this device.';
       });
     }
   }
@@ -243,14 +235,17 @@ class _WalkaroundVideoCapturePageState
                         liveRegion: true,
                         label: _recording
                             ? 'Recording walkaround video. $remainingLabel. '
-                                  'Maximum 30 seconds. Original video stays '
+                                  'Maximum 30 seconds. Frames will be decoded '
+                                  'from the recording. Original video stays '
                                   'on this device.'
                             : 'Ready to record a walkaround video of at most '
-                                  '30 seconds. Original video stays on this device.',
+                                  '30 seconds. Frames are decoded from the '
+                                  'MP4. Original video stays on this device.',
                         child: Text(
                           _recording
                               ? 'Recording · $remainingLabel'
-                              : 'Max 30 seconds · original video stays on device',
+                              : 'Max 30s · frames decoded from MP4 · '
+                                    'original stays on device',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 16,
@@ -330,9 +325,13 @@ class _ErrorBody extends StatelessWidget {
 
 /// [WalkaroundVideoCapturePort] that pushes [WalkaroundVideoCapturePage].
 class NavigatorWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
-  NavigatorWalkaroundVideoCapture({required this.navigatorKey});
+  NavigatorWalkaroundVideoCapture({
+    required this.navigatorKey,
+    this.frameDecoder,
+  });
 
   final GlobalKey<NavigatorState> navigatorKey;
+  final WalkaroundVideoFrameDecoder? frameDecoder;
 
   @override
   bool get isSupported => true;
@@ -346,7 +345,9 @@ class NavigatorWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
       );
     }
     final result = await nav.push<WalkaroundVideo>(
-      MaterialPageRoute(builder: (_) => const WalkaroundVideoCapturePage()),
+      MaterialPageRoute(
+        builder: (_) => WalkaroundVideoCapturePage(frameDecoder: frameDecoder),
+      ),
     );
     if (result == null) {
       throw EquipmentIdCaptureException(

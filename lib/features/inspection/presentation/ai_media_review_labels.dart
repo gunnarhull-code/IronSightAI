@@ -7,9 +7,10 @@ abstract final class AiMediaReviewLabels {
       'AI suggestions only — not verified facts. Humans remain the final '
       'authority. Photos and video frames cannot prove mechanical safety.';
   static const String frameBasedExplanation =
-      'Walkaround review is frame-based: representative still frames are '
-      'extracted on this device. The original video stays local and is not '
-      'uploaded.';
+      'Walkaround review is frame-based: up to 6 representative still frames '
+      'are decoded from the recorded MP4 on this device. Separate camera '
+      'stills taken before or after recording are not used. The original '
+      'video stays local and is not uploaded.';
   static const String consentTitle =
       'Before photos or frames leave this device';
   static const String consentBody =

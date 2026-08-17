@@ -1,6 +1,24 @@
+import 'package:ironsight_ai/domain/ai/decoded_video_frame.dart';
 import 'package:ironsight_ai/domain/ai/walkaround_video.dart';
 import 'package:ironsight_ai/domain/ai/walkaround_video_capture_port.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/captured_image.dart';
+
+DecodedVideoFrame decodedFrame({
+  required String videoPath,
+  required List<int> bytes,
+  int timeOffsetMs = 0,
+  String? path,
+}) {
+  return DecodedVideoFrame(
+    image: CapturedImage(
+      bytes: bytes,
+      path: path ?? '/tmp/decoded-$timeOffsetMs.jpg',
+      mimeType: 'image/jpeg',
+    ),
+    sourceVideoPath: videoPath,
+    timeOffsetMs: timeOffsetMs,
+  );
+}
 
 class FakeWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
   FakeWalkaroundVideoCapture({
@@ -12,16 +30,16 @@ class FakeWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
            WalkaroundVideo(
              localPath: '/tmp/walkaround-local.mp4',
              duration: const Duration(seconds: 12),
-             representativeFrames: const [
-               CapturedImage(
-                 bytes: [1, 2, 3, 4],
-                 path: '/tmp/frame-0.jpg',
-                 mimeType: 'image/jpeg',
+             representativeFrames: [
+               decodedFrame(
+                 videoPath: '/tmp/walkaround-local.mp4',
+                 bytes: const [1, 2, 3, 4],
+                 timeOffsetMs: 0,
                ),
-               CapturedImage(
-                 bytes: [5, 6, 7, 8],
-                 path: '/tmp/frame-1.jpg',
-                 mimeType: 'image/jpeg',
+               decodedFrame(
+                 videoPath: '/tmp/walkaround-local.mp4',
+                 bytes: const [5, 6, 7, 8],
+                 timeOffsetMs: 6000,
                ),
              ],
              mimeType: 'video/mp4',
