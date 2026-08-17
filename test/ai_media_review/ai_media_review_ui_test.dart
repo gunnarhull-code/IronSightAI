@@ -146,7 +146,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text(AiMediaReviewLabels.actionButton), findsOneWidget);
-    expect(find.textContaining('Works offline without AI'), findsOneWidget);
+    expect(find.textContaining('works offline without AI'), findsOneWidget);
     await tester.tap(find.text(AiMediaReviewLabels.actionButton));
     await tester.pumpAndSettle();
     expect(find.text(AiMediaReviewLabels.analyzeButton), findsOneWidget);
@@ -191,7 +191,9 @@ void main() {
       find.bySemanticsLabel(AiMediaReviewLabels.analyzeButton),
       findsWidgets,
     );
-    await tester.tap(find.text(AiMediaReviewLabels.analyzeButton));
+    await tester.tap(
+      find.widgetWithText(FilledButton, AiMediaReviewLabels.analyzeButton),
+    );
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Confidence: Medium'), findsOneWidget);
@@ -238,7 +240,9 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text(AiMediaReviewLabels.analyzeButton));
+    await tester.tap(
+      find.widgetWithText(FilledButton, AiMediaReviewLabels.analyzeButton),
+    );
     await tester.pumpAndSettle();
     expect(find.text('Offline / unavailable'), findsOneWidget);
     expect(find.text(AiMediaReviewLabels.retryButton), findsOneWidget);

@@ -162,11 +162,12 @@ class _AiMediaReviewScreenState extends State<AiMediaReviewScreen> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
           Semantics(
+            container: true,
             liveRegion: true,
             label:
                 state.statusAnnouncement ??
                 AiMediaReviewLabels.suggestionsDisclaimer,
-            child: const SizedBox.shrink(),
+            child: const SizedBox(width: 8, height: 8),
           ),
           Text(
             AiMediaReviewLabels.optionalBadge,
@@ -316,22 +317,28 @@ class _FailureBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Semantics(
+      container: true,
       liveRegion: true,
       label: failure.spokenMessage,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: theme.colorScheme.outline),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_titleFor(failure.kind), style: theme.textTheme.titleSmall),
-              const SizedBox(height: 4),
-              Text(failure.message, style: theme.textTheme.bodyMedium),
-            ],
+      child: ExcludeSemantics(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.colorScheme.outline),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _titleFor(failure.kind),
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: 4),
+                Text(failure.message, style: theme.textTheme.bodyMedium),
+              ],
+            ),
           ),
         ),
       ),

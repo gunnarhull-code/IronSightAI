@@ -10,7 +10,8 @@ abstract final class AiMediaReviewLabels {
       'Walkaround review is frame-based: representative still frames are '
       'extracted on this device. The original video stays local and is not '
       'uploaded.';
-  static const String consentTitle = 'Analyze media online';
+  static const String consentTitle =
+      'Before photos or frames leave this device';
   static const String consentBody =
       'Selected inspection photos and extracted walkaround video frames will '
       'be sent securely for AI analysis. The original walkaround video is not '

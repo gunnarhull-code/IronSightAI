@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -94,7 +93,8 @@ void main() {
     var calls = 0;
     final client = MockClient((request) async {
       calls += 1;
-      throw TimeoutException('timed out');
+      await Future<void>.delayed(const Duration(seconds: 5));
+      return http.Response(_okBody(), 200);
     });
     final service = SupabaseEdgeAiService(
       endpoint: Uri.parse(
@@ -102,10 +102,11 @@ void main() {
       ),
       readAccessToken: () => 'test-jwt',
       httpClient: client,
+      timeout: const Duration(milliseconds: 20),
       maxAttempts: 2,
     );
-    expect(
-      () => service.analyzeInspectionMedia(_request()),
+    await expectLater(
+      service.analyzeInspectionMedia(_request()),
       throwsA(
         isA<AiMediaReviewException>().having(
           (e) => e.failure.kind,
