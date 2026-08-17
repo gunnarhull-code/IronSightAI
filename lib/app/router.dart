@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../domain/ai/ai_service.dart';
 import '../domain/repositories/company_repository.dart';
 import '../domain/repositories/equipment_repository.dart';
 import '../features/auth/presentation/login_screen.dart';
@@ -81,6 +82,7 @@ Route<dynamic>? buildAppRoute(
   required EquipmentRepository equipmentRepository,
   InspectionSession? inspectionSession,
   GlobalKey<NavigatorState>? navigatorKey,
+  AIService? aiService,
 }) {
   final name = settings.name;
   if (name == null) return null;
@@ -169,6 +171,7 @@ Route<dynamic>? buildAppRoute(
           equipmentCatalog: session.workspace.equipmentCatalog,
           inspectionMedia: session.workspace.inspectionMedia,
           navigatorKey: navigatorKey,
+          aiService: aiService,
         ),
       );
     }

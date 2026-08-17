@@ -3,8 +3,11 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../../app/router.dart';
-import '../../../../data/equipment_id_capture/create_platform_bindings.dart';
+import '../../../../data/ai/create_walkaround_video_bindings.dart';
 import '../../../../data/equipment_id_capture/camera_capture_page.dart';
+import '../../../../data/equipment_id_capture/create_platform_bindings.dart';
+import '../../../../domain/ai/ai_service.dart';
+import '../../../../domain/ai/walkaround_video_capture_port.dart';
 import '../../../../domain/detailed_checklist_templates.dart';
 import '../../../../domain/entities/condition_rating.dart';
 import '../../../../domain/entities/detailed_category_response.dart';
@@ -25,6 +28,8 @@ import '../../../../domain/repositories/local_equipment_catalog_repository.dart'
 import '../../../../domain/repositories/local_inspection_media_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
 import '../../equipment_id_capture/presentation/equipment_id_capture_panel.dart';
+import 'ai_media_review_labels.dart';
+import 'ai_media_review_screen.dart';
 import 'widgets/condition_rating_controls.dart';
 import 'widgets/local_only_status_banner.dart';
 import 'widgets/required_inspection_photos_section.dart';
@@ -50,6 +55,8 @@ class InspectionWorkspaceScreen extends StatefulWidget {
     this.captureControllerFactory,
     this.imageCapture,
     this.cameraPermission,
+    this.aiService,
+    this.videoCapture,
   });
 
   final String companyId;
@@ -70,6 +77,12 @@ class InspectionWorkspaceScreen extends StatefulWidget {
 
   /// Optional camera permission override for required photos / tests.
   final CameraPermissionPort? cameraPermission;
+
+  /// Optional cloud AI adapter. Never a vendor SDK.
+  final AIService? aiService;
+
+  /// Optional walkaround recorder override for tests.
+  final WalkaroundVideoCapturePort? videoCapture;
 
   @override
   State<InspectionWorkspaceScreen> createState() =>
@@ -598,6 +611,27 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
     }
   }
 
+  Future<void> _openAiMediaReview() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) => AiMediaReviewScreen(
+          companyId: widget.companyId,
+          inspectionId: widget.inspectionId,
+          userId: widget.userId,
+          aiService: widget.aiService ?? const UnavailableAIService(),
+          inspections: widget.inspections,
+          inspectionMedia: widget.inspectionMedia,
+          videoCapture:
+              widget.videoCapture ??
+              createWalkaroundVideoCapturePort(
+                navigatorKey: widget.navigatorKey,
+              ),
+        ),
+      ),
+    );
+    if (mounted) _reload();
+  }
+
   Future<void> _openReview() async {
     final changed = await Navigator.of(
       context,
@@ -716,6 +750,25 @@ class _InspectionWorkspaceScreenState extends State<InspectionWorkspaceScreen> {
                           ),
                           onPreview: _previewPhoto,
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Semantics(
+                      button: true,
+                      label: AiMediaReviewLabels.actionButton,
+                      child: OutlinedButton.icon(
+                        onPressed: editable ? _openAiMediaReview : null,
+                        icon: const Icon(Icons.auto_awesome_outlined),
+                        label: const Text(AiMediaReviewLabels.actionButton),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Optional AI suggestions from photos and extracted '
+                      'walkaround frames. Never required. Quick Appraisal '
+                      'works offline without AI.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (serialController != null &&

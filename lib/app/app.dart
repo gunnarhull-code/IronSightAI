@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/theme/app_theme.dart';
+import '../data/ai/supabase_edge_ai_service.dart';
 import '../data/local/offline_inspection_workspace.dart';
 import '../data/repositories/supabase_auth_session_reader.dart';
 import '../data/repositories/supabase_company_repository.dart';
 import '../data/repositories/supabase_equipment_repository.dart';
+import '../domain/ai/ai_service.dart';
 import '../domain/repositories/auth_session_reader.dart';
 import '../domain/repositories/company_repository.dart';
 import '../domain/repositories/equipment_repository.dart';
@@ -24,6 +27,7 @@ class IronSightApp extends StatefulWidget {
     this.companyRepositoryOverride,
     this.equipmentRepositoryOverride,
     this.authSessionOverride,
+    this.aiServiceOverride,
   });
 
   /// Optional override for [AuthGate], primarily used by widget tests that
@@ -36,6 +40,7 @@ class IronSightApp extends StatefulWidget {
   final CompanyRepository? companyRepositoryOverride;
   final EquipmentRepository? equipmentRepositoryOverride;
   final AuthSessionReader? authSessionOverride;
+  final AIService? aiServiceOverride;
 
   @override
   State<IronSightApp> createState() => _IronSightAppState();
@@ -51,6 +56,7 @@ class _IronSightAppState extends State<IronSightApp> {
   CompanyRepository? _companyRepository;
   EquipmentRepository? _equipmentRepository;
   AuthSessionReader? _authSession;
+  AIService? _aiService;
 
   @override
   void initState() {
@@ -64,6 +70,12 @@ class _IronSightAppState extends State<IronSightApp> {
           SupabaseEquipmentRepository(client);
       _authSession =
           widget.authSessionOverride ?? SupabaseAuthSessionReader(client);
+      _aiService =
+          widget.aiServiceOverride ??
+          SupabaseEdgeAiService.fromSupabase(
+            client: client,
+            supabaseUrl: dotenv.env['SUPABASE_URL'] ?? '',
+          );
       if (widget.workspaceOverride != null) {
         _workspace = widget.workspaceOverride;
       } else {
@@ -73,6 +85,7 @@ class _IronSightAppState extends State<IronSightApp> {
       _companyRepository = widget.companyRepositoryOverride;
       _equipmentRepository = widget.equipmentRepositoryOverride;
       _authSession = widget.authSessionOverride;
+      _aiService = widget.aiServiceOverride;
       _workspace = widget.workspaceOverride;
     }
   }
@@ -137,6 +150,7 @@ class _IronSightAppState extends State<IronSightApp> {
               equipmentRepository: _equipmentRepository!,
               inspectionSession: _inspectionSession,
               navigatorKey: _navigatorKey,
+              aiService: _aiService,
             ),
     );
   }
