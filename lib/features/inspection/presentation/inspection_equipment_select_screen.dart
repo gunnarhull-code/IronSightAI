@@ -75,6 +75,26 @@ class _InspectionEquipmentSelectScreenState
     if (_starting) return;
     setState(() => _starting = true);
     try {
+      final stillCached = await widget.equipmentCatalog.getById(
+        companyId: widget.companyId,
+        equipmentId: equipment.id,
+      );
+      if (stillCached == null) {
+        // Stale list row after a raced catalog replace — try one refresh.
+        if (widget.refreshCatalog != null) {
+          await widget.refreshCatalog!(widget.companyId);
+        }
+        final refreshed = await widget.equipmentCatalog.getById(
+          companyId: widget.companyId,
+          equipmentId: equipment.id,
+        );
+        if (refreshed == null) {
+          throw StateError(
+            'Cannot create draft: equipment is not in the local company catalog.',
+          );
+        }
+      }
+
       final drafts = await _findDrafts(
         companyId: widget.companyId,
         equipmentId: equipment.id,
@@ -124,7 +144,12 @@ class _InspectionEquipmentSelectScreenState
       );
       if (!mounted) return;
       await _openWorkspace(draft.id);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint(
+        'InspectionEquipmentSelectScreen: could not start local draft '
+        '(${error.runtimeType})',
+      );
+      debugPrintStack(stackTrace: stackTrace);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

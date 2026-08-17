@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/theme/app_theme.dart';
 import '../data/local/offline_inspection_workspace.dart';
+import '../data/repositories/local_catalog_syncing_equipment_repository.dart';
 import '../data/repositories/supabase_auth_session_reader.dart';
 import '../data/repositories/supabase_company_repository.dart';
 import '../data/repositories/supabase_equipment_repository.dart';
@@ -83,8 +84,9 @@ class _IronSightAppState extends State<IronSightApp> {
       _workspaceError = null;
     });
     try {
+      final remoteEquipment = _equipmentRepository!;
       final workspace = await OfflineInspectionWorkspace.open(
-        remoteEquipmentRepository: _equipmentRepository!,
+        remoteEquipmentRepository: remoteEquipment,
         authSession: _authSession!,
         // Web founder QA cannot use SQLCipher; mobile/desktop keep requireCipher.
         requireCipher: !kIsWeb,
@@ -95,6 +97,11 @@ class _IronSightAppState extends State<IronSightApp> {
       }
       setState(() {
         _workspace = workspace;
+        // Mirror remote equipment CUD into the local QA catalog immediately.
+        _equipmentRepository = LocalCatalogSyncingEquipmentRepository(
+          remote: remoteEquipment,
+          localCatalog: workspace.equipmentCatalog,
+        );
         _openingWorkspace = false;
       });
     } catch (error) {

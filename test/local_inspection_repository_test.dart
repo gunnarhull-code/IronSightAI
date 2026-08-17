@@ -4,9 +4,11 @@ import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:ironsight_ai/data/local/drift/app_database.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
+import 'package:ironsight_ai/data/repositories/drift_local_equipment_catalog_repository.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_inspection_repository.dart';
 import 'package:ironsight_ai/domain/entities/condition_rating.dart';
 import 'package:ironsight_ai/domain/entities/detailed_category_response.dart';
+import 'package:ironsight_ai/domain/entities/equipment.dart';
 import 'package:ironsight_ai/domain/entities/inspection_depth.dart';
 import 'package:ironsight_ai/domain/entities/inspection_status.dart';
 import 'package:ironsight_ai/domain/entities/scorecard_category.dart';
@@ -17,11 +19,13 @@ import 'package:ironsight_ai/domain/exceptions/invalid_condition_rating_exceptio
 import 'package:ironsight_ai/domain/exceptions/invalid_inspection_lifecycle_exception.dart';
 import 'package:ironsight_ai/domain/exceptions/invalid_scorecard_category_exception.dart';
 import 'package:ironsight_ai/domain/inspection_value_parsing.dart';
+import 'package:ironsight_ai/domain/repositories/local_equipment_catalog_repository.dart';
 import 'package:ironsight_ai/domain/repositories/local_inspection_repository.dart';
 
 void main() {
   late AppDatabase database;
   late LocalInspectionRepository repository;
+  late LocalEquipmentCatalogRepository equipmentCatalog;
   var clockTick = 0;
   var idTick = 0;
 
@@ -35,10 +39,31 @@ void main() {
     return 'id-$idTick';
   }
 
+  Future<void> seedEquipment({
+    required String companyId,
+    required String equipmentId,
+  }) async {
+    final existing = await equipmentCatalog.listForCompany(companyId);
+    if (existing.any((item) => item.id == equipmentId)) return;
+    final now = DateTime.utc(2026, 7, 1);
+    await equipmentCatalog.upsertEquipment(
+      Equipment(
+        id: equipmentId,
+        companyId: companyId,
+        assetName: 'Equipment $equipmentId',
+        manufacturer: 'Caterpillar',
+        model: '320',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+
   setUp(() {
     clockTick = 0;
     idTick = 0;
     database = openMemoryAppDatabase();
+    equipmentCatalog = DriftLocalEquipmentCatalogRepository(database);
     repository = DriftLocalInspectionRepository(
       database,
       clock: nextClock,
@@ -56,6 +81,7 @@ void main() {
     String createdByUserId = 'user-1',
     InspectionDepth depth = InspectionDepth.quickAppraisal,
   }) async {
+    await seedEquipment(companyId: companyId, equipmentId: equipmentId);
     final draft = await repository.createDraft(
       companyId: companyId,
       equipmentId: equipmentId,
@@ -67,6 +93,7 @@ void main() {
 
   group('createDraft', () {
     test('creates a draft with all categories not assessed', () async {
+      await seedEquipment(companyId: 'company-a', equipmentId: 'equip-1');
       final draft = await repository.createDraft(
         companyId: 'company-a',
         equipmentId: 'equip-1',
@@ -94,6 +121,42 @@ void main() {
         draft.categoryRatings.map((rating) => rating.category).toList(),
         ScorecardCategory.scorecardOrder,
       );
+    });
+
+    test(
+      'rejects draft creation when equipment is not locally cached',
+      () async {
+        await expectLater(
+          repository.createDraft(
+            companyId: 'company-a',
+            equipmentId: 'missing-equip',
+            createdByUserId: 'user-1',
+          ),
+          throwsA(
+            isA<StateError>().having(
+              (error) => error.message,
+              'message',
+              contains('not in the local company catalog'),
+            ),
+          ),
+        );
+
+        final listed = await repository.listForCompany('company-a');
+        expect(listed, isEmpty);
+      },
+    );
+
+    test('rejects draft creation for wrong-tenant cached equipment', () async {
+      await seedEquipment(companyId: 'company-b', equipmentId: 'equip-1');
+      await expectLater(
+        repository.createDraft(
+          companyId: 'company-a',
+          equipmentId: 'equip-1',
+          createdByUserId: 'user-1',
+        ),
+        throwsA(isA<StateError>()),
+      );
+      expect(await repository.listForCompany('company-a'), isEmpty);
     });
   });
 
@@ -532,6 +595,19 @@ void main() {
           file,
           encryptionKey: encryptionKey,
           requireCipher: false,
+        );
+        final firstCatalog = DriftLocalEquipmentCatalogRepository(firstDb);
+        final now = DateTime.utc(2026, 7, 1);
+        await firstCatalog.upsertEquipment(
+          Equipment(
+            id: 'equip-1',
+            companyId: 'company-a',
+            assetName: 'Excavator',
+            manufacturer: 'Caterpillar',
+            model: '320',
+            createdAt: now,
+            updatedAt: now,
+          ),
         );
         final firstRepo = DriftLocalInspectionRepository(
           firstDb,

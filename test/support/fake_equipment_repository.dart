@@ -6,12 +6,14 @@ import 'package:ironsight_ai/domain/repositories/equipment_repository.dart';
 class FakeEquipmentRepository implements EquipmentRepository {
   FakeEquipmentRepository({
     List<Equipment>? equipment,
+    this.companyId = 'company-1',
     this.getError,
     this.createDelay = Duration.zero,
     this.updateDelay = Duration.zero,
   }) : equipment = equipment ?? [];
 
   List<Equipment> equipment;
+  final String companyId;
   Object? getError;
   Object? createError;
   Object? updateError;
@@ -27,7 +29,6 @@ class FakeEquipmentRepository implements EquipmentRepository {
   String? lastUpdatedId;
   String? lastDeletedId;
 
-  static const String _companyId = 'company-1';
   int _nextId = 1;
 
   @override
@@ -57,7 +58,7 @@ class FakeEquipmentRepository implements EquipmentRepository {
     final now = DateTime.utc(2026, 1, 1);
     final created = Equipment(
       id: 'equipment-${_nextId++}',
-      companyId: _companyId,
+      companyId: companyId,
       assetName: details.assetName,
       manufacturer: details.manufacturer,
       model: details.model,

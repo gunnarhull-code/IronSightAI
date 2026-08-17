@@ -1,19 +1,25 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ironsight_ai/data/local/drift/app_database.dart';
 import 'package:ironsight_ai/data/local/drift/open_inspection_database_io.dart';
 import 'package:ironsight_ai/data/local/inspection_media_file_store.dart';
+import 'package:ironsight_ai/data/repositories/drift_local_equipment_catalog_repository.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_inspection_media_repository.dart';
 import 'package:ironsight_ai/data/repositories/drift_local_inspection_repository.dart';
+import 'package:ironsight_ai/domain/entities/equipment.dart';
 import 'package:ironsight_ai/domain/entities/inspection_photo_slot.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/captured_image.dart';
 import 'package:ironsight_ai/domain/exceptions/invalid_inspection_lifecycle_exception.dart';
+import 'package:ironsight_ai/domain/repositories/local_equipment_catalog_repository.dart';
 import 'package:ironsight_ai/domain/repositories/local_inspection_media_repository.dart';
 import 'package:ironsight_ai/domain/repositories/local_inspection_repository.dart';
 
 void main() {
   late Directory mediaRoot;
+  late AppDatabase database;
   late LocalInspectionRepository inspections;
+  late LocalEquipmentCatalogRepository equipmentCatalog;
   late LocalInspectionMediaRepository media;
   var clockTick = 0;
   var idTick = 0;
@@ -32,7 +38,8 @@ void main() {
     clockTick = 0;
     idTick = 0;
     mediaRoot = Directory.systemTemp.createTempSync('ironsight_media_repo_');
-    final database = openMemoryAppDatabase();
+    database = openMemoryAppDatabase();
+    equipmentCatalog = DriftLocalEquipmentCatalogRepository(database);
     inspections = DriftLocalInspectionRepository(
       database,
       clock: nextClock,
@@ -47,13 +54,26 @@ void main() {
     );
   });
 
-  tearDown(() {
+  tearDown(() async {
+    await database.close();
     if (mediaRoot.existsSync()) {
       mediaRoot.deleteSync(recursive: true);
     }
   });
 
   Future<String> draft({String companyId = 'company-a'}) async {
+    final now = DateTime.utc(2026, 7, 1);
+    await equipmentCatalog.upsertEquipment(
+      Equipment(
+        id: 'equip-1',
+        companyId: companyId,
+        assetName: 'Excavator',
+        manufacturer: 'Caterpillar',
+        model: '320',
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
     final created = await inspections.createDraft(
       companyId: companyId,
       equipmentId: 'equip-1',
@@ -249,6 +269,19 @@ void main() {
         dbFile,
         encryptionKey: 'test-key-not-for-production-use!!',
         requireCipher: false,
+      );
+      final firstCatalog = DriftLocalEquipmentCatalogRepository(firstDb);
+      final now = DateTime.utc(2026, 7, 1);
+      await firstCatalog.upsertEquipment(
+        Equipment(
+          id: 'equip-1',
+          companyId: 'company-a',
+          assetName: 'Excavator',
+          manufacturer: 'Caterpillar',
+          model: '320',
+          createdAt: now,
+          updatedAt: now,
+        ),
       );
       final firstInspections = DriftLocalInspectionRepository(firstDb);
       final firstMedia = DriftLocalInspectionMediaRepository(

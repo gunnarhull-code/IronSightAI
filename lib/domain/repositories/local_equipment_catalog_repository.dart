@@ -17,6 +17,18 @@ abstract class LocalEquipmentCatalogRepository {
     required List<Equipment> equipment,
   });
 
+  /// Inserts or updates one cached equipment row for its [Equipment.companyId].
+  ///
+  /// Used when remote create/update succeeds so Quick Appraisal can start from
+  /// the new record without waiting on a full catalog refresh.
+  Future<void> upsertEquipment(Equipment equipment);
+
+  /// Removes one cached row when it belongs to [companyId].
+  Future<void> removeEquipment({
+    required String companyId,
+    required String equipmentId,
+  });
+
   Future<void> clearCompany(String companyId);
 
   /// Removes cached equipment that does not belong to [companyId].

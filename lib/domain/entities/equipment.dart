@@ -50,8 +50,8 @@ class Equipment {
       manufacturer: map['manufacturer'] as String,
       model: map['model'] as String,
       serialNumber: map['serial_number'] as String?,
-      year: map['year'] as int?,
-      hours: (map['hours'] as num?)?.toDouble(),
+      year: _optionalInt(map['year']),
+      hours: _optionalDouble(map['hours']),
       location: map['location'] as String?,
       notes: map['notes'] as String?,
       createdBy: map['created_by'] as String?,
@@ -62,4 +62,20 @@ class Equipment {
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
   }
+}
+
+int? _optionalInt(Object? value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value.trim());
+  return null;
+}
+
+double? _optionalDouble(Object? value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value.trim());
+  return null;
 }

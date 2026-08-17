@@ -66,29 +66,58 @@ class DriftLocalEquipmentCatalogRepository
         }
         await _db
             .into(_db.localEquipmentCache)
-            .insert(
-              LocalEquipmentCacheCompanion.insert(
-                id: item.id,
-                companyId: item.companyId,
-                assetName: item.assetName,
-                manufacturer: item.manufacturer,
-                model: item.model,
-                serialNumber: Value(item.serialNumber),
-                year: Value(item.year),
-                hours: Value(item.hours),
-                location: Value(item.location),
-                notes: Value(item.notes),
-                createdBy: Value(item.createdBy),
-                createdByName: Value(item.createdByName),
-                updatedBy: Value(item.updatedBy),
-                updatedByName: Value(item.updatedByName),
-                createdAt: item.createdAt.toUtc(),
-                updatedAt: item.updatedAt.toUtc(),
-                cachedAt: now,
-              ),
-            );
+            .insert(_companionFor(item, cachedAt: now));
       }
     });
+  }
+
+  @override
+  Future<void> upsertEquipment(Equipment equipment) async {
+    _requireNonEmpty(equipment.id, 'equipment.id');
+    _requireNonEmpty(equipment.companyId, 'equipment.companyId');
+    final now = _clock();
+    await _db
+        .into(_db.localEquipmentCache)
+        .insertOnConflictUpdate(_companionFor(equipment, cachedAt: now));
+  }
+
+  @override
+  Future<void> removeEquipment({
+    required String companyId,
+    required String equipmentId,
+  }) async {
+    _requireNonEmpty(companyId, 'companyId');
+    _requireNonEmpty(equipmentId, 'equipmentId');
+    await (_db.delete(_db.localEquipmentCache)..where(
+          (table) =>
+              table.id.equals(equipmentId) & table.companyId.equals(companyId),
+        ))
+        .go();
+  }
+
+  LocalEquipmentCacheCompanion _companionFor(
+    Equipment item, {
+    required DateTime cachedAt,
+  }) {
+    return LocalEquipmentCacheCompanion.insert(
+      id: item.id,
+      companyId: item.companyId,
+      assetName: item.assetName,
+      manufacturer: item.manufacturer,
+      model: item.model,
+      serialNumber: Value(item.serialNumber),
+      year: Value(item.year),
+      hours: Value(item.hours),
+      location: Value(item.location),
+      notes: Value(item.notes),
+      createdBy: Value(item.createdBy),
+      createdByName: Value(item.createdByName),
+      updatedBy: Value(item.updatedBy),
+      updatedByName: Value(item.updatedByName),
+      createdAt: item.createdAt.toUtc(),
+      updatedAt: item.updatedAt.toUtc(),
+      cachedAt: cachedAt,
+    );
   }
 
   @override

@@ -42,6 +42,19 @@ class DriftLocalInspectionRepository implements LocalInspectionRepository {
     _requireNonEmpty(equipmentId, 'equipmentId');
     _requireNonEmpty(createdByUserId, 'createdByUserId');
 
+    final cachedEquipment =
+        await (_db.select(_db.localEquipmentCache)..where(
+              (table) =>
+                  table.id.equals(equipmentId) &
+                  table.companyId.equals(companyId),
+            ))
+            .getSingleOrNull();
+    if (cachedEquipment == null) {
+      throw StateError(
+        'Cannot create draft: equipment is not in the local company catalog.',
+      );
+    }
+
     final now = _clock();
     final inspectionId = _idGenerator();
 

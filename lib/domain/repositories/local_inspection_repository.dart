@@ -14,6 +14,10 @@ import '../equipment_id_capture/confirmed_equipment_id_value.dart';
 abstract class LocalInspectionRepository {
   /// Creates a draft inspection with all scorecard categories set to
   /// [ConditionRating.notAssessed].
+  ///
+  /// [equipmentId] must already exist in the local company equipment catalog.
+  /// Callers must not insert a draft when the equipment row is missing — this
+  /// fails closed without writing a partial inspection.
   Future<Inspection> createDraft({
     required String companyId,
     required String equipmentId,
