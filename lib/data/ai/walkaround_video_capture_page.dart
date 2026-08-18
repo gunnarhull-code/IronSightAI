@@ -4,10 +4,14 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
+import '../../domain/ai/walkaround_capture_diagnostics.dart';
+import '../../domain/ai/walkaround_capture_outcome.dart';
+import '../../domain/ai/walkaround_capture_session.dart';
+import '../../domain/ai/walkaround_recording_pipeline.dart';
+import '../../domain/ai/ai_media_review_failure.dart';
 import '../../domain/ai/walkaround_video.dart';
 import '../../domain/ai/walkaround_video_capture_port.dart';
 import '../../domain/ai/walkaround_video_frame_decoder.dart';
-import '../../domain/ai/video_frame_extraction.dart';
 import '../../domain/equipment_id_capture/equipment_id_capture_failure.dart';
 import '../../domain/equipment_id_capture/image_capture_port.dart';
 import 'create_walkaround_frame_decoder.dart';
@@ -21,10 +25,12 @@ class WalkaroundVideoCapturePage extends StatefulWidget {
     super.key,
     this.title = 'Walkaround video',
     this.frameDecoder,
+    this.onCompleted,
   });
 
   final String title;
   final WalkaroundVideoFrameDecoder? frameDecoder;
+  final ValueChanged<WalkaroundCaptureOutcome>? onCompleted;
 
   @override
   State<WalkaroundVideoCapturePage> createState() =>
@@ -37,6 +43,8 @@ class _WalkaroundVideoCapturePageState
   String? _error;
   bool _busy = false;
   bool _recording = false;
+  bool _saving = false;
+  bool _reported = false;
   Duration _elapsed = Duration.zero;
   Timer? _ticker;
   DateTime? _startedAt;
@@ -49,6 +57,7 @@ class _WalkaroundVideoCapturePageState
   @override
   void initState() {
     super.initState();
+    WalkaroundCaptureDiagnostics.emit('capture_opened');
     _init();
   }
 
@@ -82,6 +91,23 @@ class _WalkaroundVideoCapturePageState
     }
   }
 
+  void _complete(WalkaroundCaptureOutcome outcome) {
+    if (_reported) return;
+    _reported = true;
+    WalkaroundCaptureDiagnostics.emit('outcome_reported', {
+      'outcome': outcome.status.name,
+      'frameCount': outcome.video?.representativeFrames.length ?? 0,
+      'durationMs': outcome.video?.duration.inMilliseconds ?? 0,
+      'decodeErrorType': outcome.failure?.kind.name,
+    });
+    widget.onCompleted?.call(outcome);
+  }
+
+  Future<void> _popAfterReport() async {
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
   Future<void> _toggleRecording() async {
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized || _busy) {
@@ -107,6 +133,7 @@ class _WalkaroundVideoCapturePageState
         setState(() => _elapsed = elapsed);
       });
       if (!mounted) return;
+      WalkaroundCaptureDiagnostics.emit('recording_started');
       setState(() {
         _recording = true;
         _busy = false;
@@ -131,56 +158,76 @@ class _WalkaroundVideoCapturePageState
     final controller = _controller;
     if (controller == null || !_recording || _busy) return;
     _ticker?.cancel();
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _saving = true;
+    });
     try {
       final started = _startedAt ?? DateTime.now();
+      WalkaroundCaptureDiagnostics.emit('recording_stop_requested');
       final videoFile = await controller.stopVideoRecording();
       final duration = DateTime.now().difference(started);
+      final videoPath = videoFile.path;
+      final file = File(videoPath);
+      final exists = await file.exists();
+      final byteSize = exists ? await file.length() : 0;
+      WalkaroundCaptureDiagnostics.emit('recording_saved', {
+        'pathKind': WalkaroundCaptureDiagnostics.pathKind(videoPath),
+        'looksLikeMp4': WalkaroundCaptureDiagnostics.looksLikeMp4(videoPath),
+        'fileExists': exists,
+        'byteSize': byteSize,
+        'durationMs': duration.inMilliseconds,
+      });
+
       if (duration > _limit + const Duration(seconds: 1)) {
-        if (!mounted) return;
-        setState(() {
-          _busy = false;
-          _recording = false;
-          _error = 'Walkaround video must be 30 seconds or less.';
-        });
+        _complete(
+          WalkaroundCaptureOutcome.failed(AiMediaReviewFailure.videoTooLong()),
+        );
+        await _popAfterReport();
         return;
       }
+
       final recordedDuration = duration > _limit ? _limit : duration;
-      final videoPath = videoFile.path;
-      final byteSize = await File(videoPath).length();
-
-      // Decode representative frames from the recorded MP4 only.
-      final frames = await VideoFrameExtraction.decodeAndBound(
+      WalkaroundCaptureDiagnostics.emit('decode_started', {
+        'pathKind': WalkaroundCaptureDiagnostics.pathKind(videoPath),
+        'fileExists': exists,
+        'byteSize': byteSize,
+        'durationMs': recordedDuration.inMilliseconds,
+      });
+      final outcome = await WalkaroundRecordingPipeline.complete(
         decoder: _frameDecoder,
-        videoPath: videoPath,
-        duration: recordedDuration,
+        recordedPath: videoPath,
+        recordedDuration: recordedDuration,
+        fileExists: exists,
+        byteSize: byteSize,
       );
-
-      if (!mounted) return;
-      Navigator.of(context).pop(
-        WalkaroundVideo(
-          localPath: videoPath,
-          duration: recordedDuration,
-          representativeFrames: frames,
-          byteSize: byteSize,
+      WalkaroundCaptureDiagnostics.emit('decode_finished', {
+        'outcome': outcome.status.name,
+        'frameCount': outcome.video?.representativeFrames.length ?? 0,
+        'decodeErrorType': outcome.failure?.kind.name,
+      });
+      _complete(outcome);
+      await _popAfterReport();
+    } on CameraException catch (error) {
+      WalkaroundCaptureDiagnostics.emit('record_failed', {
+        'decodeErrorType': error.code,
+      });
+      _complete(
+        WalkaroundCaptureOutcome.failed(
+          AiMediaReviewFailure.providerFailure(error.description ?? error.code),
         ),
       );
-    } on CameraException catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _recording = false;
-        _error = error.description ?? error.code;
-      });
+      await _popAfterReport();
     } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _busy = false;
-        _recording = false;
-        _error =
-            'Could not decode walkaround video frames from the recording. '
-            'The original video stayed on this device.';
+      WalkaroundCaptureDiagnostics.emit('record_failed', {
+        'decodeErrorType': error.runtimeType.toString(),
       });
+      _complete(
+        WalkaroundCaptureOutcome.failed(
+          AiMediaReviewFailure.videoFramesMissing(),
+        ),
+      );
+      await _popAfterReport();
     }
   }
 
@@ -191,14 +238,17 @@ class _WalkaroundVideoCapturePageState
         await controller.stopVideoRecording();
       } catch (_) {}
     }
-    if (!mounted) return;
-    Navigator.of(context).pop();
+    _complete(WalkaroundCaptureOutcome.cancelled());
+    await _popAfterReport();
   }
 
   @override
   void dispose() {
     _ticker?.cancel();
     _controller?.dispose();
+    if (!_reported) {
+      _complete(WalkaroundCaptureOutcome.cancelled());
+    }
     super.dispose();
   }
 
@@ -208,89 +258,121 @@ class _WalkaroundVideoCapturePageState
     final remaining = _limit - _elapsed;
     final remainingLabel =
         '${remaining.inSeconds.clamp(0, _limit.inSeconds)} seconds remaining';
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.title),
-        leading: IconButton(
-          tooltip: 'Cancel walkaround video',
-          onPressed: _cancel,
-          icon: const Icon(Icons.close),
+    return PopScope(
+      canPop: !_saving,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop && !_reported) {
+          _complete(WalkaroundCaptureOutcome.cancelled());
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          title: Text(widget.title),
+          leading: IconButton(
+            tooltip: 'Cancel walkaround video',
+            onPressed: _saving ? null : _cancel,
+            icon: const Icon(Icons.close),
+          ),
         ),
+        body: _error != null
+            ? _ErrorBody(message: _error!, onClose: _cancel)
+            : controller == null || !controller.value.isInitialized
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                fit: StackFit.expand,
+                children: [
+                  Center(child: CameraPreview(controller)),
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Semantics(
+                          liveRegion: true,
+                          label: _saving
+                              ? 'Saving walkaround video and decoding frames '
+                                    'from the recording. Original video stays '
+                                    'on this device.'
+                              : _recording
+                              ? 'Recording walkaround video. $remainingLabel. '
+                                    'Maximum 30 seconds. Frames will be decoded '
+                                    'from the recording. Original video stays '
+                                    'on this device.'
+                              : 'Ready to record a walkaround video of at most '
+                                    '30 seconds. Frames are decoded from the '
+                                    'MP4. Original video stays on this device.',
+                          child: Text(
+                            _saving
+                                ? 'Saving recording · decoding frames from MP4'
+                                : _recording
+                                ? 'Recording · $remainingLabel'
+                                : 'Max 30s · frames decoded from MP4 · '
+                                      'original stays on device',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (_saving)
+                    const ColoredBox(
+                      color: Color(0x99000000),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(),
+                            SizedBox(height: 16),
+                            Text(
+                              'Decoding frames from the recorded video…',
+                              style: TextStyle(color: Colors.white),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  Align(
+                    alignment: Alignment.bottomCenter,
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Semantics(
+                          button: true,
+                          label: _recording
+                              ? 'Stop walkaround video'
+                              : 'Start walkaround video, maximum 30 seconds',
+                          child: SizedBox(
+                            width: 72,
+                            height: 72,
+                            child: FloatingActionButton.large(
+                              onPressed: _busy ? null : _toggleRecording,
+                              backgroundColor: _recording
+                                  ? Colors.red
+                                  : Colors.white,
+                              child: _busy
+                                  ? const CircularProgressIndicator()
+                                  : Icon(
+                                      _recording ? Icons.stop : Icons.videocam,
+                                      size: 36,
+                                      color: _recording
+                                          ? Colors.white
+                                          : Colors.black,
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
       ),
-      body: _error != null
-          ? _ErrorBody(message: _error!, onClose: _cancel)
-          : controller == null || !controller.value.isInitialized
-          ? const Center(child: CircularProgressIndicator())
-          : Stack(
-              fit: StackFit.expand,
-              children: [
-                Center(child: CameraPreview(controller)),
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Semantics(
-                        liveRegion: true,
-                        label: _recording
-                            ? 'Recording walkaround video. $remainingLabel. '
-                                  'Maximum 30 seconds. Frames will be decoded '
-                                  'from the recording. Original video stays '
-                                  'on this device.'
-                            : 'Ready to record a walkaround video of at most '
-                                  '30 seconds. Frames are decoded from the '
-                                  'MP4. Original video stays on this device.',
-                        child: Text(
-                          _recording
-                              ? 'Recording · $remainingLabel'
-                              : 'Max 30s · frames decoded from MP4 · '
-                                    'original stays on device',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: SafeArea(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Semantics(
-                        button: true,
-                        label: _recording
-                            ? 'Stop walkaround video'
-                            : 'Start walkaround video, maximum 30 seconds',
-                        child: SizedBox(
-                          width: 72,
-                          height: 72,
-                          child: FloatingActionButton.large(
-                            onPressed: _busy ? null : _toggleRecording,
-                            backgroundColor: _recording
-                                ? Colors.red
-                                : Colors.white,
-                            child: _busy
-                                ? const CircularProgressIndicator()
-                                : Icon(
-                                    _recording ? Icons.stop : Icons.videocam,
-                                    size: 36,
-                                    color: _recording
-                                        ? Colors.white
-                                        : Colors.black,
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
     );
   }
 }
@@ -337,23 +419,22 @@ class NavigatorWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
   bool get isSupported => true;
 
   @override
-  Future<WalkaroundVideo> recordWalkaround() async {
+  Future<WalkaroundCaptureOutcome> recordWalkaround() async {
     final nav = navigatorKey.currentState;
     if (nav == null) {
       throw EquipmentIdCaptureException(
         EquipmentIdCaptureFailure.cameraUnavailable(),
       );
     }
-    final result = await nav.push<WalkaroundVideo>(
+    final session = WalkaroundCaptureSession();
+    await nav.push<void>(
       MaterialPageRoute(
-        builder: (_) => WalkaroundVideoCapturePage(frameDecoder: frameDecoder),
+        builder: (_) => WalkaroundVideoCapturePage(
+          frameDecoder: frameDecoder,
+          onCompleted: session.report,
+        ),
       ),
     );
-    if (result == null) {
-      throw EquipmentIdCaptureException(
-        EquipmentIdCaptureFailure.captureCancelled(),
-      );
-    }
-    return result;
+    return session.finalizeAfterRoute();
   }
 }

@@ -33,7 +33,7 @@ class AiMediaReviewViewState {
   final String? statusAnnouncement;
 
   bool get canAnalyze =>
-      photoCount > 0 &&
+      (photoCount > 0 || (hasWalkaroundVideo && videoFrameCount > 0)) &&
       !isBusy &&
       (phase == AiMediaReviewPhase.ready ||
           phase == AiMediaReviewPhase.offline ||

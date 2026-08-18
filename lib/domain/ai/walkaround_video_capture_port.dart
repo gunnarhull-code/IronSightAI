@@ -1,4 +1,4 @@
-import 'walkaround_video.dart';
+import 'walkaround_capture_outcome.dart';
 
 /// Records one optional walkaround video (max 30 seconds) on device.
 ///
@@ -7,7 +7,9 @@ import 'walkaround_video.dart';
 abstract class WalkaroundVideoCapturePort {
   bool get isSupported;
 
-  Future<WalkaroundVideo> recordWalkaround();
+  /// Records a walkaround. Cancelled/failed results must not imply that a
+  /// previously accepted video was cleared — callers keep prior state.
+  Future<WalkaroundCaptureOutcome> recordWalkaround();
 }
 
 class UnsupportedWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
@@ -17,9 +19,7 @@ class UnsupportedWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
   bool get isSupported => false;
 
   @override
-  Future<WalkaroundVideo> recordWalkaround() {
-    throw StateError(
-      'Walkaround video capture is not supported on this device.',
-    );
+  Future<WalkaroundCaptureOutcome> recordWalkaround() async {
+    return WalkaroundCaptureOutcome.cancelled();
   }
 }

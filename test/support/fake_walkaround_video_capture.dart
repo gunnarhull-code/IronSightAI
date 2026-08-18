@@ -1,4 +1,5 @@
 import 'package:ironsight_ai/domain/ai/decoded_video_frame.dart';
+import 'package:ironsight_ai/domain/ai/walkaround_capture_outcome.dart';
 import 'package:ironsight_ai/domain/ai/walkaround_video.dart';
 import 'package:ironsight_ai/domain/ai/walkaround_video_capture_port.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/captured_image.dart';
@@ -20,43 +21,53 @@ DecodedVideoFrame decodedFrame({
   );
 }
 
+WalkaroundVideo sampleWalkaroundVideo({
+  String localPath = '/tmp/walkaround-local.mp4',
+  Duration duration = const Duration(seconds: 12),
+  int frameCount = 2,
+}) {
+  return WalkaroundVideo(
+    localPath: localPath,
+    duration: duration,
+    representativeFrames: [
+      for (var i = 0; i < frameCount; i++)
+        decodedFrame(
+          videoPath: localPath,
+          bytes: List<int>.filled(4, i + 1),
+          timeOffsetMs: i * 1000,
+        ),
+    ],
+    mimeType: 'video/mp4',
+    byteSize: 4096,
+  );
+}
+
 class FakeWalkaroundVideoCapture implements WalkaroundVideoCapturePort {
   FakeWalkaroundVideoCapture({
     this.isSupported = true,
     WalkaroundVideo? video,
     this.error,
-  }) : video =
-           video ??
-           WalkaroundVideo(
-             localPath: '/tmp/walkaround-local.mp4',
-             duration: const Duration(seconds: 12),
-             representativeFrames: [
-               decodedFrame(
-                 videoPath: '/tmp/walkaround-local.mp4',
-                 bytes: const [1, 2, 3, 4],
-                 timeOffsetMs: 0,
-               ),
-               decodedFrame(
-                 videoPath: '/tmp/walkaround-local.mp4',
-                 bytes: const [5, 6, 7, 8],
-                 timeOffsetMs: 6000,
-               ),
-             ],
-             mimeType: 'video/mp4',
-             byteSize: 4096,
-           );
+    this.outcome,
+    List<WalkaroundCaptureOutcome>? queued,
+  }) : video = video ?? sampleWalkaroundVideo(),
+       queued = queued ?? <WalkaroundCaptureOutcome>[];
 
   @override
   bool isSupported;
 
   WalkaroundVideo video;
   Object? error;
+  WalkaroundCaptureOutcome? outcome;
+  final List<WalkaroundCaptureOutcome> queued;
   int recordCallCount = 0;
 
   @override
-  Future<WalkaroundVideo> recordWalkaround() async {
+  Future<WalkaroundCaptureOutcome> recordWalkaround() async {
     recordCallCount += 1;
     if (error != null) throw error!;
-    return video;
+    if (queued.isNotEmpty) {
+      return queued.removeAt(0);
+    }
+    return outcome ?? WalkaroundCaptureOutcome.success(video);
   }
 }

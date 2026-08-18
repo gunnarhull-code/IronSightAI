@@ -24,13 +24,7 @@ void main() {
             requested.add(args);
             final offset = args['timeMs'] as int;
             // Distinct JPEG-looking payloads per timestamp.
-            return Uint8List.fromList([
-              0xFF,
-              0xD8,
-              offset & 0xFF,
-              0xFF,
-              0xD9,
-            ]);
+            return Uint8List.fromList([0xFF, 0xD8, offset & 0xFF, 0xFF, 0xD9]);
           });
 
       const videoPath = '/data/user/0/app/cache/walkaround.mp4';

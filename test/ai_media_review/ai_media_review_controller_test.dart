@@ -9,6 +9,7 @@ import 'package:ironsight_ai/domain/ai/ai_media_source.dart';
 import 'package:ironsight_ai/domain/ai/ai_suggestion.dart';
 import 'package:ironsight_ai/domain/ai/ai_suggestion_applier.dart';
 import 'package:ironsight_ai/domain/ai/ai_suggestion_kind.dart';
+import 'package:ironsight_ai/domain/ai/walkaround_capture_outcome.dart';
 import 'package:ironsight_ai/domain/ai/walkaround_video.dart';
 import 'package:ironsight_ai/domain/entities/equipment.dart';
 import 'package:ironsight_ai/domain/entities/inspection_photo_slot.dart';
@@ -329,4 +330,123 @@ void main() {
       controller.dispose();
     },
   );
+
+  test(
+    'successful Android recording result updates walkaround state',
+    () async {
+      final id = await openDraft();
+      await addPhoto(id);
+      const recordedPath = '/cache/s22-walkaround.mp4';
+      final capture = FakeWalkaroundVideoCapture(
+        video: sampleWalkaroundVideo(localPath: recordedPath, frameCount: 4),
+      );
+      final controller = controllerFor(id, video: capture);
+      await controller.load();
+      expect(controller.state.hasWalkaroundVideo, isFalse);
+      expect(controller.state.canAnalyze, isTrue);
+
+      await controller.recordWalkaroundVideo();
+
+      expect(capture.recordCallCount, 1);
+      expect(controller.state.hasWalkaroundVideo, isTrue);
+      expect(controller.state.videoFrameCount, 4);
+      expect(controller.walkaroundVideo!.localPath, recordedPath);
+      expect(
+        controller.walkaroundVideo!.representativeFrames.every(
+          (frame) => frame.originatesFrom(recordedPath),
+        ),
+        isTrue,
+      );
+      expect(controller.state.canAnalyze, isTrue);
+      controller.dispose();
+    },
+  );
+
+  test(
+    'cancelled recording keeps the previous valid video and frames',
+    () async {
+      final id = await openDraft();
+      await addPhoto(id);
+      final first = sampleWalkaroundVideo(
+        localPath: '/cache/kept.mp4',
+        frameCount: 3,
+      );
+      final capture = FakeWalkaroundVideoCapture(
+        queued: [
+          WalkaroundCaptureOutcome.success(first),
+          WalkaroundCaptureOutcome.cancelled(),
+        ],
+      );
+      final controller = controllerFor(id, video: capture);
+      await controller.load();
+      await controller.recordWalkaroundVideo();
+      expect(controller.state.videoFrameCount, 3);
+
+      await controller.recordWalkaroundVideo();
+
+      expect(controller.walkaroundVideo, same(first));
+      expect(controller.state.hasWalkaroundVideo, isTrue);
+      expect(controller.state.videoFrameCount, 3);
+      expect(controller.state.failure, isNull);
+      controller.dispose();
+    },
+  );
+
+  test(
+    'decode failure keeps the previous video and does not enable a fake one',
+    () async {
+      final id = await openDraft();
+      await addPhoto(id);
+      final first = sampleWalkaroundVideo(
+        localPath: '/cache/kept.mp4',
+        frameCount: 2,
+      );
+      final capture = FakeWalkaroundVideoCapture(
+        queued: [
+          WalkaroundCaptureOutcome.success(first),
+          WalkaroundCaptureOutcome.failed(
+            AiMediaReviewFailure.videoFramesMissing(),
+          ),
+        ],
+      );
+      final controller = controllerFor(id, video: capture);
+      await controller.load();
+      await controller.recordWalkaroundVideo();
+      await controller.recordWalkaroundVideo();
+
+      expect(controller.walkaroundVideo, same(first));
+      expect(controller.state.hasWalkaroundVideo, isTrue);
+      expect(controller.state.videoFrameCount, 2);
+      expect(
+        controller.state.failure!.kind,
+        AiMediaReviewFailureKind.videoFramesMissing,
+      );
+      expect(controller.state.canAnalyze, isTrue);
+      controller.dispose();
+    },
+  );
+
+  test('analyze stays disabled until photos or decoded frames exist', () async {
+    final id = await openDraft();
+    final capture = FakeWalkaroundVideoCapture(
+      queued: [
+        WalkaroundCaptureOutcome.cancelled(),
+        WalkaroundCaptureOutcome.success(
+          sampleWalkaroundVideo(localPath: '/cache/only-video.mp4'),
+        ),
+      ],
+    );
+    final controller = controllerFor(id, video: capture);
+    await controller.load();
+    expect(controller.state.photoCount, 0);
+    expect(controller.state.canAnalyze, isFalse);
+
+    await controller.recordWalkaroundVideo();
+    expect(controller.state.canAnalyze, isFalse);
+
+    await controller.recordWalkaroundVideo();
+    expect(controller.state.hasWalkaroundVideo, isTrue);
+    expect(controller.state.canAnalyze, isTrue);
+    controller.dispose();
+  });
 }

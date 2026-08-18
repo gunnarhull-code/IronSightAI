@@ -22,6 +22,7 @@ import '../support/fake_auth_session_reader.dart';
 import '../support/fake_equipment_id_capture.dart';
 import '../support/fake_equipment_repository.dart';
 import '../support/fake_walkaround_video_capture.dart';
+import 'package:ironsight_ai/domain/ai/walkaround_capture_outcome.dart';
 import '../support/in_memory_inspection_media_file_store.dart';
 import '../support/test_images.dart';
 
@@ -256,4 +257,146 @@ void main() {
     );
     expect(inspection!.serialNumber, isNull);
   });
+
+  testWidgets(
+    'successful recording updates the review UI with decoded frames',
+    (tester) async {
+      useTallViewport(tester);
+      final id = await openDraft();
+      final capture = FakeWalkaroundVideoCapture(
+        video: sampleWalkaroundVideo(
+          localPath: '/cache/ui-walkaround.mp4',
+          frameCount: 3,
+        ),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AiMediaReviewScreen(
+            companyId: 'company-a',
+            inspectionId: id,
+            userId: 'user-1',
+            aiService: ai,
+            inspections: workspace.inspections,
+            inspectionMedia: workspace.inspectionMedia,
+            videoCapture: capture,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('No walkaround video (optional)'),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text(AiMediaReviewLabels.recordVideoButton));
+      await tester.pumpAndSettle();
+
+      expect(capture.recordCallCount, 1);
+      expect(
+        find.textContaining('No walkaround video (optional)'),
+        findsNothing,
+      );
+      expect(
+        find.textContaining('3 extracted walkaround frames'),
+        findsOneWidget,
+      );
+      final analyze = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, AiMediaReviewLabels.analyzeButton),
+      );
+      expect(analyze.onPressed, isNotNull);
+    },
+  );
+
+  testWidgets(
+    'cancelled recording leaves a previous walkaround on the review screen',
+    (tester) async {
+      useTallViewport(tester);
+      final id = await openDraft();
+      final kept = sampleWalkaroundVideo(
+        localPath: '/cache/kept-ui.mp4',
+        frameCount: 2,
+      );
+      final capture = FakeWalkaroundVideoCapture(
+        queued: [
+          WalkaroundCaptureOutcome.success(kept),
+          WalkaroundCaptureOutcome.cancelled(),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AiMediaReviewScreen(
+            companyId: 'company-a',
+            inspectionId: id,
+            userId: 'user-1',
+            aiService: ai,
+            inspections: workspace.inspections,
+            inspectionMedia: workspace.inspectionMedia,
+            videoCapture: capture,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AiMediaReviewLabels.recordVideoButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AiMediaReviewLabels.recordVideoButton));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('2 extracted walkaround frames'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('No walkaround video (optional)'),
+        findsNothing,
+      );
+    },
+  );
+
+  testWidgets(
+    'decode failure keeps previous frames and shows a non-destructive error',
+    (tester) async {
+      useTallViewport(tester);
+      final id = await openDraft();
+      final kept = sampleWalkaroundVideo(
+        localPath: '/cache/kept-decode.mp4',
+        frameCount: 2,
+      );
+      final capture = FakeWalkaroundVideoCapture(
+        queued: [
+          WalkaroundCaptureOutcome.success(kept),
+          WalkaroundCaptureOutcome.failed(
+            AiMediaReviewFailure.videoFramesMissing(),
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AiMediaReviewScreen(
+            companyId: 'company-a',
+            inspectionId: id,
+            userId: 'user-1',
+            aiService: ai,
+            inspections: workspace.inspections,
+            inspectionMedia: workspace.inspectionMedia,
+            videoCapture: capture,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AiMediaReviewLabels.recordVideoButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(AiMediaReviewLabels.recordVideoButton));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('2 extracted walkaround frames'),
+        findsOneWidget,
+      );
+      expect(find.text('Frames missing'), findsOneWidget);
+      final analyze = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, AiMediaReviewLabels.analyzeButton),
+      );
+      expect(analyze.onPressed, isNotNull);
+    },
+  );
 }

@@ -103,11 +103,6 @@ class _AiMediaReviewScreenState extends State<AiMediaReviewScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(error.failure.message)));
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not record walkaround video.')),
-      );
     }
   }
 

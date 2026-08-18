@@ -84,9 +84,12 @@ class AiMediaReviewFailure {
     return const AiMediaReviewFailure(
       kind: AiMediaReviewFailureKind.noMedia,
       message:
-          'Capture at least one required inspection photo before analyzing '
-          'media online.',
-      announcement: 'No inspection photos available for AI review.',
+          'Capture at least one required inspection photo, or a walkaround '
+          'video whose frames were decoded from the recording, before '
+          'analyzing media online.',
+      announcement:
+          'No inspection photos or decoded walkaround frames available '
+          'for AI review.',
     );
   }
 

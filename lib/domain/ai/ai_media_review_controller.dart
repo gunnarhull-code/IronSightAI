@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import '../entities/inspection.dart';
 import '../entities/inspection_media.dart';
 import '../entities/inspection_photo_slot.dart';
+import '../equipment_id_capture/equipment_id_capture_failure.dart';
+import '../equipment_id_capture/image_capture_port.dart';
 import '../repositories/local_inspection_media_repository.dart';
 import '../repositories/local_inspection_repository.dart';
 import 'ai_media_analysis_request.dart';
@@ -14,6 +16,8 @@ import 'ai_suggestion.dart';
 import 'ai_suggestion_applier.dart';
 import 'ai_suggestion_kind.dart';
 import 'video_frame_extraction.dart';
+import 'walkaround_capture_diagnostics.dart';
+import 'walkaround_capture_outcome.dart';
 import 'walkaround_video.dart';
 import 'walkaround_video_capture_port.dart';
 
@@ -95,30 +99,112 @@ class AiMediaReviewController extends ChangeNotifier {
       );
       return;
     }
-    final recorded = await _videoCapture.recordWalkaround();
-    if (recorded.exceedsMaxDuration) {
-      _walkaround = null;
-      _setFailure(AiMediaReviewFailure.videoTooLong());
-      return;
-    }
+    final previous = _walkaround;
+    WalkaroundCaptureDiagnostics.emit('record_started', {
+      'hasPreviousVideo': previous != null,
+      'previousFrameCount': _frameCount,
+    });
     try {
-      VideoFrameExtraction.extractBoundedFrames(recorded);
-    } on AiMediaReviewException catch (error) {
-      _walkaround = null;
-      _setFailure(error.failure);
-      return;
+      final outcome = await _videoCapture.recordWalkaround();
+      _applyCaptureOutcome(outcome, previous: previous);
+    } on EquipmentIdCaptureException catch (error) {
+      if (error.failure.kind ==
+          EquipmentIdCaptureFailureKind.captureCancelled) {
+        _applyCaptureOutcome(
+          WalkaroundCaptureOutcome.cancelled(),
+          previous: previous,
+        );
+        return;
+      }
+      _walkaround = previous;
+      WalkaroundCaptureDiagnostics.emit('record_failed', {
+        'decodeErrorType': 'capture_exception',
+        'hasPreviousVideo': previous != null,
+      });
+      _setFailure(AiMediaReviewFailure.providerFailure(error.failure.message));
+    } catch (error) {
+      _walkaround = previous;
+      WalkaroundCaptureDiagnostics.emit('record_failed', {
+        'decodeErrorType': error.runtimeType.toString(),
+        'hasPreviousVideo': previous != null,
+      });
+      _setFailure(
+        AiMediaReviewFailure.providerFailure(
+          'Could not record walkaround video. Any previous video was kept. '
+          'The original file was not uploaded.',
+        ),
+      );
     }
-    _walkaround = recorded;
-    final frameCount = VideoFrameExtraction.boundFrames(
-      recorded.representativeFrames,
-      expectedVideoPath: recorded.localPath,
-    ).length;
-    _emitReady(
-      announcement:
-          'Walkaround video saved on this device. Frame-based review will '
-          'send $frameCount frames decoded from the recording, not the '
-          'original video.',
-    );
+  }
+
+  void _applyCaptureOutcome(
+    WalkaroundCaptureOutcome outcome, {
+    required WalkaroundVideo? previous,
+  }) {
+    switch (outcome.status) {
+      case WalkaroundCaptureStatus.cancelled:
+        _walkaround = previous;
+        WalkaroundCaptureDiagnostics.emit('state_transition', {
+          'outcome': 'cancelled',
+          'hasWalkaroundVideo': _walkaround != null,
+          'frameCount': _frameCount,
+        });
+        _emitReady(
+          announcement: previous == null
+              ? 'Walkaround recording cancelled. No video was added.'
+              : 'Walkaround recording cancelled. Previous video and frames '
+                    'were kept.',
+        );
+        return;
+      case WalkaroundCaptureStatus.failed:
+        _walkaround = previous;
+        WalkaroundCaptureDiagnostics.emit('state_transition', {
+          'outcome': 'failed',
+          'decodeErrorType': outcome.failure?.kind.name ?? 'unknown',
+          'hasWalkaroundVideo': _walkaround != null,
+          'frameCount': _frameCount,
+        });
+        _setFailure(
+          outcome.failure ?? AiMediaReviewFailure.videoFramesMissing(),
+        );
+        return;
+      case WalkaroundCaptureStatus.success:
+        final recorded = outcome.video;
+        if (recorded == null) {
+          _walkaround = previous;
+          _setFailure(AiMediaReviewFailure.videoFramesMissing());
+          return;
+        }
+        if (recorded.exceedsMaxDuration) {
+          _walkaround = previous;
+          _setFailure(AiMediaReviewFailure.videoTooLong());
+          return;
+        }
+        try {
+          final frames = VideoFrameExtraction.extractBoundedFrames(recorded);
+          _walkaround = recorded;
+          WalkaroundCaptureDiagnostics.emit('state_transition', {
+            'outcome': 'success',
+            'frameCount': frames.length,
+            'durationMs': recorded.duration.inMilliseconds,
+            'hasWalkaroundVideo': true,
+          });
+          _emitReady(
+            announcement:
+                'Walkaround video saved on this device. Frame-based review '
+                'will send ${frames.length} frames decoded from the '
+                'recording, not the original video.',
+          );
+        } on AiMediaReviewException catch (error) {
+          _walkaround = previous;
+          WalkaroundCaptureDiagnostics.emit('state_transition', {
+            'outcome': 'failed',
+            'decodeErrorType': error.failure.kind.name,
+            'hasWalkaroundVideo': previous != null,
+          });
+          _setFailure(error.failure);
+        }
+    }
   }
 
   void clearWalkaroundVideo() {
@@ -130,7 +216,7 @@ class AiMediaReviewController extends ChangeNotifier {
 
   Future<void> analyzeMediaOnline() async {
     if (_state.isBusy) return;
-    if (_photos.isEmpty) {
+    if (_photos.isEmpty && _walkaround == null) {
       _setFailure(AiMediaReviewFailure.noMedia());
       return;
     }
