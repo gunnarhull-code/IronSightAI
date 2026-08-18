@@ -61,6 +61,7 @@ class AiMediaReviewController extends ChangeNotifier {
   WalkaroundVideo? _walkaround;
   AiAnalysisCancelToken? _cancelToken;
   int _analysisGeneration = 0;
+  bool _analyzeInFlight = false;
 
   /// Last request actually sent (tests assert it never includes video bytes).
   AiMediaAnalysisRequest? lastRequest;
@@ -215,12 +216,13 @@ class AiMediaReviewController extends ChangeNotifier {
   }
 
   Future<void> analyzeMediaOnline() async {
-    if (_state.isBusy) return;
+    if (_analyzeInFlight || _state.isBusy) return;
     if (_photos.isEmpty && _walkaround == null) {
       _setFailure(AiMediaReviewFailure.noMedia());
       return;
     }
 
+    _analyzeInFlight = true;
     final generation = ++_analysisGeneration;
     final token = AiAnalysisCancelToken();
     _cancelToken = token;
@@ -275,6 +277,8 @@ class AiMediaReviewController extends ChangeNotifier {
     } catch (_) {
       if (token.isCancelled || generation != _analysisGeneration) return;
       _setFailure(AiMediaReviewFailure.providerFailure());
+    } finally {
+      _analyzeInFlight = false;
     }
   }
 
@@ -475,6 +479,8 @@ class AiMediaReviewController extends ChangeNotifier {
       AiMediaReviewFailureKind.offline => AiMediaReviewPhase.offline,
       AiMediaReviewFailureKind.cancelled => AiMediaReviewPhase.cancelled,
       AiMediaReviewFailureKind.timeout ||
+      AiMediaReviewFailureKind.authentication ||
+      AiMediaReviewFailureKind.quota ||
       AiMediaReviewFailureKind.providerFailure ||
       AiMediaReviewFailureKind.malformedResponse =>
         AiMediaReviewPhase.providerFailure,

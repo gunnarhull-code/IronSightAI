@@ -345,6 +345,8 @@ class _FailureBanner extends StatelessWidget {
       AiMediaReviewFailureKind.offline => 'Offline / unavailable',
       AiMediaReviewFailureKind.timeout => 'AI timed out',
       AiMediaReviewFailureKind.cancelled => 'Cancelled',
+      AiMediaReviewFailureKind.authentication => 'Authentication failed',
+      AiMediaReviewFailureKind.quota => 'Provider quota exceeded',
       AiMediaReviewFailureKind.providerFailure => 'Provider failure',
       AiMediaReviewFailureKind.malformedResponse => 'Unreadable AI response',
       AiMediaReviewFailureKind.noMedia => 'Photos needed',

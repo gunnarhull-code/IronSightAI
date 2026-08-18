@@ -1,6 +1,14 @@
 // Swappable server-side AI provider for media review.
 // Flutter never calls this. Credentials stay in Edge Function secrets.
 
+import { logStage } from "./diagnostics.ts";
+import {
+  classifyProviderHttpStatus,
+  ProviderError,
+} from "./errors.ts";
+import { REVIEW_JSON_SCHEMA, SYSTEM_PROMPT } from "./schema.ts";
+import { validateReviewResult } from "./validate.ts";
+
 export interface ProviderImage {
   id: string;
   role: string;
@@ -12,6 +20,7 @@ export interface ProviderImage {
 }
 
 export interface ProviderRequest {
+  requestId: string;
   companyId: string;
   inspectionId: string;
   images: ProviderImage[];
@@ -21,20 +30,8 @@ export interface ProviderAdapter {
   analyze(request: ProviderRequest): Promise<unknown>;
 }
 
-const SYSTEM_PROMPT = `You review heavy-equipment inspection still photos and extracted walkaround video frames.
-Return JSON only. These are AI suggestions for a human, not verified facts.
-Rules:
-- Never invent missing serial characters or hour-meter digits.
-- Preserve ambiguous characters such as O/0, I/1, S/5, B/8 exactly as seen.
-- If a serial or hour reading is partial or unreadable, use kind unreadable_or_uncertain and omit a guessed value.
-- Do not estimate price or valuation.
-- Do not assign Good/Fair/Poor ratings.
-- Do not claim mechanical safety, certification, or airworthiness from photos.
-- Do not describe or identify people or faces.
-- Walkaround input is frame-based video review: still frames only, not a full video.
-- Every suggestion needs confidence high|medium|low, a source photo slot or video frame, and an uncertainty explanation when confidence is not high.
-JSON shape:
-{"review_kind":"frame_based_video_review","disclaimer":"AI suggestions only — not verified facts.","suggestions":[{"id":"s1","kind":"manufacturer|model|serial_number|hour_meter|visible_damage_or_wear|possible_leak|possible_crack|rust|dent|broken_glass_or_light|tire_or_track_wear|visible_attachment|unreadable_or_uncertain","value":"string or omit","confidence":"high","source":{"type":"photo","slot":"front_left_overview","label":"Front-left overview"},"uncertainty":"optional"}]}`;
+/** Shorter than the Edge Function wall-clock so we can return a stable timeout. */
+export const PROVIDER_TIMEOUT_MS = 25_000;
 
 export function createProviderAdapter(): ProviderAdapter {
   const apiKey = Deno.env.get("AI_API_KEY")?.trim() ?? "";
@@ -54,6 +51,44 @@ export class ProviderUnconfiguredError extends Error {
   }
 }
 
+export function parseChatCompletion(body: unknown): unknown {
+  if (body == null || typeof body !== "object") {
+    throw new ProviderError("provider_empty", 502);
+  }
+  const map = body as {
+    choices?: Array<{
+      finish_reason?: string | null;
+      message?: {
+        content?: string | null;
+        refusal?: string | null;
+      };
+    }>;
+  };
+  const choice = map.choices?.[0];
+  if (!choice) {
+    throw new ProviderError("provider_empty", 502);
+  }
+  if (choice.message?.refusal) {
+    throw new ProviderError("provider_refusal", 502);
+  }
+  const reason = choice.finish_reason ?? "stop";
+  if (reason === "content_filter") {
+    throw new ProviderError("provider_refusal", 502);
+  }
+  if (reason === "length") {
+    throw new ProviderError("provider_incomplete", 502);
+  }
+  const text = choice.message?.content;
+  if (text == null || String(text).trim() === "") {
+    throw new ProviderError("provider_empty", 502);
+  }
+  try {
+    return JSON.parse(String(text));
+  } catch {
+    throw new ProviderError("provider_invalid_json", 422);
+  }
+}
+
 class OpenAiCompatibleProvider implements ProviderAdapter {
   constructor(
     private readonly baseUrl: string,
@@ -66,11 +101,9 @@ class OpenAiCompatibleProvider implements ProviderAdapter {
       {
         type: "text",
         text:
-          `Company-scoped inspection ${request.inspectionId}. ` +
-          `Analyze only the still images. Frame-based video review. ` +
-          `Image labels: ${
-            request.images.map((image) => image.label).join("; ")
-          }`,
+          "Analyze only the attached still images. Frame-based video review. " +
+          "Walkaround stills are video frames, not photos. " +
+          "Return zero suggestions if nothing reliable is visible.",
       },
     ];
     for (const image of request.images) {
@@ -83,34 +116,86 @@ class OpenAiCompatibleProvider implements ProviderAdapter {
       });
     }
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: this.model,
-        temperature: 0,
-        response_format: { type: "json_object" },
-        max_tokens: 2000,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content },
-        ],
-      }),
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
+    const started = Date.now();
+    logStage(request.requestId, "provider_started", {
+      model: this.model,
+      timeout_ms: PROVIDER_TIMEOUT_MS,
+    });
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: this.model,
+          temperature: 0,
+          max_tokens: 4000,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "ai_media_review_result",
+              strict: true,
+              schema: REVIEW_JSON_SCHEMA,
+            },
+          },
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content },
+          ],
+        }),
+      });
+    } catch (error) {
+      clearTimeout(timer);
+      if (error instanceof DOMException && error.name === "AbortError") {
+        logStage(request.requestId, "provider_timeout", {
+          latency_ms: Date.now() - started,
+        });
+        throw new ProviderError("provider_timeout", 504);
+      }
+      logStage(request.requestId, "provider_http_failure", {
+        latency_ms: Date.now() - started,
+      });
+      throw new ProviderError("provider_http", 502);
+    }
+    clearTimeout(timer);
+
+    const latencyMs = Date.now() - started;
+    logStage(request.requestId, "provider_http_status", {
+      http_status: response.status,
+      latency_ms: latencyMs,
     });
 
     if (!response.ok) {
-      throw new Error(`provider_http_${response.status}`);
+      throw classifyProviderHttpStatus(response.status);
     }
-    const body = await response.json() as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const text = body.choices?.[0]?.message?.content;
-    if (!text) {
-      throw new Error("provider_empty");
+
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new ProviderError("provider_invalid_json", 422);
     }
-    return JSON.parse(text);
+
+    const finishReason =
+      (body as { choices?: Array<{ finish_reason?: string }> })
+        .choices?.[0]?.finish_reason ?? "unknown";
+    logStage(request.requestId, "provider_finish_reason", {
+      finish_reason: finishReason,
+      latency_ms: latencyMs,
+    });
+
+    const parsed = parseChatCompletion(body);
+    const validated = validateReviewResult(parsed);
+    logStage(request.requestId, "normalized_success", {
+      suggestion_count: validated.suggestions.length,
+    });
+    return validated;
   }
 }

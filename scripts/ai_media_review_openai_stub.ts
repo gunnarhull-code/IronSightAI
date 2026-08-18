@@ -21,20 +21,21 @@ Deno.serve({ port }, async (req) => {
   }
   const body = await req.json() as {
     model?: string;
+    response_format?: { type?: string };
     messages?: Array<{ role?: string; content?: unknown }>;
   };
+  const formatType = body.response_format?.type ?? "json_schema";
+  if (formatType !== "json_schema" && formatType !== "json_object") {
+    return Response.json({ error: "unsupported_response_format" }, { status: 400 });
+  }
   const model = body.model ?? "gpt-4o-mini";
   const user = body.messages?.find((message) => message.role === "user");
   const content = user?.content;
   let imageCount = 0;
-  let labels = "";
   if (Array.isArray(content)) {
     for (const part of content) {
       if (part && typeof part === "object" && "image_url" in part) {
         imageCount += 1;
-      }
-      if (part && typeof part === "object" && part.type === "text") {
-        labels = String((part as { text?: string }).text ?? "");
       }
     }
   }
@@ -52,6 +53,7 @@ Deno.serve({ port }, async (req) => {
         source: {
           type: "photo",
           slot: "front_left_overview",
+          frame_index: null,
           label: "Front-left overview",
         },
         uncertainty: "Brand cues inferred from paint and overall shape only.",
@@ -63,19 +65,21 @@ Deno.serve({ port }, async (req) => {
         confidence: "low",
         source: {
           type: "video_frame",
+          slot: null,
           frame_index: 0,
           label: "Walkaround video frame 1",
         },
-        uncertainty:
-          `Frame-based review of ${imageCount} stills. ${labels}`.slice(0, 240),
+        uncertainty: `Frame-based review of ${imageCount} stills.`.slice(0, 240),
       },
       {
         id: "s-unreadable",
         kind: "unreadable_or_uncertain",
+        value: null,
         confidence: "low",
         source: {
           type: "photo",
           slot: "serial_data_plate",
+          frame_index: null,
           label: "Serial / data plate",
         },
         uncertainty:
@@ -92,6 +96,7 @@ Deno.serve({ port }, async (req) => {
   return Response.json({
     choices: [
       {
+        finish_reason: "stop",
         message: {
           role: "assistant",
           content: JSON.stringify(payload),

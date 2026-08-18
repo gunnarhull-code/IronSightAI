@@ -6,6 +6,8 @@ enum AiMediaReviewFailureKind {
   offline,
   timeout,
   cancelled,
+  authentication,
+  quota,
   providerFailure,
   malformedResponse,
   noMedia,
@@ -56,6 +58,28 @@ class AiMediaReviewFailure {
           'AI media review was cancelled. Your inspection work is still saved '
           'on this device.',
       announcement: 'AI media review cancelled. Inspection unchanged.',
+    );
+  }
+
+  factory AiMediaReviewFailure.authentication() {
+    return const AiMediaReviewFailure(
+      kind: AiMediaReviewFailureKind.authentication,
+      message:
+          'AI media review could not authenticate with the provider. Nothing '
+          'was changed on this inspection. You can retry later or continue '
+          'without AI.',
+      announcement: 'AI authentication failed. Inspection unchanged.',
+    );
+  }
+
+  factory AiMediaReviewFailure.quota() {
+    return const AiMediaReviewFailure(
+      kind: AiMediaReviewFailureKind.quota,
+      message:
+          'AI media review hit a provider quota or rate limit. Nothing was '
+          'changed on this inspection. You can retry later or continue '
+          'without AI.',
+      announcement: 'AI provider quota exceeded. Inspection unchanged.',
     );
   }
 

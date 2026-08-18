@@ -160,6 +160,119 @@ void main() {
     );
   });
 
+  test('parses a valid video-frame structured response', () {
+    final result = AiMediaReviewParser.parse({
+      'review_kind': 'frame_based_video_review',
+      'disclaimer': 'AI suggestions only — not verified facts.',
+      'suggestions': [
+        _suggestion(
+          kind: 'visible_damage_or_wear',
+          confidence: 'low',
+          value: 'Scuff on counterweight',
+          type: 'video_frame',
+          frameIndex: 1,
+          uncertainty: 'Angle is oblique',
+        ),
+      ],
+    });
+    expect(result.suggestions, hasLength(1));
+    expect(result.suggestions.single.source.type.name, 'videoFrame');
+    expect(result.suggestions.single.source.frameIndex, 1);
+    expect(result.suggestions.single.source.slot, isNull);
+    expect(
+      result.suggestions.single.source.spokenLabel,
+      'Walkaround video frame 2',
+    );
+  });
+
+  test('empty suggestions are valid and invent nothing', () {
+    final result = AiMediaReviewParser.parse({
+      'review_kind': 'frame_based_video_review',
+      'disclaimer': 'AI suggestions only — not verified facts.',
+      'suggestions': <Map<String, dynamic>>[],
+    });
+    expect(result.suggestions, isEmpty);
+  });
+
+  test('rejects an invalid source type', () {
+    expect(
+      () => AiMediaReviewParser.parse({
+        'suggestions': [
+          _suggestion(
+            kind: 'rust',
+            confidence: 'low',
+            value: 'Surface rust',
+            type: 'walkaround',
+          ),
+        ],
+      }),
+      throwsA(
+        isA<AiMediaReviewException>().having(
+          (e) => e.failure.kind,
+          'kind',
+          AiMediaReviewFailureKind.malformedResponse,
+        ),
+      ),
+    );
+  });
+
+  test('rejects an invalid photo slot', () {
+    expect(
+      () => AiMediaReviewParser.parse({
+        'suggestions': [
+          _suggestion(
+            kind: 'manufacturer',
+            confidence: 'high',
+            value: 'Cat',
+            slot: 'left_side',
+          ),
+        ],
+      }),
+      throwsA(
+        isA<AiMediaReviewException>().having(
+          (e) => e.failure.kind,
+          'kind',
+          AiMediaReviewFailureKind.malformedResponse,
+        ),
+      ),
+    );
+  });
+
+  test('rejects unknown suggestion kind and confidence', () {
+    expect(
+      () => AiMediaReviewParser.parse({
+        'suggestions': [
+          _suggestion(
+            kind: 'price_estimate',
+            confidence: 'high',
+            value: '12000',
+          ),
+        ],
+      }),
+      throwsA(
+        isA<AiMediaReviewException>().having(
+          (e) => e.failure.kind,
+          'kind',
+          AiMediaReviewFailureKind.malformedResponse,
+        ),
+      ),
+    );
+    expect(
+      () => AiMediaReviewParser.parse({
+        'suggestions': [
+          _suggestion(kind: 'manufacturer', confidence: 'certain', value: 'X'),
+        ],
+      }),
+      throwsA(
+        isA<AiMediaReviewException>().having(
+          (e) => e.failure.kind,
+          'kind',
+          AiMediaReviewFailureKind.malformedResponse,
+        ),
+      ),
+    );
+  });
+
   test('requires a source photo or video frame', () {
     expect(
       () => AiMediaReviewParser.parse({

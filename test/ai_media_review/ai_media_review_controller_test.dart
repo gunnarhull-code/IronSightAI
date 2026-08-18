@@ -303,6 +303,74 @@ void main() {
     await expectLater(other.load(), throwsA(isA<StateError>()));
   });
 
+  test('duplicate Analyze taps produce one provider call', () async {
+    final id = await openDraft();
+    await addPhoto(id);
+    ai
+      ..hangUntilCancel = true
+      ..result = _result([_serialSuggestion()]);
+    final controller = controllerFor(id);
+    await controller.load();
+
+    final first = controller.analyzeMediaOnline();
+    final second = controller.analyzeMediaOnline();
+    await Future<void>.delayed(Duration.zero);
+    expect(ai.analyzeCallCount, 1);
+    expect(controller.state.phase, AiMediaReviewPhase.uploading);
+
+    controller.cancelAnalysis();
+    await first;
+    await second;
+    expect(ai.analyzeCallCount, 1);
+    expect(controller.state.phase, AiMediaReviewPhase.cancelled);
+    controller.dispose();
+  });
+
+  test('failed analysis never mutates the inspection', () async {
+    final id = await openDraft();
+    await addPhoto(id);
+    await workspace.inspections.saveConfirmedEquipmentId(
+      companyId: 'company-a',
+      inspectionId: id,
+      confirmedValue: const ConfirmedEquipmentIdValue(
+        kind: EquipmentIdCaptureKind.serialNumber,
+        value: 'CONFIRMED',
+        method: EquipmentIdCaptureMethod.manual,
+      ),
+    );
+    final controller = controllerFor(id);
+    await controller.load();
+
+    final failures = [
+      AiMediaReviewFailure.timeout(),
+      AiMediaReviewFailure.authentication(),
+      AiMediaReviewFailure.quota(),
+      AiMediaReviewFailure.providerFailure(
+        'The AI provider refused this request. Nothing was changed on this '
+        'inspection. You can retry or continue without AI.',
+      ),
+      AiMediaReviewFailure.providerFailure(
+        'The AI response was incomplete. Nothing was changed on this '
+        'inspection. You can retry or continue without AI.',
+      ),
+      AiMediaReviewFailure.malformedResponse(),
+    ];
+    for (final failure in failures) {
+      ai.error = AiMediaReviewException(failure);
+      await controller.analyzeMediaOnline();
+      expect(controller.state.failure!.kind, failure.kind);
+      expect(
+        (await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: id,
+        ))!.serialNumber,
+        'CONFIRMED',
+      );
+    }
+    expect(ai.analyzeCallCount, failures.length);
+    controller.dispose();
+  });
+
   test(
     'provider timeout and malformed responses stay non-destructive',
     () async {

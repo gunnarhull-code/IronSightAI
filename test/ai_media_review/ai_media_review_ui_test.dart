@@ -259,6 +259,98 @@ void main() {
   });
 
   testWidgets(
+    'provider timeout, auth, quota, and HTTP failures are not unreadable',
+    (tester) async {
+      useTallViewport(tester);
+      final id = await openDraft();
+      final cases = <(AiMediaReviewFailure, String)>[
+        (AiMediaReviewFailure.timeout(), 'AI timed out'),
+        (AiMediaReviewFailure.authentication(), 'Authentication failed'),
+        (AiMediaReviewFailure.quota(), 'Provider quota exceeded'),
+        (
+          AiMediaReviewFailure.providerFailure(
+            'The AI provider returned an HTTP error. Nothing was changed on '
+            'this inspection. You can retry or continue without AI.',
+          ),
+          'Provider failure',
+        ),
+      ];
+      for (final item in cases) {
+        ai.error = AiMediaReviewException(item.$1);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AiMediaReviewScreen(
+              companyId: 'company-a',
+              inspectionId: id,
+              userId: 'user-1',
+              aiService: ai,
+              inspections: workspace.inspections,
+              inspectionMedia: workspace.inspectionMedia,
+              videoCapture: FakeWalkaroundVideoCapture(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.widgetWithText(FilledButton, AiMediaReviewLabels.analyzeButton),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text(item.$2), findsOneWidget);
+        expect(find.text('Unreadable AI response'), findsNothing);
+        final inspection = await workspace.inspections.getById(
+          companyId: 'company-a',
+          inspectionId: id,
+        );
+        expect(inspection!.serialNumber, isNull);
+      }
+    },
+  );
+
+  testWidgets('valid video-frame suggestions render for human review', (
+    tester,
+  ) async {
+    useTallViewport(tester);
+    final id = await openDraft();
+    ai.error = null;
+    ai.result = const AiMediaReviewResult(
+      suggestions: [
+        AiSuggestion(
+          id: 's-frame',
+          kind: AiSuggestionKind.visibleDamageOrWear,
+          confidence: AiSuggestionConfidence.low,
+          source: AiMediaSource(
+            type: AiMediaSourceType.videoFrame,
+            label: 'Walkaround video frame 2',
+            frameIndex: 1,
+          ),
+          value: 'Scuff on counterweight',
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AiMediaReviewScreen(
+          companyId: 'company-a',
+          inspectionId: id,
+          userId: 'user-1',
+          aiService: ai,
+          inspections: workspace.inspections,
+          inspectionMedia: workspace.inspectionMedia,
+          videoCapture: FakeWalkaroundVideoCapture(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, AiMediaReviewLabels.analyzeButton),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Visible damage or wear'), findsOneWidget);
+    expect(find.textContaining('Walkaround video frame 2'), findsOneWidget);
+    expect(find.text('Unreadable AI response'), findsNothing);
+  });
+
+  testWidgets(
     'successful recording updates the review UI with decoded frames',
     (tester) async {
       useTallViewport(tester);
