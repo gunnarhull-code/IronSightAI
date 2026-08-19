@@ -51,6 +51,15 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
+      - name: Install FFmpeg
+        run: |
+          set -euo pipefail
+          # MP4 frame-decode regression tests invoke ffmpeg directly.
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          command -v ffmpeg
+          ffmpeg -version
+
       - name: Test
         run: flutter test
 

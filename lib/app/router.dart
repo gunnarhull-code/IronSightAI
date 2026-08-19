@@ -177,6 +177,7 @@ Route<dynamic>? buildAppRoute(
           equipmentCatalog: session.workspace.equipmentCatalog,
           inspectionMedia: session.workspace.inspectionMedia,
           navigatorKey: navigatorKey,
+          aiService: aiService,
         ),
       );
     }
