@@ -9,7 +9,8 @@ import '../features/company/presentation/company_settings_screen.dart';
 import '../features/dashboard/presentation/dashboard_screen.dart';
 import '../features/equipment/presentation/equipment_form_screen.dart';
 import '../features/equipment/presentation/equipment_list_screen.dart';
-import '../features/inspection/presentation/inspection_equipment_select_screen.dart';
+import '../features/inspection/presentation/guided_quick_appraisal_entry_screen.dart';
+import '../features/inspection/presentation/guided_quick_appraisal_screen.dart';
 import '../features/inspection/presentation/inspection_list_screen.dart';
 import '../features/inspection/presentation/inspection_review_screen.dart';
 import '../features/inspection/presentation/inspection_workspace_screen.dart';
@@ -33,6 +34,8 @@ abstract final class AppRoutes {
 
   static const String _equipmentEditPrefix = '/equipment/edit/';
   static const String _inspectionWorkspacePrefix = '/inspections/workspace/';
+  static const String _guidedQuickAppraisalPrefix =
+      '/inspections/guided-quick-appraisal/';
   static const String _inspectionReviewPrefix = '/inspections/review/';
 
   /// Builds the route name for editing a specific equipment record.
@@ -45,6 +48,9 @@ abstract final class AppRoutes {
 
   static String inspectionWorkspace(String id) =>
       '$_inspectionWorkspacePrefix$id';
+
+  static String guidedQuickAppraisal(String id) =>
+      '$_guidedQuickAppraisalPrefix$id';
 
   static String inspectionReview(String id) => '$_inspectionReviewPrefix$id';
 
@@ -145,7 +151,7 @@ Route<dynamic>? buildAppRoute(
     if (name == AppRoutes.inspectionNew) {
       return MaterialPageRoute<bool?>(
         settings: settings,
-        builder: (context) => InspectionEquipmentSelectScreen(
+        builder: (context) => GuidedQuickAppraisalEntryScreen(
           companyId: session.companyId,
           userId: session.userId,
           inspections: session.workspace.inspections,
@@ -156,6 +162,26 @@ Route<dynamic>? buildAppRoute(
       );
     }
 
+    final guidedId = AppRoutes._inspectionIdFromPrefix(
+      name,
+      AppRoutes._guidedQuickAppraisalPrefix,
+    );
+    if (guidedId != null) {
+      return MaterialPageRoute<bool?>(
+        settings: settings,
+        builder: (context) => GuidedQuickAppraisalScreen(
+          companyId: session.companyId,
+          userId: session.userId,
+          inspectionId: guidedId,
+          inspections: session.workspace.inspections,
+          equipmentCatalog: session.workspace.equipmentCatalog,
+          inspectionMedia: session.workspace.inspectionMedia,
+          navigatorKey: navigatorKey,
+        ),
+      );
+    }
+
+    // Kept for compatibility with existing tests and deep links.
     final workspaceId = AppRoutes._inspectionIdFromPrefix(
       name,
       AppRoutes._inspectionWorkspacePrefix,
@@ -189,6 +215,7 @@ Route<dynamic>? buildAppRoute(
           inspectionId: reviewId,
           inspections: session.workspace.inspections,
           equipmentCatalog: session.workspace.equipmentCatalog,
+          inspectionMedia: session.workspace.inspectionMedia,
         ),
       );
     }

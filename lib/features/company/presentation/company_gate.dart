@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../app/inspection_session.dart';
 import '../../../data/local/offline_inspection_workspace.dart';
 import '../../../domain/entities/company.dart';
+import '../../../domain/exceptions/local_database_schema_exception.dart';
 import '../../../domain/exceptions/remote_service_unavailable_exception.dart';
 import '../../../domain/repositories/auth_session_reader.dart';
 import '../../../domain/repositories/company_repository.dart';
@@ -77,20 +78,25 @@ class _CompanyGateState extends State<CompanyGate> {
       case CompanyAccessKind.online:
         debugPrint('CompanyGate: online company resolution succeeded');
         final company = resolution.company!;
-        final session = await _prepareSession(
+        final _SessionAttempt attempt = await _tryPrepareSession(
           companyId: company.id,
           userId: userId,
         );
-        return _CompanyGateResult.dashboard(company: company, session: session);
+        if (attempt.failed) return const _CompanyGateResult.workspaceFailed();
+        return _CompanyGateResult.dashboard(
+          company: company,
+          session: attempt.session,
+        );
       case CompanyAccessKind.cached:
         debugPrint(
           'CompanyGate: restored company context from local cache for user',
         );
-        final session = await _prepareSession(
+        final _SessionAttempt attempt = await _tryPrepareSession(
           companyId: resolution.resolvedCompanyId,
           userId: userId,
         );
-        return _CompanyGateResult.dashboardFromCache(session: session);
+        if (attempt.failed) return const _CompanyGateResult.workspaceFailed();
+        return _CompanyGateResult.dashboardFromCache(session: attempt.session);
       case CompanyAccessKind.offlineUnavailable:
         debugPrint(
           'CompanyGate: company lookup failed with no usable cache: '
@@ -134,6 +140,33 @@ class _CompanyGateState extends State<CompanyGate> {
       debugPrintStack(stackTrace: stackTrace);
       widget.onInspectionSessionChanged?.call(null);
       return const _CompanyGateResult.lookupFailed();
+    }
+  }
+
+  /// Opens the local workspace after company resolution already succeeded.
+  ///
+  /// A failure here is a local database problem, not a company lookup problem,
+  /// and used to surface as the company error with nothing logged.
+  Future<_SessionAttempt> _tryPrepareSession({
+    required String companyId,
+    required String userId,
+  }) async {
+    try {
+      return _SessionAttempt.ready(
+        await _prepareSession(companyId: companyId, userId: userId),
+      );
+    } catch (error, stackTrace) {
+      // Log the type and any schema metadata only — never row values.
+      debugPrint(
+        'CompanyGate: local workspace open failed after company resolution '
+        '(${error.runtimeType})',
+      );
+      if (error is LocalDatabaseSchemaException) {
+        debugPrint('CompanyGate: local schema: ${error.details}');
+      }
+      debugPrintStack(stackTrace: stackTrace);
+      widget.onInspectionSessionChanged?.call(null);
+      return const _SessionAttempt.failed();
     }
   }
 
@@ -193,14 +226,32 @@ class _CompanyGateState extends State<CompanyGate> {
           );
         }
 
+        if (snapshot.hasError) {
+          debugPrint(
+            'CompanyGate: bootstrap failed (${snapshot.error.runtimeType})',
+          );
+          debugPrintStack(stackTrace: snapshot.stackTrace);
+        }
+
         final result = snapshot.data;
         if (result == null ||
             result.offlineUnavailable ||
-            result.lookupFailed) {
-          final message = result?.offlineUnavailable == true
-              ? 'You\'re offline and no company is cached on this '
-                    'device. Connect to the internet, then try again.'
-              : 'Could not load your company. Please try again.';
+            result.lookupFailed ||
+            result.workspaceFailed) {
+          final String message;
+          if (result?.offlineUnavailable == true) {
+            message =
+                'You\'re offline and no company is cached on this '
+                'device. Connect to the internet, then try again.';
+          } else if (result?.workspaceFailed == true) {
+            message =
+                'Your company loaded, but this device\'s local inspection '
+                'database could not be opened. Nothing was deleted — your '
+                'saved inspections are still on this device. Retry, and '
+                'contact support if this keeps happening.';
+          } else {
+            message = 'Could not load your company. Please try again.';
+          }
           return Scaffold(
             body: SafeArea(
               child: Padding(
@@ -245,6 +296,7 @@ class _CompanyGateResult {
     required this.needsOnboarding,
     required this.offlineUnavailable,
     required this.lookupFailed,
+    this.workspaceFailed = false,
     this.company,
     this.session,
   });
@@ -270,6 +322,15 @@ class _CompanyGateResult {
         lookupFailed: true,
       );
 
+  /// Company resolution succeeded but the local database could not be opened.
+  const _CompanyGateResult.workspaceFailed()
+    : this._(
+        needsOnboarding: false,
+        offlineUnavailable: false,
+        lookupFailed: false,
+        workspaceFailed: true,
+      );
+
   const _CompanyGateResult.dashboard({
     required Company company,
     InspectionSession? session,
@@ -292,6 +353,17 @@ class _CompanyGateResult {
   final bool needsOnboarding;
   final bool offlineUnavailable;
   final bool lookupFailed;
+  final bool workspaceFailed;
   final Company? company;
   final InspectionSession? session;
+}
+
+/// Outcome of opening the local workspace for a resolved company.
+class _SessionAttempt {
+  const _SessionAttempt.ready(this.session) : failed = false;
+
+  const _SessionAttempt.failed() : session = null, failed = true;
+
+  final InspectionSession? session;
+  final bool failed;
 }

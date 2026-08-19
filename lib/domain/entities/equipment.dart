@@ -1,3 +1,5 @@
+import 'local_equipment_catalog_origin.dart';
+
 /// A single piece of equipment owned by a company.
 ///
 /// [companyId] is set by the data layer from the authenticated user's
@@ -23,6 +25,7 @@ class Equipment {
     this.createdByName,
     this.updatedBy,
     this.updatedByName,
+    this.catalogOrigin = LocalEquipmentCatalogOrigin.remoteCache,
   });
 
   final String id;
@@ -42,7 +45,15 @@ class Equipment {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Local catalog provenance. Remote list screens ignore this; refresh keeps
+  /// [LocalEquipmentCatalogOrigin.localCreated] rows that are not yet remote.
+  final LocalEquipmentCatalogOrigin catalogOrigin;
+
+  bool get isLocalCreated =>
+      catalogOrigin == LocalEquipmentCatalogOrigin.localCreated;
+
   factory Equipment.fromMap(Map<String, dynamic> map) {
+    final rawOrigin = map['catalog_origin'] as String?;
     return Equipment(
       id: map['id'] as String,
       companyId: map['company_id'] as String,
@@ -60,6 +71,47 @@ class Equipment {
       updatedByName: map['updated_by_name'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
+      catalogOrigin: rawOrigin == null
+          ? LocalEquipmentCatalogOrigin.remoteCache
+          : LocalEquipmentCatalogOrigin.fromStorage(rawOrigin),
+    );
+  }
+
+  Equipment copyWith({
+    String? assetName,
+    String? manufacturer,
+    String? model,
+    String? serialNumber,
+    int? year,
+    double? hours,
+    String? location,
+    String? notes,
+    String? updatedBy,
+    String? updatedByName,
+    DateTime? updatedAt,
+    LocalEquipmentCatalogOrigin? catalogOrigin,
+    bool clearSerialNumber = false,
+  }) {
+    return Equipment(
+      id: id,
+      companyId: companyId,
+      assetName: assetName ?? this.assetName,
+      manufacturer: manufacturer ?? this.manufacturer,
+      model: model ?? this.model,
+      serialNumber: clearSerialNumber
+          ? null
+          : (serialNumber ?? this.serialNumber),
+      year: year ?? this.year,
+      hours: hours ?? this.hours,
+      location: location ?? this.location,
+      notes: notes ?? this.notes,
+      createdBy: createdBy,
+      createdByName: createdByName,
+      updatedBy: updatedBy ?? this.updatedBy,
+      updatedByName: updatedByName ?? this.updatedByName,
+      createdAt: createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      catalogOrigin: catalogOrigin ?? this.catalogOrigin,
     );
   }
 }

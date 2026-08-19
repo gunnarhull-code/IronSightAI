@@ -9,10 +9,14 @@ import 'package:ironsight_ai/data/local/offline_inspection_workspace.dart';
 import 'package:ironsight_ai/domain/entities/condition_rating.dart';
 import 'package:ironsight_ai/domain/entities/detailed_category_response.dart';
 import 'package:ironsight_ai/domain/entities/equipment.dart';
+import 'package:ironsight_ai/domain/entities/guided_quick_appraisal_step.dart';
 import 'package:ironsight_ai/domain/entities/inspection.dart';
 import 'package:ironsight_ai/domain/entities/inspection_depth.dart';
+import 'package:ironsight_ai/domain/entities/inspection_machine_source.dart';
+import 'package:ironsight_ai/domain/entities/inspection_photo_slot.dart';
 import 'package:ironsight_ai/domain/entities/inspection_status.dart';
 import 'package:ironsight_ai/domain/entities/scorecard_category.dart';
+import 'package:ironsight_ai/domain/equipment_id_capture/captured_image.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/confirmed_equipment_id_value.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_controller.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_kind.dart';
@@ -30,6 +34,13 @@ import 'package:ironsight_ai/features/inspection/presentation/widgets/condition_
 import 'support/fake_auth_session_reader.dart';
 import 'support/fake_equipment_id_capture.dart';
 import 'support/fake_equipment_repository.dart';
+import 'support/test_images.dart';
+
+const CapturedImage _guidedPhoto = CapturedImage(
+  bytes: kTinyPngBytes,
+  path: '/tmp/guided.png',
+  mimeType: 'image/png',
+);
 
 EquipmentIdCaptureController _manualCaptureController({
   required EquipmentIdCaptureKind kind,
@@ -59,6 +70,31 @@ Equipment _equipment({
     serialNumber: 'SN-$id',
     createdAt: now,
     updatedAt: now,
+  );
+}
+
+Future<void> _prepareGuidedDraftForCompletion(
+  OfflineInspectionWorkspace workspace,
+  Inspection draft,
+) async {
+  for (final slot in InspectionPhotoSlot.requiredSlots) {
+    await workspace.inspectionMedia.saveRequiredPhoto(
+      companyId: draft.companyId,
+      inspectionId: draft.id,
+      slot: slot,
+      image: _guidedPhoto,
+      updatedByUserId: draft.createdByUserId,
+    );
+  }
+  await workspace.inspections.markSerialUnableToVerify(
+    companyId: draft.companyId,
+    inspectionId: draft.id,
+    updatedByUserId: draft.createdByUserId,
+  );
+  await workspace.inspections.markHoursUnavailable(
+    companyId: draft.companyId,
+    inspectionId: draft.id,
+    updatedByUserId: draft.createdByUserId,
   );
 }
 
@@ -352,6 +388,11 @@ void main() {
         equipmentId: 'eq-1',
         createdByUserId: 'user-1',
       );
+      await workspace.equipmentCatalog.replaceCompanyCatalog(
+        companyId: 'company-a',
+        equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
+      );
+      await _prepareGuidedDraftForCompletion(workspace, draft);
       final completed = await workspace.inspections.complete(
         companyId: 'company-a',
         inspectionId: draft.id,
@@ -943,6 +984,11 @@ void main() {
     testWidgets('review shows incomplete categories and completes locally', (
       tester,
     ) async {
+      tester.view.physicalSize = const Size(800, 4000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await workspace.equipmentCatalog.replaceCompanyCatalog(
         companyId: 'company-a',
         equipment: [_equipment(id: 'eq-1', companyId: 'company-a')],
@@ -952,6 +998,10 @@ void main() {
         equipmentId: 'eq-1',
         createdByUserId: 'user-1',
       );
+      // File/Drift I/O must run outside fake async.
+      await tester.runAsync(() async {
+        await _prepareGuidedDraftForCompletion(workspace, draft);
+      });
 
       await tester.pumpWidget(
         MaterialApp(
@@ -964,27 +1014,31 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(
-        find.textContaining('Incomplete:'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      expect(find.textContaining('Incomplete:'), findsOneWidget);
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      await tester.pump();
 
-      await tester.scrollUntilVisible(
-        find.text('Complete locally'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
+      expect(find.textContaining('Incomplete:'), findsOneWidget);
+      expect(find.text('Complete locally'), findsOneWidget);
+
       await tester.tap(find.text('Complete locally'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 20));
+      });
+      await tester.pump();
       expect(find.text('Incomplete categories'), findsOneWidget);
       await tester.tap(find.text('Complete Anyway'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      });
+      await tester.pump();
       expect(find.text('Inspection completed locally'), findsOneWidget);
       await tester.tap(find.text('Done'));
-      await tester.pumpAndSettle();
+      await tester.pump();
 
       final completed = await workspace.inspections.getById(
         companyId: 'company-a',
@@ -1139,6 +1193,81 @@ class _ThrowingListInspectionRepository implements LocalInspectionRepository {
     required String companyId,
     required String inspectionId,
     required ConfirmedEquipmentIdValue confirmedValue,
+    String? updatedByUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> createGuidedDraft({
+    required String companyId,
+    required String createdByUserId,
+    required InspectionMachineSource machineSource,
+    String? equipmentId,
+    InspectionDepth depth = InspectionDepth.quickAppraisal,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> updateGuidedIntake({
+    required String companyId,
+    required String inspectionId,
+    String? updatedByUserId,
+    InspectionMachineSource? machineSource,
+    String? equipmentId,
+    bool clearEquipmentId = false,
+    String? pendingAssetName,
+    String? pendingManufacturer,
+    String? pendingModel,
+    bool clearPendingIdentity = false,
+    GuidedQuickAppraisalStep? guidedStep,
+    String? pendingEquipmentId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> completeGuidedNewMachine({
+    required String companyId,
+    required String inspectionId,
+    String? updatedByUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> completeGuidedExistingEquipment({
+    required String companyId,
+    required String inspectionId,
+    String? updatedByUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> markSerialUnableToVerify({
+    required String companyId,
+    required String inspectionId,
+    String? updatedByUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> markHoursUnavailable({
+    required String companyId,
+    required String inspectionId,
+    String? updatedByUserId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Inspection> switchGuidedDraftToExistingEquipment({
+    required String companyId,
+    required String inspectionId,
+    required String equipmentId,
     String? updatedByUserId,
   }) {
     throw UnimplementedError();

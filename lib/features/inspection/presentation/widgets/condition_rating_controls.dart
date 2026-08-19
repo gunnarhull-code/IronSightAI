@@ -53,7 +53,7 @@ class ConditionRatingControls extends StatelessWidget {
       ConditionRating.good => 'Good',
       ConditionRating.fair => 'Fair',
       ConditionRating.poor => 'Poor',
-      ConditionRating.notAssessed => 'N/A',
+      ConditionRating.notAssessed => 'Not assessed',
     };
   }
 }
