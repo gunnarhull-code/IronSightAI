@@ -54,9 +54,19 @@ jobs:
       - name: Install FFmpeg
         run: |
           set -euo pipefail
+          export DEBIAN_FRONTEND=noninteractive
           # MP4 frame-decode regression tests invoke ffmpeg directly.
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg
+          # Prefer the runner image index first; fall back to a bounded apt update.
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get install -y --no-install-recommends ffmpeg \
+              || {
+                sudo apt-get update \
+                  -o Acquire::Retries=3 \
+                  -o Acquire::http::Timeout=30 \
+                  -o Acquire::https::Timeout=30
+                sudo apt-get install -y --no-install-recommends ffmpeg
+              }
+          fi
           command -v ffmpeg
           ffmpeg -version
 
