@@ -21,6 +21,10 @@ class LocalEquipmentCache extends Table {
   DateTimeColumn get updatedAt => dateTime()();
   DateTimeColumn get cachedAt => dateTime()();
 
+  /// remote_cache | local_created — local_created survives catalog replace.
+  TextColumn get catalogOrigin =>
+      text().withDefault(const Constant('remote_cache'))();
+
   @override
   Set<Column<Object>> get primaryKey => {id};
 }

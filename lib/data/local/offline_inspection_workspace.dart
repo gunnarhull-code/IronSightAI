@@ -65,13 +65,16 @@ class OfflineInspectionWorkspace {
       database,
       equipmentCatalog,
     );
-    final inspections = DriftLocalInspectionRepository(database);
     final files = mediaFiles ?? InspectionMediaFileStore();
+    // Media is constructed with a temporary inspections handle, then
+    // inspections is re-wired with media for guided completion checks.
+    final inspectionsSeed = DriftLocalInspectionRepository(database);
     final inspectionMedia = DriftLocalInspectionMediaRepository(
       database,
-      inspections,
+      inspectionsSeed,
       files,
     );
+    final inspections = inspectionsSeed.withMediaRepository(inspectionMedia);
     final catalogRefresh = EquipmentCatalogRefreshService(
       remoteEquipmentRepository: remoteEquipmentRepository,
       localCatalog: equipmentCatalog,

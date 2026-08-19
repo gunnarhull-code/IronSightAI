@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:sqlite3/common.dart' show CommonDatabase;
 
+import '../../../domain/exceptions/local_database_schema_exception.dart';
+import 'local_guided_schema_probe.dart';
 import 'tables/inspection_category_ratings_table.dart';
 import 'tables/inspection_detailed_responses_table.dart';
 import 'tables/inspection_media_table.dart';
@@ -24,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration {
@@ -55,8 +57,87 @@ class AppDatabase extends _$AppDatabase {
           await migrator.createTable(inspectionMediaItems);
           await _createMediaIndexes();
         }
+        if (from < 5) {
+          // A device that already ran a guided build carries the v5 shape even
+          // when its version stamp regressed to 4. Inspect the physical schema
+          // before touching it: rerunning the rebuild would drop guided values
+          // and re-adding catalog_origin fails outright.
+          final probe = await probeGuidedSchema();
+          switch (probe.state) {
+            case LocalGuidedSchemaState.applied:
+              // Every row stays as it is; Drift repairs the stamp on its own.
+              break;
+            case LocalGuidedSchemaState.notApplied:
+              await _applyGuidedSchema(migrator);
+            case LocalGuidedSchemaState.indeterminate:
+              throw LocalDatabaseSchemaException(
+                'Local inspection schema is neither the expected pre-guided '
+                'shape nor a fully applied guided shape, so it was left '
+                'untouched instead of being rebuilt.',
+                details: probe.details,
+              );
+          }
+        }
       },
     );
+  }
+
+  /// Reads the physical schema shape of this file without modifying it.
+  Future<LocalGuidedSchemaProbe> probeGuidedSchema() async {
+    final inspectionColumns = await _columnsOf('inspections');
+    final equipmentColumns = await _columnsOf('local_equipment_cache');
+    return classifyGuidedSchema(
+      inspectionColumnsNotNull: inspectionColumns,
+      hasEquipmentCacheTable: await _hasTable('local_equipment_cache'),
+      equipmentCacheColumns: equipmentColumns.keys.toSet(),
+    );
+  }
+
+  /// Maps each column of [table] to its NOT NULL flag; empty when absent.
+  Future<Map<String, bool>> _columnsOf(String table) async {
+    final rows = await customSelect("PRAGMA table_info('$table')").get();
+    return {
+      for (final row in rows)
+        row.data['name'] as String: (row.data['notnull'] as int? ?? 0) != 0,
+    };
+  }
+
+  Future<bool> _hasTable(String table) async {
+    final rows = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table' AND name = ?",
+      variables: [Variable.withString(table)],
+    ).get();
+    return rows.isNotEmpty;
+  }
+
+  /// Applies the guided (v5) shape to a clean pre-guided database.
+  Future<void> _applyGuidedSchema(Migrator migrator) async {
+    // SQLite cannot ALTER a NOT NULL column to nullable; rebuild.
+    await migrator.alterTable(
+      TableMigration(
+        inspections,
+        newColumns: [
+          inspections.machineSource,
+          inspections.pendingAssetName,
+          inspections.pendingManufacturer,
+          inspections.pendingModel,
+          inspections.guidedStep,
+          inspections.pendingEquipmentId,
+        ],
+      ),
+    );
+    if (await _hasTable('local_equipment_cache')) {
+      await migrator.addColumn(
+        localEquipmentCache,
+        localEquipmentCache.catalogOrigin,
+      );
+    } else {
+      await migrator.createTable(localEquipmentCache);
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_local_equipment_company '
+        'ON local_equipment_cache (company_id)',
+      );
+    }
   }
 
   Future<void> _createIndexes() async {

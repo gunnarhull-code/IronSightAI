@@ -5,8 +5,10 @@ import '../../../../domain/entities/equipment.dart';
 import '../../../../domain/entities/inspection.dart';
 import '../../../../domain/entities/scorecard_category.dart';
 import '../../../../domain/exceptions/invalid_inspection_lifecycle_exception.dart';
+import '../../../../domain/guided_quick_appraisal_completeness.dart';
 import '../../../../domain/inspection_review_summary.dart';
 import '../../../../domain/repositories/local_equipment_catalog_repository.dart';
+import '../../../../domain/repositories/local_inspection_media_repository.dart';
 import '../../../../domain/repositories/local_inspection_repository.dart';
 import 'widgets/local_only_status_banner.dart';
 
@@ -19,6 +21,7 @@ class InspectionReviewScreen extends StatefulWidget {
     required this.inspectionId,
     required this.inspections,
     required this.equipmentCatalog,
+    this.inspectionMedia,
   });
 
   final String companyId;
@@ -26,6 +29,9 @@ class InspectionReviewScreen extends StatefulWidget {
   final String inspectionId;
   final LocalInspectionRepository inspections;
   final LocalEquipmentCatalogRepository equipmentCatalog;
+
+  /// Optional; when present, guided drafts use completeness gating in UI.
+  final LocalInspectionMediaRepository? inspectionMedia;
 
   @override
   State<InspectionReviewScreen> createState() => _InspectionReviewScreenState();
@@ -49,13 +55,31 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
     if (inspection == null) {
       throw StateError('Inspection not found for this company.');
     }
-    final equipment = await widget.equipmentCatalog.getById(
-      companyId: widget.companyId,
-      equipmentId: inspection.equipmentId,
-    );
+    final equipmentId = inspection.equipmentId;
+    final equipment = equipmentId == null || equipmentId.isEmpty
+        ? null
+        : await widget.equipmentCatalog.getById(
+            companyId: widget.companyId,
+            equipmentId: equipmentId,
+          );
+
+    GuidedQuickAppraisalCompleteness? guidedCompleteness;
+    final mediaRepo = widget.inspectionMedia;
+    if (mediaRepo != null && inspection.machineSource != null) {
+      final media = await mediaRepo.listForInspection(
+        companyId: widget.companyId,
+        inspectionId: widget.inspectionId,
+      );
+      guidedCompleteness = evaluateGuidedQuickAppraisalCompleteness(
+        inspection: inspection,
+        media: media,
+      );
+    }
+
     return _ReviewData(
       summary: buildInspectionReviewSummary(inspection),
       equipment: equipment,
+      guidedCompleteness: guidedCompleteness,
     );
   }
 
@@ -67,8 +91,24 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
 
   Future<void> _complete(Inspection inspection) async {
     if (_completing) return;
+
+    final data = await _future;
+    if (!mounted) return;
+    final guided = data.guidedCompleteness;
+    if (guided != null && !guided.isComplete) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Guided Quick Appraisal is incomplete. Return to the guided '
+            'flow to finish required steps.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final summary = buildInspectionReviewSummary(inspection);
-    if (summary.hasIncompleteCategories) {
+    if (guided == null && summary.hasIncompleteCategories) {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -119,6 +159,14 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
       );
       if (!mounted) return;
       Navigator.of(context).pop(true);
+    } on DuplicateLocalEquipmentSerialException catch (error) {
+      if (!mounted) return;
+      await _handleDuplicateSerial(inspection, error);
+    } on GuidedQuickAppraisalIncompleteException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
     } on InvalidInspectionLifecycleException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -132,6 +180,69 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
     } finally {
       if (mounted) setState(() => _completing = false);
     }
+  }
+
+  Future<void> _handleDuplicateSerial(
+    Inspection inspection,
+    DuplicateLocalEquipmentSerialException error,
+  ) async {
+    final decision = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Serial already on device'),
+        content: Text(
+          'Serial ${error.serialNumber} matches existing equipment on this '
+          'device. Switch this draft to that equipment and complete, or cancel '
+          'and keep this draft resumable?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Switch & complete'),
+          ),
+        ],
+      ),
+    );
+    if (decision != true || !mounted) return;
+
+    try {
+      await widget.inspections.switchGuidedDraftToExistingEquipment(
+        companyId: widget.companyId,
+        inspectionId: inspection.id,
+        equipmentId: error.existingEquipmentId,
+        updatedByUserId: widget.userId,
+      );
+      await widget.inspections.completeGuidedExistingEquipment(
+        companyId: widget.companyId,
+        inspectionId: inspection.id,
+        updatedByUserId: widget.userId,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not switch to existing equipment. Draft remains resumable.',
+          ),
+        ),
+      );
+    }
+  }
+
+  String _identityTitle(Inspection inspection, Equipment? equipment) {
+    if (inspection.isNewMachineDraft) {
+      final pending = inspection.pendingAssetName?.trim();
+      if (pending != null && pending.isNotEmpty) return pending;
+      return 'New machine draft';
+    }
+    return equipment?.assetName ??
+        'Equipment ${inspection.equipmentId ?? 'unknown'}';
   }
 
   @override
@@ -170,6 +281,11 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
           final data = snapshot.data!;
           final inspection = data.summary.inspection;
           final equipment = data.equipment;
+          final guided = data.guidedCompleteness;
+          final canComplete =
+              inspection.isIncomplete &&
+              !_completing &&
+              (guided == null || guided.isComplete);
 
           return Column(
             children: [
@@ -181,8 +297,7 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
                     Text('Equipment', style: theme.textTheme.titleMedium),
                     const SizedBox(height: 4),
                     Text(
-                      equipment?.assetName ??
-                          'Equipment ${inspection.equipmentId}',
+                      _identityTitle(inspection, equipment),
                       style: theme.textTheme.headlineSmall,
                     ),
                     if (equipment != null)
@@ -195,16 +310,22 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
                         ].join(' · '),
                       ),
                     if (inspection.serialNumber != null ||
-                        inspection.hourMeterReading != null) ...[
+                        inspection.hourMeterReading != null ||
+                        inspection.serialIsUnableToVerify ||
+                        inspection.hoursAreUnavailable) ...[
                       const SizedBox(height: 12),
                       Text(
                         'Confirmed for this inspection',
                         style: theme.textTheme.titleSmall,
                       ),
                       const SizedBox(height: 4),
-                      if (inspection.serialNumber != null)
+                      if (inspection.serialIsUnableToVerify)
+                        const Text('Serial: Unable to verify')
+                      else if (inspection.serialNumber != null)
                         Text('Serial: ${inspection.serialNumber}'),
-                      if (inspection.hourMeterReading != null)
+                      if (inspection.hoursAreUnavailable)
+                        const Text('Hours: Unavailable / not displayed')
+                      else if (inspection.hourMeterReading != null)
                         Text(
                           'Hours: ${inspection.confirmedHourMeter?.value ?? inspection.hourMeterReading}',
                         ),
@@ -230,7 +351,16 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
                           ),
                         ),
                       ),
-                    if (data.summary.hasIncompleteCategories) ...[
+                    if (guided != null && !guided.isComplete) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Guided intake incomplete. Open the guided Quick '
+                        'Appraisal to finish required steps.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.error,
+                        ),
+                      ),
+                    ] else if (data.summary.hasIncompleteCategories) ...[
                       const SizedBox(height: 8),
                       Text(
                         'Incomplete: '
@@ -275,7 +405,7 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
                     ),
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: inspection.isIncomplete && !_completing
+                      onPressed: canComplete
                           ? () => _complete(inspection)
                           : null,
                       child: Padding(
@@ -306,8 +436,13 @@ class _InspectionReviewScreenState extends State<InspectionReviewScreen> {
 }
 
 class _ReviewData {
-  const _ReviewData({required this.summary, required this.equipment});
+  const _ReviewData({
+    required this.summary,
+    required this.equipment,
+    this.guidedCompleteness,
+  });
 
   final InspectionReviewSummary summary;
   final Equipment? equipment;
+  final GuidedQuickAppraisalCompleteness? guidedCompleteness;
 }
