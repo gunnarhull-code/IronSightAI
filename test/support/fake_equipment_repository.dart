@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ironsight_ai/domain/entities/equipment.dart';
 import 'package:ironsight_ai/domain/entities/equipment_details.dart';
 import 'package:ironsight_ai/domain/repositories/equipment_repository.dart';
@@ -6,12 +8,14 @@ import 'package:ironsight_ai/domain/repositories/equipment_repository.dart';
 class FakeEquipmentRepository implements EquipmentRepository {
   FakeEquipmentRepository({
     List<Equipment>? equipment,
+    this.companyId = 'company-1',
     this.getError,
     this.createDelay = Duration.zero,
     this.updateDelay = Duration.zero,
   }) : equipment = equipment ?? [];
 
   List<Equipment> equipment;
+  final String companyId;
   Object? getError;
   Object? createError;
   Object? updateError;
@@ -19,6 +23,13 @@ class FakeEquipmentRepository implements EquipmentRepository {
   Duration createDelay;
   Duration updateDelay;
 
+  /// When set, [getEquipment] waits here after snapshotting the current list.
+  Completer<void>? blockGetUntil;
+
+  /// Completes when [getEquipment] has snapshotted and is about to wait.
+  Completer<void>? onGetStarted;
+
+  int getCallCount = 0;
   int createCallCount = 0;
   int updateCallCount = 0;
   int deleteCallCount = 0;
@@ -27,13 +38,22 @@ class FakeEquipmentRepository implements EquipmentRepository {
   String? lastUpdatedId;
   String? lastDeletedId;
 
-  static const String _companyId = 'company-1';
   int _nextId = 1;
 
   @override
   Future<List<Equipment>> getEquipment() async {
+    getCallCount += 1;
+    final snapshot = List<Equipment>.from(equipment);
+    final started = onGetStarted;
+    if (started != null && !started.isCompleted) {
+      started.complete();
+    }
+    final barrier = blockGetUntil;
+    if (barrier != null) {
+      await barrier.future;
+    }
     if (getError != null) throw getError!;
-    return List.unmodifiable(equipment);
+    return List.unmodifiable(snapshot);
   }
 
   @override
@@ -57,7 +77,7 @@ class FakeEquipmentRepository implements EquipmentRepository {
     final now = DateTime.utc(2026, 1, 1);
     final created = Equipment(
       id: 'equipment-${_nextId++}',
-      companyId: _companyId,
+      companyId: companyId,
       assetName: details.assetName,
       manufacturer: details.manufacturer,
       model: details.model,

@@ -22,6 +22,13 @@ abstract class LocalEquipmentCatalogRepository {
   /// Inserts or updates a locally created Equipment row (offline New-machine).
   Future<Equipment> upsertLocalCreated(Equipment equipment);
 
+  /// Inserts or updates a remote-canonical Equipment row for its own company.
+  ///
+  /// Never writes into a different company's catalog. If [equipment.id]
+  /// already exists under another company, implementations must refuse rather
+  /// than overwrite or fall back across tenants.
+  Future<Equipment> upsertEquipment(Equipment equipment);
+
   /// Replaces the remote-mirrored catalog for [companyId].
   ///
   /// Rows with [LocalEquipmentCatalogOrigin.localCreated] that are absent from

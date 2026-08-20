@@ -101,11 +101,15 @@ Route<dynamic>? buildAppRoute(
     );
   }
 
+  final equipmentForScreens =
+      inspectionSession?.workspace.catalogSyncingEquipment ??
+      equipmentRepository;
+
   if (name == AppRoutes.equipmentList) {
     return MaterialPageRoute<void>(
       settings: settings,
       builder: (context) =>
-          EquipmentListScreen(repository: equipmentRepository),
+          EquipmentListScreen(repository: equipmentForScreens),
     );
   }
 
@@ -116,7 +120,7 @@ Route<dynamic>? buildAppRoute(
     return MaterialPageRoute<bool?>(
       settings: settings,
       builder: (context) => EquipmentFormScreen(
-        repository: equipmentRepository,
+        repository: equipmentForScreens,
         companyRepository: companyRepository,
       ),
     );
@@ -127,7 +131,7 @@ Route<dynamic>? buildAppRoute(
     return MaterialPageRoute<bool?>(
       settings: settings,
       builder: (context) => EquipmentFormScreen(
-        repository: equipmentRepository,
+        repository: equipmentForScreens,
         companyRepository: companyRepository,
         equipmentId: editId,
       ),
