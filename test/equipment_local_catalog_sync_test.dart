@@ -10,6 +10,7 @@ import 'package:ironsight_ai/domain/entities/equipment.dart';
 import 'package:ironsight_ai/domain/entities/equipment_details.dart';
 import 'package:ironsight_ai/domain/entities/inspection_machine_source.dart';
 import 'package:ironsight_ai/domain/entities/local_equipment_catalog_origin.dart';
+import 'package:ironsight_ai/domain/exceptions/equipment_local_catalog_mirror_exception.dart';
 import 'package:ironsight_ai/domain/use_cases/create_equipment.dart';
 import 'package:ironsight_ai/domain/use_cases/update_equipment.dart';
 import 'package:ironsight_ai/features/inspection/presentation/guided_quick_appraisal_entry_screen.dart';
@@ -187,7 +188,44 @@ void main() {
   });
 
   group('local catalog failures are not swallowed and do not retry remote', () {
-    test('create does not retry remote when local upsert fails', () async {
+    test(
+      'create throws partial-success exception when local upsert fails',
+      () async {
+        final local = FakeLocalEquipmentCatalogRepository()
+          ..upsertError = StateError('local catalog write failed');
+        final refresh = EquipmentCatalogRefreshService(
+          remoteEquipmentRepository: remote,
+          localCatalog: local,
+        );
+        final syncing = LocalCatalogSyncingEquipmentRepository(
+          remoteEquipmentRepository: remote,
+          catalogRefreshService: refresh,
+        );
+
+        await expectLater(
+          syncing.createEquipment(validDetails()),
+          throwsA(
+            isA<EquipmentLocalCatalogMirrorException>()
+                .having(
+                  (error) => error.operation,
+                  'operation',
+                  EquipmentRemoteSaveOperation.create,
+                )
+                .having(
+                  (error) => error.equipment.assetName,
+                  'assetName',
+                  'Skid Steer',
+                ),
+          ),
+        );
+
+        expect(remote.createCallCount, 1);
+        expect(local.upsertCallCount, 1);
+        expect(local.storedFor('company-a'), isEmpty);
+      },
+    );
+
+    test('retryLocalMirror succeeds without another remote create', () async {
       final local = FakeLocalEquipmentCatalogRepository()
         ..upsertError = StateError('local catalog write failed');
       final refresh = EquipmentCatalogRefreshService(
@@ -199,20 +237,20 @@ void main() {
         catalogRefreshService: refresh,
       );
 
-      await expectLater(
-        syncing.createEquipment(validDetails()),
-        throwsA(
-          isA<StateError>().having(
-            (error) => error.message,
-            'message',
-            contains('local catalog write failed'),
-          ),
-        ),
-      );
+      EquipmentLocalCatalogMirrorException? partial;
+      try {
+        await syncing.createEquipment(validDetails());
+      } on EquipmentLocalCatalogMirrorException catch (error) {
+        partial = error;
+      }
+      expect(partial, isNotNull);
+
+      local.upsertError = null;
+      await syncing.retryLocalMirror(partial!.equipment);
 
       expect(remote.createCallCount, 1);
-      expect(local.upsertCallCount, 1);
-      expect(local.storedFor('company-a'), isEmpty);
+      expect(local.storedFor('company-a'), hasLength(1));
+      expect(local.storedFor('company-a').single.id, partial.equipment.id);
     });
   });
 

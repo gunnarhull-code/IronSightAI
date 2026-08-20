@@ -9,8 +9,10 @@ import '../../../domain/entities/equipment_details.dart'
     show maxEquipmentYear, minEquipmentYear;
 import '../../../domain/entities/manufacturer_catalog.dart';
 import '../../../domain/exceptions/duplicate_serial_number_exception.dart';
+import '../../../domain/exceptions/equipment_local_catalog_mirror_exception.dart';
 import '../../../domain/repositories/company_repository.dart';
 import '../../../domain/repositories/equipment_repository.dart';
+import '../../../domain/repositories/local_catalog_mirror_recovery.dart';
 import '../../../domain/use_cases/create_equipment.dart';
 import '../../../domain/use_cases/get_current_user_company.dart';
 import '../../../domain/use_cases/get_equipment_by_id.dart';
@@ -80,6 +82,8 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
   String? _errorMessage;
   Equipment? _loadedEquipment;
   String? _companyCountry;
+  Equipment? _pendingRemoteEquipment;
+  EquipmentRemoteSaveOperation? _pendingRemoteOperation;
 
   Map<String, String> _originalValues = const {};
 
@@ -244,6 +248,10 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
 
   Future<void> _save() async {
     if (_isSaving) return;
+    if (_pendingRemoteEquipment != null) {
+      await _retryLocalMirror();
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -285,17 +293,21 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
       }
 
       if (!mounted) return;
-      _hasUnsavedChanges = false;
-      // Non-auth form: do not prompt the browser to save credentials.
-      TextInput.finishAutofillContext(shouldSave: false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.isEditing ? 'Equipment updated.' : 'Equipment added.',
-          ),
-        ),
+      _completeSuccessfulSave(
+        widget.isEditing ? 'Equipment updated.' : 'Equipment added.',
       );
-      Navigator.of(context).pop(true);
+    } on EquipmentLocalCatalogMirrorException catch (error, stackTrace) {
+      debugPrint(
+        'EquipmentFormScreen local mirror failed after remote save: '
+        '${error.cause}',
+      );
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() {
+        _pendingRemoteEquipment = error.equipment;
+        _pendingRemoteOperation = error.operation;
+        _errorMessage = null;
+      });
     } catch (e, stackTrace) {
       // Always log the original exception for debugging; the user only ever
       // sees the friendly message from [_friendlyErrorMessage].
@@ -306,6 +318,71 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _retryLocalMirror() async {
+    final pending = _pendingRemoteEquipment;
+    final recovery = widget.repository;
+    if (pending == null || recovery is! LocalCatalogMirrorRecovery) {
+      setState(() {
+        _errorMessage =
+            'Could not save equipment on this device. '
+            'Please try again.';
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final mirrorRecovery = recovery as LocalCatalogMirrorRecovery;
+      await mirrorRecovery.retryLocalMirror(pending);
+      if (!mounted) return;
+      final message = switch (_pendingRemoteOperation) {
+        EquipmentRemoteSaveOperation.update =>
+          'Equipment updated on this device.',
+        EquipmentRemoteSaveOperation.create ||
+        null => 'Equipment saved on this device.',
+      };
+      _completeSuccessfulSave(message);
+    } catch (e, stackTrace) {
+      debugPrint('EquipmentFormScreen local mirror retry failed: $e');
+      debugPrintStack(stackTrace: stackTrace);
+      if (!mounted) return;
+      setState(() {
+        _pendingRemoteEquipment = pending;
+        _errorMessage = null;
+      });
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  void _completeSuccessfulSave(String snackbarMessage) {
+    _hasUnsavedChanges = false;
+    _pendingRemoteEquipment = null;
+    _pendingRemoteOperation = null;
+    TextInput.finishAutofillContext(shouldSave: false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(snackbarMessage)));
+    Navigator.of(context).pop(true);
+  }
+
+  String? get _partialSuccessMessage {
+    final operation = _pendingRemoteOperation;
+    if (_pendingRemoteEquipment == null || operation == null) return null;
+    return EquipmentLocalCatalogMirrorException.messageFor(operation);
+  }
+
+  String _primaryActionLabel() {
+    if (_pendingRemoteEquipment != null) {
+      return 'Save on this device';
+    }
+    return widget.isEditing ? 'Save Changes' : 'Add Equipment';
   }
 
   String _friendlyErrorMessage(Object error) {
@@ -382,6 +459,10 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (_partialSuccessMessage != null) ...[
+                    _PartialSuccessBanner(message: _partialSuccessMessage!),
+                    const SizedBox(height: 16),
+                  ],
                   if (_errorMessage != null) ...[
                     _ErrorBanner(message: _errorMessage!),
                     const SizedBox(height: 16),
@@ -621,11 +702,7 @@ class _EquipmentFormScreenState extends State<EquipmentFormScreen> {
                                 strokeWidth: 2.5,
                               ),
                             )
-                          : Text(
-                              widget.isEditing
-                                  ? 'Save Changes'
-                                  : 'Add Equipment',
-                            ),
+                          : Text(_primaryActionLabel()),
                     ),
                   ),
                 ],
@@ -721,6 +798,41 @@ class _AuditRow extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(child: Text(value)),
       ],
+    );
+  }
+}
+
+class _PartialSuccessBanner extends StatelessWidget {
+  const _PartialSuccessBanner({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.tertiaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.cloud_done_outlined,
+            color: colorScheme.onTertiaryContainer,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: colorScheme.onTertiaryContainer),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
