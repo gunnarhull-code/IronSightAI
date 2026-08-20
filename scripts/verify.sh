@@ -20,4 +20,7 @@ dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test
 
+# Catch AGP / plugin incompatibilities that unit tests alone miss.
+./scripts/verify_android_apk.sh
+
 echo "Verification passed."

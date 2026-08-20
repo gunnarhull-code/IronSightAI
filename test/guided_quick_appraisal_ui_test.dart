@@ -10,13 +10,16 @@ import 'package:ironsight_ai/domain/entities/scorecard_category.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/confirmed_equipment_id_value.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_controller.dart';
 import 'package:ironsight_ai/domain/equipment_id_capture/equipment_id_capture_kind.dart';
+import 'package:ironsight_ai/features/inspection/presentation/ai_media_review_labels.dart';
 import 'package:ironsight_ai/features/inspection/presentation/guided_quick_appraisal_entry_screen.dart';
 import 'package:ironsight_ai/features/inspection/presentation/guided_quick_appraisal_screen.dart';
 import 'package:ironsight_ai/features/inspection/presentation/widgets/condition_rating_controls.dart';
 
+import 'support/fake_ai_service.dart';
 import 'support/fake_auth_session_reader.dart';
 import 'support/fake_equipment_id_capture.dart';
 import 'support/fake_equipment_repository.dart';
+import 'support/fake_walkaround_video_capture.dart';
 import 'support/in_memory_inspection_media_file_store.dart';
 
 void main() {
@@ -53,6 +56,7 @@ void main() {
     WidgetTester tester, {
     required String inspectionId,
     GuidedQuickAppraisalStep? initialStep,
+    FakeAIService? aiService,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -65,6 +69,8 @@ void main() {
           inspectionMedia: workspace.inspectionMedia,
           captureControllerFactory: manualCapture,
           initialStepOverride: initialStep,
+          aiService: aiService,
+          videoCapture: FakeWalkaroundVideoCapture(),
         ),
       ),
     );
@@ -298,4 +304,71 @@ void main() {
     );
     expect(find.text('Excavator eq-1'), findsWidgets);
   });
+
+  testWidgets(
+    'guided photos step exposes optional AI Media Review without requiring it',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final draft = await workspace.inspections.createGuidedDraft(
+        companyId: 'company-a',
+        createdByUserId: 'user-1',
+        machineSource: InspectionMachineSource.newMachine,
+      );
+      await workspace.inspections.updateGuidedIntake(
+        companyId: 'company-a',
+        inspectionId: draft.id,
+        pendingAssetName: 'Unit',
+        pendingManufacturer: 'Cat',
+        pendingModel: '320',
+      );
+
+      await pumpGuided(
+        tester,
+        inspectionId: draft.id,
+        initialStep: GuidedQuickAppraisalStep.requiredPhotos,
+        aiService: FakeAIService(),
+      );
+
+      expect(find.text(AiMediaReviewLabels.actionButton), findsOneWidget);
+      expect(find.textContaining('works offline without AI'), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
+
+      await tester.tap(find.text(AiMediaReviewLabels.actionButton));
+      await tester.pumpAndSettle();
+      expect(find.text(AiMediaReviewLabels.analyzeButton), findsOneWidget);
+      expect(find.text(AiMediaReviewLabels.continueWithoutAi), findsOneWidget);
+
+      await tester.tap(find.text(AiMediaReviewLabels.continueWithoutAi));
+      await tester.pumpAndSettle();
+      expect(find.text(AiMediaReviewLabels.actionButton), findsOneWidget);
+      expect(find.text('Next'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'guided review step keeps AI Media Review optional and reachable',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(390, 1600));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final draft = await workspace.inspections.createGuidedDraft(
+        companyId: 'company-a',
+        createdByUserId: 'user-1',
+        machineSource: InspectionMachineSource.newMachine,
+      );
+
+      await pumpGuided(
+        tester,
+        inspectionId: draft.id,
+        initialStep: GuidedQuickAppraisalStep.reviewAndComplete,
+        aiService: FakeAIService(),
+      );
+
+      expect(find.text(AiMediaReviewLabels.actionButton), findsOneWidget);
+      expect(find.textContaining('works offline without AI'), findsOneWidget);
+      expect(find.text('Complete'), findsOneWidget);
+    },
+  );
 }
