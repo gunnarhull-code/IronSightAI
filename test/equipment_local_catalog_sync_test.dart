@@ -195,8 +195,8 @@ void main() {
         localCatalog: local,
       );
       final syncing = LocalCatalogSyncingEquipmentRepository(
-        remote: remote,
-        catalogRefresh: refresh,
+        remoteEquipmentRepository: remote,
+        catalogRefreshService: refresh,
       );
 
       await expectLater(

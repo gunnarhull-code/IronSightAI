@@ -11,10 +11,10 @@ import '../services/equipment_catalog_refresh_service.dart';
 /// the remote write. Delete is not mirrored.
 class LocalCatalogSyncingEquipmentRepository implements EquipmentRepository {
   LocalCatalogSyncingEquipmentRepository({
-    required EquipmentRepository remote,
-    required EquipmentCatalogRefreshService catalogRefresh,
-  }) : _remote = remote,
-       _catalogRefresh = catalogRefresh;
+    required EquipmentRepository remoteEquipmentRepository,
+    required EquipmentCatalogRefreshService catalogRefreshService,
+  }) : _remote = remoteEquipmentRepository,
+       _catalogRefresh = catalogRefreshService;
 
   final EquipmentRepository _remote;
   final EquipmentCatalogRefreshService _catalogRefresh;

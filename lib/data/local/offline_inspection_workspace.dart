@@ -85,8 +85,8 @@ class OfflineInspectionWorkspace {
       localCatalog: equipmentCatalog,
     );
     final catalogSyncingEquipment = LocalCatalogSyncingEquipmentRepository(
-      remote: remoteEquipmentRepository,
-      catalogRefresh: catalogRefresh,
+      remoteEquipmentRepository: remoteEquipmentRepository,
+      catalogRefreshService: catalogRefresh,
     );
     return OfflineInspectionWorkspace(
       database: database,
