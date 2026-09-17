@@ -8,6 +8,7 @@ import '../repositories/drift_local_equipment_catalog_repository.dart';
 import '../repositories/drift_local_inspection_media_repository.dart';
 import '../repositories/drift_local_inspection_repository.dart';
 import '../repositories/drift_local_tenant_context_repository.dart';
+import '../repositories/local_catalog_syncing_equipment_repository.dart';
 import '../services/equipment_catalog_refresh_service.dart';
 import 'drift/app_database.dart';
 import 'drift/open_inspection_database.dart';
@@ -25,6 +26,7 @@ class OfflineInspectionWorkspace {
     required this.equipmentCatalog,
     required this.tenantContext,
     required this.catalogRefresh,
+    required this.catalogSyncingEquipment,
     required this.authSession,
     required this.mediaFiles,
   });
@@ -35,6 +37,9 @@ class OfflineInspectionWorkspace {
   final LocalEquipmentCatalogRepository equipmentCatalog;
   final LocalTenantContextRepository tenantContext;
   final EquipmentCatalogRefreshService catalogRefresh;
+
+  /// Remote create/update that immediately upserts the company-local catalog.
+  final EquipmentRepository catalogSyncingEquipment;
   final AuthSessionReader authSession;
   final InspectionMediaFileStore mediaFiles;
 
@@ -79,6 +84,10 @@ class OfflineInspectionWorkspace {
       remoteEquipmentRepository: remoteEquipmentRepository,
       localCatalog: equipmentCatalog,
     );
+    final catalogSyncingEquipment = LocalCatalogSyncingEquipmentRepository(
+      remoteEquipmentRepository: remoteEquipmentRepository,
+      catalogRefreshService: catalogRefresh,
+    );
     return OfflineInspectionWorkspace(
       database: database,
       inspections: inspections,
@@ -86,6 +95,7 @@ class OfflineInspectionWorkspace {
       equipmentCatalog: equipmentCatalog,
       tenantContext: tenantContext,
       catalogRefresh: catalogRefresh,
+      catalogSyncingEquipment: catalogSyncingEquipment,
       authSession: authSession,
       mediaFiles: files,
     );

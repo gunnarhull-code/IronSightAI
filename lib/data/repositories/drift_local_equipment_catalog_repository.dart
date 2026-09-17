@@ -68,35 +68,37 @@ class DriftLocalEquipmentCatalogRepository
   }
 
   @override
-  Future<Equipment> upsertLocalCreated(Equipment equipment) async {
+  Future<Equipment> upsertLocalCreated(Equipment equipment) {
+    return _upsert(equipment, origin: LocalEquipmentCatalogOrigin.localCreated);
+  }
+
+  @override
+  Future<Equipment> upsertEquipment(Equipment equipment) {
+    return _upsert(equipment, origin: LocalEquipmentCatalogOrigin.remoteCache);
+  }
+
+  Future<Equipment> _upsert(
+    Equipment equipment, {
+    required LocalEquipmentCatalogOrigin origin,
+  }) async {
     _requireNonEmpty(equipment.companyId, 'companyId');
     _requireNonEmpty(equipment.id, 'id');
+
+    final existingById = await (_db.select(
+      _db.localEquipmentCache,
+    )..where((table) => table.id.equals(equipment.id))).getSingleOrNull();
+    if (existingById != null && existingById.companyId != equipment.companyId) {
+      throw StateError(
+        'Refusing to cache equipment ${equipment.id} for company '
+        '${equipment.companyId}; already cached for ${existingById.companyId}.',
+      );
+    }
+
     final now = _clock();
     await _db
         .into(_db.localEquipmentCache)
         .insertOnConflictUpdate(
-          LocalEquipmentCacheCompanion.insert(
-            id: equipment.id,
-            companyId: equipment.companyId,
-            assetName: equipment.assetName,
-            manufacturer: equipment.manufacturer,
-            model: equipment.model,
-            serialNumber: Value(equipment.serialNumber),
-            year: Value(equipment.year),
-            hours: Value(equipment.hours),
-            location: Value(equipment.location),
-            notes: Value(equipment.notes),
-            createdBy: Value(equipment.createdBy),
-            createdByName: Value(equipment.createdByName),
-            updatedBy: Value(equipment.updatedBy),
-            updatedByName: Value(equipment.updatedByName),
-            createdAt: equipment.createdAt.toUtc(),
-            updatedAt: equipment.updatedAt.toUtc(),
-            cachedAt: now,
-            catalogOrigin: Value(
-              LocalEquipmentCatalogOrigin.localCreated.storageValue,
-            ),
-          ),
+          _companion(equipment, cachedAt: now, origin: origin),
         );
     return (await getById(
       companyId: equipment.companyId,
@@ -138,27 +140,10 @@ class DriftLocalEquipmentCatalogRepository
         await _db
             .into(_db.localEquipmentCache)
             .insert(
-              LocalEquipmentCacheCompanion.insert(
-                id: item.id,
-                companyId: item.companyId,
-                assetName: item.assetName,
-                manufacturer: item.manufacturer,
-                model: item.model,
-                serialNumber: Value(item.serialNumber),
-                year: Value(item.year),
-                hours: Value(item.hours),
-                location: Value(item.location),
-                notes: Value(item.notes),
-                createdBy: Value(item.createdBy),
-                createdByName: Value(item.createdByName),
-                updatedBy: Value(item.updatedBy),
-                updatedByName: Value(item.updatedByName),
-                createdAt: item.createdAt.toUtc(),
-                updatedAt: item.updatedAt.toUtc(),
+              _companion(
+                item,
                 cachedAt: now,
-                catalogOrigin: Value(
-                  LocalEquipmentCatalogOrigin.remoteCache.storageValue,
-                ),
+                origin: LocalEquipmentCatalogOrigin.remoteCache,
               ),
             );
       }
@@ -169,27 +154,10 @@ class DriftLocalEquipmentCatalogRepository
         await _db
             .into(_db.localEquipmentCache)
             .insert(
-              LocalEquipmentCacheCompanion.insert(
-                id: local.id,
-                companyId: local.companyId,
-                assetName: local.assetName,
-                manufacturer: local.manufacturer,
-                model: local.model,
-                serialNumber: Value(local.serialNumber),
-                year: Value(local.year),
-                hours: Value(local.hours),
-                location: Value(local.location),
-                notes: Value(local.notes),
-                createdBy: Value(local.createdBy),
-                createdByName: Value(local.createdByName),
-                updatedBy: Value(local.updatedBy),
-                updatedByName: Value(local.updatedByName),
-                createdAt: local.createdAt,
-                updatedAt: local.updatedAt,
+              _companion(
+                _toEquipment(local),
                 cachedAt: now,
-                catalogOrigin: Value(
-                  LocalEquipmentCatalogOrigin.localCreated.storageValue,
-                ),
+                origin: LocalEquipmentCatalogOrigin.localCreated,
               ),
             );
       }
@@ -215,6 +183,33 @@ class DriftLocalEquipmentCatalogRepository
   @override
   Future<void> clearAll() async {
     await _db.delete(_db.localEquipmentCache).go();
+  }
+
+  LocalEquipmentCacheCompanion _companion(
+    Equipment item, {
+    required DateTime cachedAt,
+    required LocalEquipmentCatalogOrigin origin,
+  }) {
+    return LocalEquipmentCacheCompanion.insert(
+      id: item.id,
+      companyId: item.companyId,
+      assetName: item.assetName,
+      manufacturer: item.manufacturer,
+      model: item.model,
+      serialNumber: Value(item.serialNumber),
+      year: Value(item.year),
+      hours: Value(item.hours),
+      location: Value(item.location),
+      notes: Value(item.notes),
+      createdBy: Value(item.createdBy),
+      createdByName: Value(item.createdByName),
+      updatedBy: Value(item.updatedBy),
+      updatedByName: Value(item.updatedByName),
+      createdAt: item.createdAt.toUtc(),
+      updatedAt: item.updatedAt.toUtc(),
+      cachedAt: cachedAt,
+      catalogOrigin: Value(origin.storageValue),
+    );
   }
 
   Equipment _toEquipment(LocalEquipmentCacheRow row) {
